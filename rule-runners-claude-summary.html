@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rule Runners - Claude Collaboration Summary</title>
+    <style>
+      :root {
+        --bg: #f4f7fb;
+        --ink: #1f2937;
+        --muted: #526173;
+        --card: #ffffff;
+        --line: #d8e1ec;
+        --accent: #1866d3;
+        --accent-soft: #e8f1ff;
+        --good: #0f8b5f;
+        --warn: #b26a00;
+        --bad: #b43a3a;
+        --shadow: 0 14px 34px rgba(31, 41, 55, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, #ffffff, transparent 32%),
+          linear-gradient(180deg, #eef4fb 0%, var(--bg) 100%);
+      }
+
+      .wrap {
+        width: min(1120px, 94vw);
+        margin: 28px auto 56px;
+        display: grid;
+        gap: 18px;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: var(--shadow);
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0 0 12px;
+        font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      }
+
+      h1 {
+        font-size: clamp(1.7rem, 3.5vw, 2.5rem);
+      }
+
+      h2 {
+        font-size: 1.25rem;
+        color: #28496d;
+      }
+
+      h3 {
+        font-size: 1.02rem;
+        color: #35577f;
+      }
+
+      p {
+        margin: 0 0 12px;
+        line-height: 1.58;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      li {
+        margin: 6px 0;
+        line-height: 1.48;
+      }
+
+      code {
+        font-family: Consolas, "Courier New", monospace;
+        background: #f3f7fc;
+        border: 1px solid #e3ebf5;
+        border-radius: 6px;
+        padding: 1px 5px;
+      }
+
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .pill {
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        border: 1px solid #cfe0ff;
+        font: 700 0.92rem "Trebuchet MS", "Segoe UI", sans-serif;
+        color: #1d4f95;
+      }
+
+      .summary-grid,
+      .illustration-grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      }
+
+      .mini {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px;
+        background: #fbfdff;
+      }
+
+      .mini .label {
+        font: 700 0.8rem "Trebuchet MS", "Segoe UI", sans-serif;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+
+      .status-good {
+        color: var(--good);
+      }
+
+      .status-warn {
+        color: var(--warn);
+      }
+
+      .status-bad {
+        color: var(--bad);
+      }
+
+      .timeline {
+        display: grid;
+        gap: 12px;
+      }
+
+      .entry {
+        border-left: 4px solid #c9daf4;
+        background: #fbfdff;
+        border-radius: 0 14px 14px 0;
+        padding: 14px 16px;
+      }
+
+      .when {
+        font: 700 0.9rem "Trebuchet MS", "Segoe UI", sans-serif;
+        color: #48678d;
+        margin-bottom: 8px;
+      }
+
+      figure {
+        margin: 0;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        overflow: hidden;
+        background: #fff;
+      }
+
+      figcaption {
+        padding: 10px 12px 12px;
+        border-top: 1px solid var(--line);
+        font-size: 0.94rem;
+        color: #41556c;
+      }
+
+      svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        background: linear-gradient(180deg, #f9fbff, #eef4fb);
+      }
+
+      .callout {
+        border: 1px solid #cfe0ff;
+        background: #f6faff;
+        border-radius: 14px;
+        padding: 14px;
+      }
+
+      .footer {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="card">
+        <h1>Rule Runners - Claude Collaboration Summary</h1>
+        <p>
+          This page records the later design-review conversation around the
+          browser game <strong>Rule Runners</strong>: what Codex tested live,
+          what Claude changed, which ideas were rejected, and why the roster
+          ultimately stopped at a stronger set of levels instead of being padded
+          with weak ones.
+        </p>
+        <div class="meta">
+          <span class="pill">Generated: March 17, 2026</span>
+          <span class="pill">Participants: User, Codex, Claude</span>
+          <span class="pill">Mode: Live browser testing + level design review</span>
+          <span class="pill">Outcome: 25 stronger levels, 1 app bug fixed</span>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>At A Glance</h2>
+        <div class="summary-grid">
+          <article class="mini">
+            <div class="label">Bug Fix</div>
+            <p class="status-good">
+              Fixed the artifact error
+              <code>Identifier 'TS' has already been declared</code>.
+            </p>
+            <p>
+              Claude found that the HTML file had been duplicated end-to-end,
+              creating two whole documents in one artifact.
+            </p>
+          </article>
+
+          <article class="mini">
+            <div class="label">Accepted Level</div>
+            <p class="status-good"><strong>The Course</strong> was added and signed off.</p>
+            <p>
+              It teaches one rule handling two local conditions in sequence:
+              gap detection, then ladder climbing.
+            </p>
+          </article>
+
+          <article class="mini">
+            <div class="label">Rejected Ideas</div>
+            <p class="status-warn">
+              <strong>The Puddle</strong> and <strong>The Approach</strong>
+              were both rejected.
+            </p>
+            <p>
+              Both sounded plausible at first, but collapsed under closer
+              scrutiny into weaker or contradictory lessons.
+            </p>
+          </article>
+
+          <article class="mini">
+            <div class="label">Design Conclusion</div>
+            <p class="status-good">
+              The roster ended in a healthier place by stopping early.
+            </p>
+            <p>
+              Claude ultimately concluded that the remaining design space was
+              too thin, too fragile, or required new mechanics.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Timeline</h2>
+        <div class="timeline">
+          <article class="entry">
+            <div class="when">Phase 1 - Earlier polish and new levels</div>
+            <ul>
+              <li>Codex reviewed earlier level fixes and rejected simplifications that removed the puzzle.</li>
+              <li><strong>Two Gaps</strong> was kept as a jump-size tutorial, but its wording was made more honest.</li>
+              <li><strong>The Ready</strong> was added as a state-change level built around parachutes and a fatal drop.</li>
+            </ul>
+          </article>
+
+          <article class="entry">
+            <div class="when">Phase 2 - App bug surfaced</div>
+            <ul>
+              <li>The artifact pane displayed <code>Uncaught SyntaxError: Identifier 'TS' has already been declared</code>.</li>
+              <li>Codex explicitly asked Claude to treat it as a real bug, not preview noise.</li>
+              <li>Claude traced the problem to two concatenated HTML documents and removed the duplicate copy.</li>
+            </ul>
+          </article>
+
+          <article class="entry">
+            <div class="when">Phase 3 - The Course</div>
+            <ul>
+              <li>Claude proposed a new mixed-local-conditions level.</li>
+              <li>The literal "fork" idea was rejected in favor of a cleaner sequential layout.</li>
+              <li>The first build failed: runners climbed up, faced left, and jumped back into the hazard.</li>
+              <li>Codex pushed for a geometry fix rather than a wording workaround.</li>
+              <li>Claude added a one-tile backstop at the ladder top, and the natural rule finally worked.</li>
+            </ul>
+          </article>
+
+          <article class="entry">
+            <div class="when">Phase 4 - Honest rejection of weaker ideas</div>
+            <ul>
+              <li><strong>The Puddle</strong> was rejected because hazard detection never became the clean core lesson.</li>
+              <li><strong>The Approach</strong> was rejected because stopping near the exit contradicted the purpose of the exit.</li>
+              <li>Claude concluded that the remaining ideas were mostly thin sensor demos, fragile coordination puzzles, or features that needed new engine support.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Illustrations</h2>
+        <div class="illustration-grid">
+          <figure>
+            <svg viewBox="0 0 560 300" xmlns="http://www.w3.org/2000/svg" aria-label="Illustration of the duplicated HTML bug">
+              <rect x="24" y="24" width="512" height="252" rx="18" fill="#ffffff" stroke="#d7e2f0"/>
+              <rect x="54" y="50" width="200" height="170" rx="12" fill="#f5f9ff" stroke="#c8d8f1"/>
+              <rect x="306" y="50" width="200" height="170" rx="12" fill="#fff7f7" stroke="#f0c7c7"/>
+              <text x="74" y="84" font-size="24" font-family="Consolas, monospace" fill="#28496d">&lt;html&gt;</text>
+              <text x="74" y="118" font-size="24" font-family="Consolas, monospace" fill="#28496d">&lt;script&gt; TS ...</text>
+              <text x="74" y="152" font-size="24" font-family="Consolas, monospace" fill="#28496d">&lt;/html&gt;</text>
+              <text x="326" y="84" font-size="24" font-family="Consolas, monospace" fill="#8b2f2f">&lt;html&gt;</text>
+              <text x="326" y="118" font-size="24" font-family="Consolas, monospace" fill="#8b2f2f">&lt;script&gt; TS ...</text>
+              <text x="326" y="152" font-size="24" font-family="Consolas, monospace" fill="#8b2f2f">&lt;/html&gt;</text>
+              <text x="280" y="143" text-anchor="middle" font-size="28" font-family="Trebuchet MS, sans-serif" fill="#b43a3a">+</text>
+              <text x="280" y="248" text-anchor="middle" font-size="22" font-family="Trebuchet MS, sans-serif" fill="#b43a3a">
+                Duplicate document -> duplicate declaration
+              </text>
+            </svg>
+            <figcaption>
+              <strong>Console bug fix.</strong> Claude found that the artifact file had been duplicated wholesale,
+              so the same script declarations were evaluated twice.
+            </figcaption>
+          </figure>
+
+          <figure>
+            <svg viewBox="0 0 560 300" xmlns="http://www.w3.org/2000/svg" aria-label="Illustration of The Ready level">
+              <rect width="560" height="300" fill="#f7fbff"/>
+              <rect x="0" y="228" width="560" height="72" fill="#dbe7f4"/>
+              <rect x="60" y="172" width="300" height="18" rx="6" fill="#516c8f"/>
+              <rect x="402" y="210" width="108" height="18" rx="6" fill="#516c8f"/>
+              <rect x="360" y="190" width="42" height="38" fill="#7ac6ff"/>
+              <rect x="402" y="228" width="108" height="34" fill="#7ac6ff"/>
+              <circle cx="124" cy="160" r="8" fill="#ffd96d"/>
+              <circle cx="164" cy="160" r="8" fill="#ffd96d"/>
+              <circle cx="204" cy="160" r="8" fill="#ffd96d"/>
+              <path d="M124 147 l-9 13 h18 z" fill="#ffd96d"/>
+              <path d="M164 147 l-9 13 h18 z" fill="#ffd96d"/>
+              <path d="M204 147 l-9 13 h18 z" fill="#ffd96d"/>
+              <circle cx="286" cy="162" r="10" fill="#2f5e9c"/>
+              <circle cx="308" cy="162" r="10" fill="#2f5e9c"/>
+              <circle cx="330" cy="162" r="10" fill="#2f5e9c"/>
+              <rect x="486" y="176" width="18" height="34" rx="4" fill="#4fd58d"/>
+              <text x="40" y="50" font-size="24" font-family="Trebuchet MS, sans-serif" fill="#29486d">
+                The Ready: collect protection first, then cross the drop
+              </text>
+              <text x="90" y="136" font-size="18" font-family="Trebuchet MS, sans-serif" fill="#8b6c00">parachutes</text>
+              <text x="364" y="172" font-size="18" font-family="Trebuchet MS, sans-serif" fill="#22648a">fatal drop</text>
+              <text x="450" y="166" font-size="18" font-family="Trebuchet MS, sans-serif" fill="#18664c">exit</text>
+            </svg>
+            <figcaption>
+              <strong>The Ready.</strong> A successful addition: the creatures must change behavior after collecting parachutes.
+            </figcaption>
+          </figure>
+
+          <figure>
+            <svg viewBox="0 0 560 300" xmlns="http://www.w3.org/2000/svg" aria-label="Illustration of The Course ladder-top fix">
+              <rect width="560" height="300" fill="#f8fbff"/>
+              <rect x="0" y="224" width="560" height="76" fill="#dce8f5"/>
+              <rect x="40" y="172" width="170" height="18" rx="6" fill="#506a8d"/>
+              <rect x="254" y="224" width="48" height="28" fill="#7cc9ff"/>
+              <rect x="324" y="172" width="182" height="18" rx="6" fill="#506a8d"/>
+              <rect x="324" y="172" width="16" height="52" fill="#9c7b49"/>
+              <rect x="316" y="172" width="8" height="52" fill="#c8a46b"/>
+              <rect x="308" y="164" width="16" height="8" fill="#3f5571"/>
+              <circle cx="112" cy="162" r="10" fill="#21599d"/>
+              <circle cx="136" cy="162" r="10" fill="#21599d"/>
+              <circle cx="160" cy="162" r="10" fill="#21599d"/>
+              <line x1="332" y1="184" x2="332" y2="220" stroke="#d9bb83" stroke-width="4"/>
+              <line x1="340" y1="184" x2="340" y2="220" stroke="#d9bb83" stroke-width="4"/>
+              <line x1="328" y1="194" x2="344" y2="194" stroke="#d9bb83" stroke-width="4"/>
+              <line x1="328" y1="206" x2="344" y2="206" stroke="#d9bb83" stroke-width="4"/>
+              <text x="32" y="50" font-size="24" font-family="Trebuchet MS, sans-serif" fill="#29486d">
+                The Course: one rule, two local conditions
+              </text>
+              <text x="68" y="145" font-size="18" font-family="Trebuchet MS, sans-serif" fill="#22648a">jump gap</text>
+              <text x="352" y="156" font-size="18" font-family="Trebuchet MS, sans-serif" fill="#7a561f">climb ladder</text>
+              <text x="292" y="150" font-size="18" font-family="Trebuchet MS, sans-serif" fill="#b43a3a">new backstop tile</text>
+            </svg>
+            <figcaption>
+              <strong>The Course.</strong> The final fix was geometric: a single tile to the left of the ladder top prevents a backward jump.
+            </figcaption>
+          </figure>
+
+          <figure>
+            <svg viewBox="0 0 560 300" xmlns="http://www.w3.org/2000/svg" aria-label="Illustration of rejected ideas">
+              <rect width="560" height="300" fill="#fbfcfe"/>
+              <rect x="56" y="66" width="180" height="72" rx="12" fill="#fff3d9" stroke="#edd7a8"/>
+              <rect x="322" y="66" width="180" height="72" rx="12" fill="#ffe8e8" stroke="#efc1c1"/>
+              <rect x="190" y="190" width="180" height="72" rx="12" fill="#eaf7ef" stroke="#c6e4cf"/>
+              <text x="146" y="103" text-anchor="middle" font-size="24" font-family="Trebuchet MS, sans-serif" fill="#8d5d00">The Puddle</text>
+              <text x="146" y="126" text-anchor="middle" font-size="16" font-family="Trebuchet MS, sans-serif" fill="#8d5d00">collapsed into older lessons</text>
+              <text x="412" y="103" text-anchor="middle" font-size="24" font-family="Trebuchet MS, sans-serif" fill="#9a2f2f">The Approach</text>
+              <text x="412" y="126" text-anchor="middle" font-size="16" font-family="Trebuchet MS, sans-serif" fill="#9a2f2f">contradicted the exit itself</text>
+              <text x="280" y="228" text-anchor="middle" font-size="24" font-family="Trebuchet MS, sans-serif" fill="#0f8b5f">Roster kept stronger</text>
+              <text x="280" y="251" text-anchor="middle" font-size="16" font-family="Trebuchet MS, sans-serif" fill="#0f8b5f">better to reject than pad</text>
+              <path d="M220 138 C230 156, 240 168, 260 190" fill="none" stroke="#c6b36a" stroke-width="4"/>
+              <path d="M340 138 C330 156, 320 168, 300 190" fill="none" stroke="#d08d8d" stroke-width="4"/>
+            </svg>
+            <figcaption>
+              <strong>Good rejections.</strong> Two ideas were explicitly abandoned because they did not survive honest design scrutiny.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Accepted Changes</h2>
+        <div class="callout">
+          <p><strong>Natural rule that signed off The Course:</strong></p>
+          <p>
+            <code>if there is a gap ahead, jump. if there is a ladder ahead or you are on a ladder, climb up. otherwise move right</code>
+          </p>
+        </div>
+        <ul>
+          <li>The console error was treated as a shipping bug, not an ignorable preview quirk.</li>
+          <li><strong>The Course</strong> stayed in the game only after its geometry matched the intended lesson.</li>
+          <li>The game ended stronger because several tempting but weak concepts were rejected instead of being forced in.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Rejected Changes</h2>
+        <ul>
+          <li><strong>The Puddle</strong>: hazard detection never became the clean core lesson; it either looped, collapsed into jumping, or was bypassed by simpler movement.</li>
+          <li><strong>The Approach</strong>: proximity-to-exit stopping contradicted the basic purpose of the exit, so the lesson could not be made coherent.</li>
+          <li>Further single-sensor levels were judged too thin, while richer multi-creature ideas would need new sensors or more engine support.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Final Design Judgment</h2>
+        <p>
+          The most important outcome of the conversation was not just that one
+          bug was fixed and one new level was added. It was that the review
+          process stayed disciplined enough to reject filler. Claude ultimately
+          concluded, and Codex agreed, that the game had reached a good stopping
+          point: the remaining ideas were either thin novelties, fragile
+          compiler puzzles, or concepts that needed new mechanics.
+        </p>
+        <p>
+          That left the game with a cleaner artifact, a better level roster, and
+          a clearer design boundary around what counts as a genuinely worthwhile
+          addition.
+        </p>
+      </section>
+
+      <section class="card footer">
+        <p>
+          File purpose: a readable project note describing the live design-review
+          conversation between Codex and Claude about Rule Runners, including the
+          accepted fixes, the accepted level, and the rejected concepts.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

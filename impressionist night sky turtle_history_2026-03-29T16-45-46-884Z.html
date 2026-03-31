@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turtle Graphics Agent History</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #0f172a; line-height: 1.5; padding: 20px;}
+        .canvas-container { border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; background: #f8fafc; display: flex; justify-content: center; position: relative; }
+        pre, .code-block { background: #0f172a; color: #f8fafc; padding: 16px; border-radius: 8px; overflow-y: auto; font-family: ui-monospace, monospace; font-size: 14px; white-space: pre-wrap; word-wrap: break-word; max-height: 200px; }
+        .diff-add { background-color: #fcd34d; color: #78350f; font-weight: bold; padding: 0 4px; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        
+        /* CSS Tree Hierarchy Styles */
+        .css-tree { display: flex; justify-content: center; min-width: max-content; padding-bottom: 2rem; }
+        .css-tree ul { display: flex; padding-top: 20px; position: relative; margin: 0; padding-left: 0; }
+        .css-tree li { display: flex; flex-direction: column; align-items: center; list-style-type: none; position: relative; padding: 20px 10px 0 10px; }
+        .css-tree li::before, .css-tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid #cbd5e1; width: 50%; height: 20px; z-index: 1; }
+        .css-tree li::after { right: auto; left: 50%; border-left: 2px solid #cbd5e1; }
+        .css-tree li:only-child::after, .css-tree li:only-child::before { display: none; }
+        .css-tree li:only-child { padding-top: 0; }
+        .css-tree li:first-child::before, .css-tree li:last-child::after { border: 0 none; }
+        .css-tree li:last-child::before { border-right: 2px solid #cbd5e1; border-radius: 0 5px 0 0; }
+        .css-tree li:first-child::after { border-radius: 5px 0 0 0; }
+        .css-tree ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid #cbd5e1; width: 0; height: 20px; z-index: 1; margin-left: -1px; }
+        
+        .tree-node { background: white; border: 2px solid #e2e8f0; border-radius: 8px; padding: 6px; width: 140px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; position: relative; z-index: 2; }
+        .tree-node:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #3b82f6;}
+        .tree-node.winner { border-color: #22c55e; border-width: 3px; }
+        .tree-node canvas { width: 100%; border-radius: 4px; background: white; border: 1px solid #f1f5f9; display: block; }
+        .tree-node .node-title { font-size: 11px; font-weight: bold; margin-top: 6px; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+        .tree-node .node-score { font-size: 11px; color: #8b5cf6; font-weight: bold; margin-top: 2px; text-align: center; }
+    </style>
+</head>
+<body class="max-w-5xl mx-auto space-y-8">
+    <h1 class="text-3xl font-bold text-center text-slate-800 mb-8">Multi-Agent Turtle Graphics History</h1>
+    
+    <div id="historyEntries" class="space-y-12"></div>
+    <div id="finalMasterpiece" class="mt-16 text-center pb-10 flex flex-col items-center"></div>
+    
+    <div id="treeContainer" class="mt-8 mb-20 bg-white p-8 rounded-xl shadow-sm border border-slate-200 overflow-x-auto hidden">
+        <h2 class="text-3xl font-bold text-center text-slate-800 mb-8">Evolution Tree</h2>
+        <div class="css-tree">
+            <ul id="treeRoot"></ul>
+        </div>
+    </div>
+
+    <!-- Replay Modal (Exported) -->
+    <div id="replayModal" class="fixed inset-0 bg-slate-900/90 hidden z-[100] overflow-y-auto p-4 sm:p-8">
+        <button onclick="closeModal()" class="fixed top-4 right-4 sm:top-6 sm:right-8 text-white hover:text-slate-300 text-5xl leading-none z-[110] drop-shadow-md">&times;</button>
+        <div class="bg-white rounded-xl p-6 w-full max-w-5xl mx-auto flex flex-col items-center relative shadow-2xl mt-4 sm:mt-8 mb-10">
+            <h3 class="text-2xl font-bold mb-6 text-slate-800" id="modalTitle">Replay</h3>
+            <div class="bg-slate-50 border rounded w-full flex justify-center p-2 mb-4">
+                <canvas id="modalCanvas" width="800" height="600" class="max-w-full h-auto bg-white rounded shadow"></canvas>
+            </div>
+            <div id="modalCodeDisplay" class="w-full bg-slate-800 text-slate-200 p-4 rounded-lg font-mono text-[10px] sm:text-xs overflow-y-auto max-h-40 mb-4 custom-scroll whitespace-pre-wrap break-words"></div>
+            <div class="flex flex-col sm:flex-row items-center justify-between w-full gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <div class="flex items-center gap-3 w-full sm:w-1/2">
+                    <label class="text-sm font-semibold text-slate-700 whitespace-nowrap">Speed: <span id="modalSpeedLabel" class="text-blue-600">Medium</span></label>
+                    <input type="range" id="modalAnimSpeed" min="0" max="100" value="50" oninput="updateModalSpeedLabel(this.value)" class="w-full accent-emerald-600">
+                </div>
+                <button onclick="playModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold shadow transition flex items-center gap-2 whitespace-nowrap">▶ Replay Animation</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Param Changes Modal (Exported) -->
+    <div id="paramModal" class="fixed inset-0 bg-slate-900/80 hidden z-[110] overflow-y-auto p-4 items-center justify-center">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md relative shadow-2xl mx-auto">
+            <button onclick="closeParamModal()" class="absolute top-3 right-4 text-slate-400 hover:text-slate-800 text-3xl leading-none">&times;</button>
+            <h3 class="text-xl font-bold mb-4 text-slate-800 border-b pb-2">Parameter Changes</h3>
+            <div id="paramModalContent" class="text-sm text-slate-700 leading-relaxed"></div>
+        </div>
+    </div>
+
+    <script>
+        const historyData = [{"stage":"Original Version","baseCode":"","code":"REPEAT 4 [ FD 100 RT 90 ]","feedback":null},{"stage":"Iteration 1","baseCode":"REPEAT 4 [ FD 100 RT 90 ]","code":"SETPC 1\nSETPS 2\nREPEAT 12 [ REPEAT 4 [ FD 100 RT 90 ] RT 30 ]","feedback":"Replace the thin, solid blue lines with thick, swirling impasto brushstrokes in shades of deep indigo and luminous gold to create a sense of movement and light.","taste":"Impressionist painting of the night sky","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Variant 1","code":"SETPC 1\nSETPS 2\nREPEAT 12 [ REPEAT 4 [ FD 100 RT 90 ] RT 30 ]","score":4,"reason":"The radial symmetry effectively suggests a star and the blue color is appropriate, though the sharp, clinical lines are the opposite of the soft, painterly brushwork required for impressionism.","isWinner":true},{"title":"Original/Base","code":"REPEAT 4 [ FD 100 RT 90 ]","score":2,"reason":"The dark, muted color palette hints at a night sky, but the single geometric square lacks any impressionist texture, light, or celestial subjects.","isWinner":false},{"title":"Variant 2","code":"SETPC 5\nSETPS 3\nREPEAT 8 [ REPEAT 4 [ FD 100 RT 90 ] RT 45 FD 50 ]","score":1,"reason":"The vibrant magenta color and chaotic overlapping squares are entirely unrelated to the serene and atmospheric qualities of an impressionist night sky.","isWinner":false}]},{"stage":"Iteration 2","baseCode":"SETPC 1\nSETPS 2\nREPEAT 12 [ REPEAT 4 [ FD 100 RT 90 ] RT 30 ]","code":"SETPS 8\nREPEAT 12 [\n  REPEAT 4 [\n    REPEAT 10 [\n      SETPC 1\n      FD 10\n      RT 3\n      SETPC 6\n      FD 2\n      LT 1\n    ]\n    RT 70\n  ]\n  RT 30\n]","feedback":"Replace the white background with a dark navy blue field featuring thick, swirling impasto brushstrokes to provide depth and a sense of movement.","taste":"Impressionist painting of the night sky","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Variant 1","code":"SETPS 8\nREPEAT 12 [\n  REPEAT 4 [\n    REPEAT 10 [\n      SETPC 1\n      FD 10\n      RT 3\n      SETPC 6\n      FD 2\n      LT 1\n    ]\n    RT 70\n  ]\n  RT 30\n]","score":6,"reason":"The yellow and blue stippling creates a vibrant, flickering effect that successfully mimics starlight, while the dense radial pattern evokes a luminous celestial object.","isWinner":true},{"title":"Variant 2","code":"SETPS 5\nREPEAT 12 [\n  REPEAT 4 [\n    REPEAT 20 [\n      SETPC 6\n      FD 5\n      RT 1\n      SETPC 1\n      FD 2\n      RT 2\n    ]\n    RT 50\n  ]\n  RT 30\n  PU\n  FD 10\n  RT 10\n  PD\n]","score":3,"reason":"Although the curved lines are more organic, the composition feels empty and fails to capture the rich, filled-in texture of a painted nocturnal landscape.","isWinner":false},{"title":"Original/Base","code":"SETPC 1\nSETPS 2\nREPEAT 12 [ REPEAT 4 [ FD 100 RT 90 ] RT 30 ]","score":2,"reason":"The thin, straight blue lines and stark white background are too clinical and lack the expressive brushwork and atmospheric depth required for an Impressionist night sky.","isWinner":false}]},{"stage":"Iteration 3","baseCode":"SETPS 8\nREPEAT 12 [\n  REPEAT 4 [\n    REPEAT 10 [\n      SETPC 1\n      FD 10\n      RT 3\n      SETPC 6\n      FD 2\n      LT 1\n    ]\n    RT 70\n  ]\n  RT 30\n]","code":"SETPS 50\nSETPC 15\nREPEAT 100 [\n  SETPS REPCOUNT\n  FD 8\n  RT 10\n]\nPD\nSETPS 10\nREPEAT 15 [\n  REPEAT 3 [\n    REPEAT 12 [\n      SETPC 1\n      FD 15\n      RT 5\n      SETPC 6\n      FD 5\n      LT 3\n    ]\n    RT 120\n  ]\n  RT 24\n]","feedback":"Replace the white background with a dark navy blue to establish a nocturnal setting.","taste":"Impressionist painting of the night sky","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Variant 2","code":"SETPS 50\nSETPC 15\nREPEAT 100 [\n  SETPS REPCOUNT\n  FD 8\n  RT 10\n]\nPD\nSETPS 10\nREPEAT 15 [\n  REPEAT 3 [\n    REPEAT 12 [\n      SETPC 1\n      FD 15\n      RT 5\n      SETPC 6\n      FD 5\n      LT 3\n    ]\n    RT 120\n  ]\n  RT 24\n]","score":5,"reason":"The dense, overlapping pattern of blue and yellow strokes creates a sense of swirling energy reminiscent of 'The Starry Night', making it the closest to the desired aesthetic despite the white background.","isWinner":true},{"title":"Variant 1","code":"SETPS 30\nSETPC 15\nREPEAT 20 [\n  PU FD 80\n  PD\n  REPEAT 10 [ FD 20 RT 36 ]\n  PU BK 80\n  RT 18\n]\nPD\nSETPS 8\nREPEAT 12 [\n  REPEAT 5 [\n    REPEAT 15 [\n      SETPC 1\n      FD 10\n      RT 4\n      SETPC 6\n      FD 3\n      LT 2\n    ]\n    RT 72\n  ]\n  RT 30\n]","score":3,"reason":"The inclusion of a grey circular element suggests a moon, but the composition is too empty and the clean digital lines lack the visible brushwork required for an Impressionist feel.","isWinner":false},{"title":"Original/Base","code":"SETPS 8\nREPEAT 12 [\n  REPEAT 4 [\n    REPEAT 10 [\n      SETPC 1\n      FD 10\n      RT 3\n      SETPC 6\n      FD 2\n      LT 1\n    ]\n    RT 70\n  ]\n  RT 30\n]","score":2,"reason":"While the blue and yellow palette hints at the colors of a starry night, the geometric precision and stark white background are the opposite of the atmospheric, painterly Impressionist style.","isWinner":false}]},{"stage":"Iteration 4","baseCode":"SETPS 50\nSETPC 15\nREPEAT 100 [\n  SETPS REPCOUNT\n  FD 8\n  RT 10\n]\nPD\nSETPS 10\nREPEAT 15 [\n  REPEAT 3 [\n    REPEAT 12 [\n      SETPC 1\n      FD 15\n      RT 5\n      SETPC 6\n      FD 5\n      LT 3\n    ]\n    RT 120\n  ]\n  RT 24\n]","code":"SETPS 5\nREPEAT 12 [\n  REPEAT 4 [\n    REPEAT 20 [\n      SETPC 6\n      FD 5\n      RT 1\n      SETPC 1\n      FD 2\n      RT 2\n    ]\n    RT 50\n  ]\n  RT 30\n  PU\n  FD 10\n  RT 10\n  PD\n]","feedback":"\u003cspan class=\"text-amber-600 font-bold\">Original won but backups exist. The top Backup variant was promoted to current.\u003c/span>\u003cbr>\u003cbr>You were promoted from the backup list (Score: 3). Please improve this further based on your taste.","taste":"Impressionist painting of the night sky","magnitude":"6","magnitudeText":"Make a SIGNIFICANT change. Expand the complexity. Introduce new colors, varying pen sizes, and noticeably alter the geometry.","variants":[{"title":"Original/Base","code":"SETPS 50\nSETPC 15\nREPEAT 100 [\n  SETPS REPCOUNT\n  FD 8\n  RT 10\n]\nPD\nSETPS 10\nREPEAT 15 [\n  REPEAT 3 [\n    REPEAT 12 [\n      SETPC 1\n      FD 15\n      RT 5\n      SETPC 6\n      FD 5\n      LT 3\n    ]\n    RT 120\n  ]\n  RT 24\n]","score":4,"reason":"The color palette of deep blue and bright yellow is the most reminiscent of a celestial night, though the geometric rigidity lacks the fluid, painterly essence of Impressionism.","isWinner":true},{"title":"Variant 2","code":"PU SETPC 11 SETPS 2000 FD 1 BK 1 PD\nSETPS 2\nREPEAT 24 [\n  SETPC 14\n  REPEAT 12 [\n    SETPS REPCOUNT / 3\n    FD 40\n    RT 150\n    REPEAT 6 [\n      SETPC 10\n      FD 20\n      LT 60\n      SETPC 1\n      FD 10\n      RT 120\n    ]\n    SETPC 13\n    BK 15\n    RT 30\n  ]\n  PU FD 80 LT 15 PD\n  REPEAT 4 [\n    SETPC 15\n    SETPS 5\n    FD 10\n    BK 10\n    RT 90\n  ]\n]","score":2,"reason":"While the darker colors are a slight improvement over image 2, the green hues and fragmented composition do not align with the requested aesthetic.","isWinner":false},{"title":"Variant 1","code":"PU SETPC 11 SETPS 2000 FD 1 BK 1 PD\nREPEAT 12 [\n  PU FD 150 RT 30 PD\n  REPEAT 8 [\n    SETPS REPCOUNT\n    SETPC 9\n    REPEAT 10 [\n      FD 25\n      RT 36\n      SETPC 13\n      FD 10\n      LT 18\n      REPEAT 3 [\n        SETPC 15\n        FD 5\n        RT 120\n      ]\n    ]\n    RT 45\n  ]\n]","score":1,"reason":"The white background and chaotic mesh structure completely fail to evoke the mood or atmosphere of a night sky.","isWinner":false}]},{"stage":"Iteration 5","baseCode":"SETPS 5\nREPEAT 12 [\n  REPEAT 4 [\n    REPEAT 20 [\n      SETPC 6\n      FD 5\n      RT 1\n      SETPC 1\n      FD 2\n      RT 2\n    ]\n    RT 50\n  ]\n  RT 30\n  PU\n  FD 10\n  RT 10\n  PD\n]","code":"SETPS 30\nSETPC 15\nREPEAT 20 [\n  PU FD 80\n  PD\n  REPEAT 10 [ FD 20 RT 36 ]\n  PU BK 80\n  RT 18\n]\nPD\nSETPS 8\nREPEAT 12 [\n  REPEAT 5 [\n    REPEAT 15 [\n      SETPC 1\n      FD 10\n      RT 4\n      SETPC 6\n      FD 3\n      LT 2\n    ]\n    RT 72\n  ]\n  RT 30\n]","feedback":"\u003cspan class=\"text-amber-600 font-bold\">Original won but backups exist. The top Backup variant was promoted to current.\u003c/span>\u003cbr>\u003cbr>You were promoted from the backup list (Score: 3). Please improve this further based on your taste.","taste":"Impressionist painting of the night sky","magnitude":"6","magnitudeText":"Make a SIGNIFICANT change. Expand the complexity. Introduce new colors, varying pen sizes, and noticeably alter the geometry.","variants":[{"title":"Original/Base","code":"SETPS 5\nREPEAT 12 [\n  REPEAT 4 [\n    REPEAT 20 [\n      SETPC 6\n      FD 5\n      RT 1\n      SETPC 1\n      FD 2\n      RT 2\n    ]\n    RT 50\n  ]\n  RT 30\n  PU\n  FD 10\n  RT 10\n  PD\n]","score":4,"reason":"The use of blue and yellow dots creates a rhythmic, stippled texture that echoes Impressionist brushwork, and the colors suggest a celestial theme, though the white background is far too sterile.","isWinner":true},{"title":"Variant 1","code":"SETPS 2\nREPEAT 15 [\n  SETPC REPCOUNT\n  REPEAT 12 [\n    SETPS REPCOUNT\n    FD 120\n    RT 150\n    REPEAT 4 [\n      FD 25\n      LT 90\n    ]\n    BK 120\n    RT 30\n  ]\n  PU FD 30 RT 24 PD\n]","score":1,"reason":"The flat vector style, multi-colored palette, and rigid geometric shapes lack the atmospheric depth and painterly soul of a night sky scene.","isWinner":false},{"title":"Variant 2","code":"SETPS 1\nREPEAT 12 [\n  SETPC REPCOUNT\n  REPEAT 8 [\n    REPEAT 12 [\n      SETPS REPCOUNT\n      FD 10\n      RT 15\n    ]\n    RT 90\n    SETPS 2\n    REPEAT 6 [\n      SETPC 15\n      FD 15\n      LT 60\n    ]\n    SETPC REPCOUNT\n    RT 45\n  ]\n  PU BK 60 RT 30 PD\n]","score":1,"reason":"The clean, bright arcs and white negative space are completely disconnected from the moody, textured, and dark aesthetic of a nocturnal painting.","isWinner":false}]},{"stage":"Iteration 6","baseCode":"SETPS 30\nSETPC 15\nREPEAT 20 [\n  PU FD 80\n  PD\n  REPEAT 10 [ FD 20 RT 36 ]\n  PU BK 80\n  RT 18\n]\nPD\nSETPS 8\nREPEAT 12 [\n  REPEAT 5 [\n    REPEAT 15 [\n      SETPC 1\n      FD 10\n      RT 4\n      SETPC 6\n      FD 3\n      LT 2\n    ]\n    RT 72\n  ]\n  RT 30\n]","code":"SETPC 5\nSETPS 3\nREPEAT 8 [ REPEAT 4 [ FD 100 RT 90 ] RT 45 FD 50 ]","feedback":"\u003cspan class=\"text-amber-600 font-bold\">Original won but backups exist. The top Backup variant was promoted to current.\u003c/span>\u003cbr>\u003cbr>You were promoted from the backup list (Score: 1). Please improve this further based on your taste.","taste":"Impressionist painting of the night sky","magnitude":"6","magnitudeText":"Make a SIGNIFICANT change. Expand the complexity. Introduce new colors, varying pen sizes, and noticeably alter the geometry.","variants":[{"title":"Original/Base","code":"SETPS 30\nSETPC 15\nREPEAT 20 [\n  PU FD 80\n  PD\n  REPEAT 10 [ FD 20 RT 36 ]\n  PU BK 80\n  RT 18\n]\nPD\nSETPS 8\nREPEAT 12 [\n  REPEAT 5 [\n    REPEAT 15 [\n      SETPC 1\n      FD 10\n      RT 4\n      SETPC 6\n      FD 3\n      LT 2\n    ]\n    RT 72\n  ]\n  RT 30\n]","score":6,"reason":"The short, dashed lines of blue and yellow are remarkably similar to the 'staccato' brushstrokes used in Impressionism to represent flickering light, and the overlapping grey circles create a soft, cloud-like texture.","isWinner":true},{"title":"Variant 2","code":"SETPS 1\nREPEAT 12 [\n  SETPC REPCOUNT\n  REPEAT 10 [\n    SETPS REPCOUNT\n    FD 100 RT 160 FD 100 RT 20\n  ]\n  RT 30\n]\nPU HOME PD\nSETPS 4\nREPEAT 24 [\n  SETPC 13\n  PU FD 200 PD\n  REPEAT 6 [ FD 40 RT 60 ]\n  PU BK 200 RT 15\n]\nSETPS 10\nSETPC 9\nREPEAT 8 [\n  REPEAT 4 [ FD 50 RT 90 ]\n  RT 45\n]","score":4,"reason":"The thick, vibrant strokes in the center have the necessary impasto energy, but the composition is too chaotic and the white background prevents any sense of a night sky atmosphere.","isWinner":false},{"title":"Variant 1","code":"SETPS 2\nREPEAT 36 [\n  SETPC REPCOUNT\n  REPEAT 4 [ FD 100 RT 90 ]\n  RT 10\n]\nSETPS 6\nREPEAT 18 [\n  PU FD 150 PD\n  SETPC 15\n  REPEAT 36 [ FD 10 RT 10 ]\n  PU BK 150 RT 20\n]\nPU HOME PD\nSETPS 1\nREPEAT 100 [ \n  SETPC REPCOUNT \n  FD REPCOUNT \n  RT 91 \n]","score":3,"reason":"While the radial symmetry suggests the movement of celestial bodies, the lines are too thin and the geometric precision feels overly digital rather than painterly.","isWinner":false}]},{"stage":"Iteration 7","baseCode":"SETPC 5\nSETPS 3\nREPEAT 8 [ REPEAT 4 [ FD 100 RT 90 ] RT 45 FD 50 ]","code":"SETPS 1 REPEAT 12 [ SETPC REPCOUNT REPEAT 12 [ FD 150 RT 150 REPEAT 8 [ FD 40 RT 45 SETPS REPCOUNT ] ] BK 60 LT 30 ]","feedback":"Replace the white background with a deep navy blue gradient and apply a thick, visible brushstroke texture to the shapes using a palette of vibrant yellows and cyans to simulate the 'Starry Night' impasto style.","taste":"Impressionist painting of the night sky","magnitude":"6","magnitudeText":"Make a SIGNIFICANT change. Expand the complexity. Introduce new colors, varying pen sizes, and noticeably alter the geometry.","variants":[{"title":"Variant 2","code":"SETPS 1 REPEAT 12 [ SETPC REPCOUNT REPEAT 12 [ FD 150 RT 150 REPEAT 8 [ FD 40 RT 45 SETPS REPCOUNT ] ] BK 60 LT 30 ]","score":4,"reason":"This image is the strongest as the complex, radial patterns resemble stylized stars, and the use of blues and cyans hints at a celestial theme, though it still feels like a digital graphic rather than a painting.","isWinner":true},{"title":"Variant 1","code":"SETPS 1 REPEAT 10 [ SETPC REPCOUNT REPEAT 8 [ FD 100 RT 45 REPEAT 10 [ FD 20 RT 36 SETPS REPCOUNT ] ] RT 36 PU FD 30 PD ]","score":3,"reason":"The overlapping circular forms begin to suggest the swirling motion found in impressionist skies, but the clean vector lines and bright primary colors on white do not capture the mood of nighttime.","isWinner":false},{"title":"Original/Base","code":"SETPC 5\nSETPS 3\nREPEAT 8 [ REPEAT 4 [ FD 100 RT 90 ] RT 45 FD 50 ]","score":1,"reason":"The neon magenta geometric lines on a white background are the antithesis of the impressionist night sky aesthetic; it lacks depth, painterly texture, and the appropriate color palette.","isWinner":false}]},{"stage":"Iteration 8","baseCode":"SETPS 1 REPEAT 12 [ SETPC REPCOUNT REPEAT 12 [ FD 150 RT 150 REPEAT 8 [ FD 40 RT 45 SETPS REPCOUNT ] ] BK 60 LT 30 ]","code":"REPEAT 4 [ SETPS 1000 SETPC 7 FD 500 BK 500 RT 90 ] REPEAT 15 [ PU FD 120 RT 24 PD REPEAT 20 [ SETPC 6 SETPS REPCOUNT FD 20 BK 10 RT 18 REPEAT 10 [ SETPC 3 SETPS 4 FD 15 BK 10 RT 36 ] ] ]","feedback":"Replace the flat white background with a dark navy blue field featuring thick, visible impasto brushstrokes in shades of indigo and violet to create a painterly night sky atmosphere.","taste":"Impressionist painting of the night sky","magnitude":"6","magnitudeText":"Make a SIGNIFICANT change. Expand the complexity. Introduce new colors, varying pen sizes, and noticeably alter the geometry.","variants":[{"title":"Variant 1","code":"REPEAT 4 [ SETPS 1000 SETPC 7 FD 500 BK 500 RT 90 ] REPEAT 15 [ PU FD 120 RT 24 PD REPEAT 20 [ SETPC 6 SETPS REPCOUNT FD 20 BK 10 RT 18 REPEAT 10 [ SETPC 3 SETPS 4 FD 15 BK 10 RT 36 ] ] ]","score":4,"reason":"The repetition of smaller circular forms across the canvas provides a rhythmic quality that loosely suggests a field of stars, making it the most adaptable to the requested aesthetic.","isWinner":true},{"title":"Original/Base","code":"SETPS 1 REPEAT 12 [ SETPC REPCOUNT REPEAT 12 [ FD 150 RT 150 REPEAT 8 [ FD 40 RT 45 SETPS REPCOUNT ] ] BK 60 LT 30 ]","score":2,"reason":"The geometric complexity is interesting, but the sharp vector lines and stark white background are the antithesis of the soft, atmospheric, and textured nature of an Impressionist night sky.","isWinner":false},{"title":"Variant 2","code":"REPEAT 4 [ SETPS 1000 SETPC 7 FD 500 BK 500 RT 90 ] REPEAT 8 [ PU FD 220 RT 45 PD REPEAT 12 [ SETPC 6 SETPS 24 FD 60 BK 60 RT 30 REPEAT 10 [ SETPC 3 SETPS 12 FD 35 BK 35 RT 36 REPEAT 6 [ SETPC 6 FD 20 BK 20 RT 60 ] ] ] ]","score":1,"reason":"The bold, flat graphic style and minimalist composition lack the expressive brushwork and atmospheric depth required for a painterly nocturnal scene.","isWinner":false}]},{"stage":"Iteration 9","baseCode":"REPEAT 4 [ SETPS 1000 SETPC 7 FD 500 BK 500 RT 90 ] REPEAT 15 [ PU FD 120 RT 24 PD REPEAT 20 [ SETPC 6 SETPS REPCOUNT FD 20 BK 10 RT 18 REPEAT 10 [ SETPC 3 SETPS 4 FD 15 BK 10 RT 36 ] ] ]","code":"REPEAT 120 [ SETPS 100 SETPC 13 FD 1000 BK 1000 RT 3 ] REPEAT 60 [ SETPS 50 SETPC 1 FD 900 BK 900 RT 6 ] REPEAT 6 [ PU FD 180 RT 60 PD REPEAT 20 [ SETPC 11 SETPS REPCOUNT FD 80 RT 18 REPEAT 15 [ SETPC 6 SETPS 5 FD 40 BK 20 RT 24 REPEAT 6 [ SETPC 14 SETPS 2 FD 15 BK 15 RT 60 ] ] ] ]","feedback":"Arrange the yellow strokes into concentrated swirling patterns to represent glowing stars and galaxies, allowing more of the dark blue background to peek through for better contrast.","taste":"Impressionist painting of the night sky","magnitude":"6","magnitudeText":"Make a SIGNIFICANT change. Expand the complexity. Introduce new colors, varying pen sizes, and noticeably alter the geometry.","variants":[{"title":"Variant 2","code":"REPEAT 120 [ SETPS 100 SETPC 13 FD 1000 BK 1000 RT 3 ] REPEAT 60 [ SETPS 50 SETPC 1 FD 900 BK 900 RT 6 ] REPEAT 6 [ PU FD 180 RT 60 PD REPEAT 20 [ SETPC 11 SETPS REPCOUNT FD 80 RT 18 REPEAT 15 [ SETPC 6 SETPS 5 FD 40 BK 20 RT 24 REPEAT 6 [ SETPC 14 SETPS 2 FD 15 BK 15 RT 60 ] ] ] ]","score":7,"reason":"This variant is the most successful, utilizing a deep midnight blue background and thick, energetic marks that strongly evoke the brushwork of Van Gogh's night scenes.","isWinner":true},{"title":"Variant 1","code":"REPEAT 90 [ SETPS 60 SETPC 1 FD 1000 BK 1000 RT 4 ] REPEAT 72 [ SETPS 30 SETPC 13 FD 800 BK 800 RT 5 ] REPEAT 45 [ SETPS 15 SETPC 5 FD 600 BK 600 RT 8 ] REPEAT 10 [ PU FD 220 RT 36 PD REPEAT 15 [ SETPC 14 SETPS REPCOUNT FD 60 RT 24 REPEAT 12 [ SETPC 7 SETPS 3 FD 30 BK 15 RT 30 ] ] ]","score":3,"reason":"The purple tones suggest a sky, but the sharp radial lines and graphic style lean towards pop art rather than the soft, blended textures of Impressionism.","isWinner":false},{"title":"Original/Base","code":"REPEAT 4 [ SETPS 1000 SETPC 7 FD 500 BK 500 RT 90 ] REPEAT 15 [ PU FD 120 RT 24 PD REPEAT 20 [ SETPC 6 SETPS REPCOUNT FD 20 BK 10 RT 18 REPEAT 10 [ SETPC 3 SETPS 4 FD 15 BK 10 RT 36 ] ] ]","score":1,"reason":"The minimalist vector aesthetic and bright white background are the antithesis of an atmospheric, painterly night sky.","isWinner":false}]},{"stage":"Iteration 10","baseCode":"REPEAT 120 [ SETPS 100 SETPC 13 FD 1000 BK 1000 RT 3 ] REPEAT 60 [ SETPS 50 SETPC 1 FD 900 BK 900 RT 6 ] REPEAT 6 [ PU FD 180 RT 60 PD REPEAT 20 [ SETPC 11 SETPS REPCOUNT FD 80 RT 18 REPEAT 15 [ SETPC 6 SETPS 5 FD 40 BK 20 RT 24 REPEAT 6 [ SETPC 14 SETPS 2 FD 15 BK 15 RT 60 ] ] ] ]","code":"REPEAT 120 [ SETPS 70 SETPC 13 FD 1000 BK 1000 RT 3 ] REPEAT 60 [ SETPS 35 SETPC 1 FD 900 BK 900 RT 6 ] REPEAT 6 [ PU FD 180 RT 60 PD REPEAT 20 [ SETPC 11 SETPS REPCOUNT FD 80 RT 18 REPEAT 15 [ SETPC 6 SETPS 4 REPEAT 8 [ FD 4 RT 15 ] BK 15 RT 24 REPEAT 6 [ SETPC 14 SETPS 2 FD 15 BK 15 RT 60 ] ] ] ]","feedback":"Replace the flat blue background with a textured blend of deep indigo and violet brushstrokes to add depth and a more atmospheric, painterly feel.","taste":"Impressionist painting of the night sky","magnitude":"4","magnitudeText":"Make a MINOR change. Introduce a small new element to the existing structure, like a repeating inner shape, but keep the overall form.","variants":[{"title":"Variant 1","code":"REPEAT 120 [ SETPS 70 SETPC 13 FD 1000 BK 1000 RT 3 ] REPEAT 60 [ SETPS 35 SETPC 1 FD 900 BK 900 RT 6 ] REPEAT 6 [ PU FD 180 RT 60 PD REPEAT 20 [ SETPC 11 SETPS REPCOUNT FD 80 RT 18 REPEAT 15 [ SETPC 6 SETPS 4 REPEAT 8 [ FD 4 RT 15 ] BK 15 RT 24 REPEAT 6 [ SETPC 14 SETPS 2 FD 15 BK 15 RT 60 ] ] ] ]","score":7,"reason":"The star-like clusters successfully evoke the glowing aura of celestial bodies, and the open composition better captures the vastness of a night sky.","isWinner":true},{"title":"Original/Base","code":"REPEAT 120 [ SETPS 100 SETPC 13 FD 1000 BK 1000 RT 3 ] REPEAT 60 [ SETPS 50 SETPC 1 FD 900 BK 900 RT 6 ] REPEAT 6 [ PU FD 180 RT 60 PD REPEAT 20 [ SETPC 11 SETPS REPCOUNT FD 80 RT 18 REPEAT 15 [ SETPC 6 SETPS 5 FD 40 BK 20 RT 24 REPEAT 6 [ SETPC 14 SETPS 2 FD 15 BK 15 RT 60 ] ] ] ]","score":4,"reason":"While the yellow and blue palette is appropriate, the composition is overly chaotic and lacks the rhythmic, intentional brushwork found in Impressionist works.","isWinner":false},{"title":"Variant 2","code":"REPEAT 120 [ SETPS 60 SETPC 13 FD 1000 BK 1000 RT 3 ] REPEAT 60 [ SETPS 30 SETPC 1 FD 900 BK 900 RT 6 ] REPEAT 6 [ PU FD 180 RT 60 PD REPEAT 20 [ SETPC 11 SETPS REPCOUNT FD 80 RT 18 REPEAT 12 [ SETPC 6 SETPS 3 FD 45 REPEAT 3 [ FD 10 RT 120 ] BK 20 RT 30 REPEAT 6 [ SETPC 14 SETPS 2 FD 15 BK 15 RT 60 ] ] ] ]","score":3,"reason":"The addition of sharp, geometric triangles creates a digital aesthetic that directly conflicts with the soft, organic nature of Impressionism.","isWinner":false}]},{"stage":"Iteration 11","baseCode":"REPEAT 120 [ SETPS 70 SETPC 13 FD 1000 BK 1000 RT 3 ] REPEAT 60 [ SETPS 35 SETPC 1 FD 900 BK 900 RT 6 ] REPEAT 6 [ PU FD 180 RT 60 PD REPEAT 20 [ SETPC 11 SETPS REPCOUNT FD 80 RT 18 REPEAT 15 [ SETPC 6 SETPS 4 REPEAT 8 [ FD 4 RT 15 ] BK 15 RT 24 REPEAT 6 [ SETPC 14 SETPS 2 FD 15 BK 15 RT 60 ] ] ] ]","code":"SETPS 1 REPEAT 10 [ SETPC REPCOUNT REPEAT 8 [ FD 100 RT 45 REPEAT 10 [ FD 20 RT 36 SETPS REPCOUNT ] ] RT 36 PU FD 30 PD ]","feedback":"\u003cspan class=\"text-amber-600 font-bold\">Original won but backups exist. The top Backup variant was promoted to current.\u003c/span>\u003cbr>\u003cbr>You were promoted from the backup list (Score: 3). Please improve this further based on your taste.","taste":"Impressionist painting of the night sky","magnitude":"4","magnitudeText":"Make a MINOR change. Introduce a small new element to the existing structure, like a repeating inner shape, but keep the overall form.","variants":[{"title":"Original/Base","code":"REPEAT 120 [ SETPS 70 SETPC 13 FD 1000 BK 1000 RT 3 ] REPEAT 60 [ SETPS 35 SETPC 1 FD 900 BK 900 RT 6 ] REPEAT 6 [ PU FD 180 RT 60 PD REPEAT 20 [ SETPC 11 SETPS REPCOUNT FD 80 RT 18 REPEAT 15 [ SETPC 6 SETPS 4 REPEAT 8 [ FD 4 RT 15 ] BK 15 RT 24 REPEAT 6 [ SETPC 14 SETPS 2 FD 15 BK 15 RT 60 ] ] ] ]","score":5,"reason":"The deep blue background correctly suggests a night sky and the yellow clusters mimic stars, but the execution is too geometric and lacks the soft, visible brushwork essential to the Impressionist style.","isWinner":true},{"title":"Variant 1","code":"REPEAT 120 [ SETPS 85 SETPC 13 FD 1000 BK 1000 RT 3 ] REPEAT 120 [ SETPS 45 SETPC 5 FD 950 BK 950 RT 3 ] REPEAT 6 [ PU FD 180 RT 60 PD REPEAT 20 [ SETPC 11 SETPS REPCOUNT FD 80 RT 18 REPEAT 15 [ SETPC 6 SETPS 4 REPEAT 8 [ FD 4 RT 15 ] BK 15 RT 24 REPEAT 6 [ SETPC 14 SETPS 2 FD 15 BK 15 RT 60 REPEAT 3 [ FD 5 RT 120 ] ] ] ] ]","score":2,"reason":"The magenta background moves entirely away from the night sky aesthetic, and the sharp, flat digital lines do not reflect any Impressionist qualities.","isWinner":false},{"title":"Variant 2","code":"REPEAT 180 [ SETPS 75 SETPC 13 FD 1000 BK 1000 RT 2 ] REPEAT 180 [ SETPS 35 SETPC 5 FD 1000 BK 1000 RT 2 ] REPEAT 6 [ PU FD 180 RT 60 PD REPEAT 20 [ SETPC 11 SETPS REPCOUNT REPEAT 8 [ FD 4 BK 4 RT 45 ] FD 80 RT 18 REPEAT 15 [ SETPC 6 SETPS 4 REPEAT 8 [ FD 4 RT 15 ] BK 15 RT 24 REPEAT 6 [ SETPC 14 SETPS 2 FD 15 BK 15 RT 60 ] ] ] ]","score":2,"reason":"Similar to image 2, the color palette is inappropriate for a night sky, and the added nodes make the piece feel more like a technical diagram than a fine art painting.","isWinner":false}]},{"stage":"Iteration 12","baseCode":"SETPS 1 REPEAT 10 [ SETPC REPCOUNT REPEAT 8 [ FD 100 RT 45 REPEAT 10 [ FD 20 RT 36 SETPS REPCOUNT ] ] RT 36 PU FD 30 PD ]","code":"SETPS 1 REPEAT 10 [ SETPC REPCOUNT REPEAT 8 [ FD 100 RT 45 REPEAT 10 [ FD 20 RT 36 SETPS REPCOUNT ] ] RT 36 PU FD 50 PD ]","feedback":"Replace the white background with a deep navy blue gradient featuring visible, swirling impasto brushstrokes.","taste":"Impressionist painting of the night sky","magnitude":"3","magnitudeText":"Make a SUBTLE change. You can add 1 or 2 simple commands (like a slight turn or small line) or adjust existing loop counts slightly.","variants":[{"title":"Variant 1","code":"SETPS 1 REPEAT 10 [ SETPC REPCOUNT REPEAT 8 [ FD 100 RT 45 REPEAT 10 [ FD 20 RT 36 SETPS REPCOUNT ] ] RT 36 PU FD 50 PD ]","score":2,"reason":"This variant is slightly preferred because the dense central cluster of shapes hints at a celestial focal point, though it still lacks the necessary painterly texture and nocturnal colors.","isWinner":true},{"title":"Original/Base","code":"SETPS 1 REPEAT 10 [ SETPC REPCOUNT REPEAT 8 [ FD 100 RT 45 REPEAT 10 [ FD 20 RT 36 SETPS REPCOUNT ] ] RT 36 PU FD 30 PD ]","score":1,"reason":"The stark white background and flat, vector-like rings fail to capture the atmospheric depth, dark color palette, and expressive brushwork of an Impressionist night sky.","isWinner":false},{"title":"Variant 2","code":"SETPS 1 REPEAT 10 [ SETPC REPCOUNT REPEAT 9 [ FD 100 RT 40 REPEAT 10 [ FD 20 RT 36 SETPS REPCOUNT ] ] RT 36 PU FD 30 PD ]","score":1,"reason":"The chaotic distribution of high-contrast rings on a white void is visually jarring and completely ignores the requested aesthetic of a moody, atmospheric painting.","isWinner":false}]},{"stage":"Iteration 13","baseCode":"SETPS 1 REPEAT 10 [ SETPC REPCOUNT REPEAT 8 [ FD 100 RT 45 REPEAT 10 [ FD 20 RT 36 SETPS REPCOUNT ] ] RT 36 PU FD 50 PD ]","code":"REPEAT 60 [ PU SETPC 1 SETPS 20 RT REPCOUNT * 6 FD 250 PD REPEAT 15 [ FD 15 RT 24 ] PU BK 250 ] REPEAT 10 [ SETPC REPCOUNT + 2 SETPS REPCOUNT REPEAT 6 [ FD 160 RT 60 REPEAT 10 [ FD 30 RT 36 SETPS REPCOUNT ] ] RT 36 PU FD 100 PD ]","feedback":"Replace the white background with a deep midnight blue to establish a nocturnal atmosphere.","taste":"Impressionist painting of the night sky","magnitude":"6","magnitudeText":"Make a SIGNIFICANT change. Expand the complexity. Introduce new colors, varying pen sizes, and noticeably alter the geometry.","variants":[{"title":"Variant 1","code":"REPEAT 60 [ PU SETPC 1 SETPS 20 RT REPCOUNT * 6 FD 250 PD REPEAT 15 [ FD 15 RT 24 ] PU BK 250 ] REPEAT 10 [ SETPC REPCOUNT + 2 SETPS REPCOUNT REPEAT 6 [ FD 160 RT 60 REPEAT 10 [ FD 30 RT 36 SETPS REPCOUNT ] ] RT 36 PU FD 100 PD ]","score":5,"reason":"The introduction of dark blue tones at the periphery provides a foundational contrast that better suggests a nocturnal setting than the other variants.","isWinner":true},{"title":"Original/Base","code":"SETPS 1 REPEAT 10 [ SETPC REPCOUNT REPEAT 8 [ FD 100 RT 45 REPEAT 10 [ FD 20 RT 36 SETPS REPCOUNT ] ] RT 36 PU FD 50 PD ]","score":3,"reason":"The swirling arrangement of shapes hints at the rhythmic motion of a starry sky, but the white background and flat colors are antithetical to a night sky aesthetic.","isWinner":false},{"title":"Variant 2","code":"REPEAT 80 [ PU SETPC 4 SETPS 25 RT REPCOUNT * 4 FD 350 PD REPEAT 12 [ FD 20 LT 30 ] PU BK 350 ] REPEAT 15 [ SETPC REPCOUNT + 5 SETPS 2 REPEAT 8 [ FD 200 RT 45 REPEAT 5 [ FD 60 RT 72 SETPS REPCOUNT * 2 ] ] RT 24 PU FD 50 PD ]","score":2,"reason":"The thin lines and sparse composition lack the expressive, textured brushwork and atmospheric weight of an impressionist painting.","isWinner":false}]},{"stage":"Iteration 14","baseCode":"REPEAT 60 [ PU SETPC 1 SETPS 20 RT REPCOUNT * 6 FD 250 PD REPEAT 15 [ FD 15 RT 24 ] PU BK 250 ] REPEAT 10 [ SETPC REPCOUNT + 2 SETPS REPCOUNT REPEAT 6 [ FD 160 RT 60 REPEAT 10 [ FD 30 RT 36 SETPS REPCOUNT ] ] RT 36 PU FD 100 PD ]","code":"REPEAT 90 [ SETPS 60 SETPC 1 FD 1000 BK 1000 RT 4 ] REPEAT 72 [ SETPS 30 SETPC 13 FD 800 BK 800 RT 5 ] REPEAT 45 [ SETPS 15 SETPC 5 FD 600 BK 600 RT 8 ] REPEAT 10 [ PU FD 220 RT 36 PD REPEAT 15 [ SETPC 14 SETPS REPCOUNT FD 60 RT 24 REPEAT 12 [ SETPC 7 SETPS 3 FD 30 BK 15 RT 30 ] ] ]","feedback":"\u003cspan class=\"text-amber-600 font-bold\">Original won but backups exist. The top Backup variant was promoted to current.\u003c/span>\u003cbr>\u003cbr>You were promoted from the backup list (Score: 3). Please improve this further based on your taste.","taste":"Impressionist painting of the night sky","magnitude":"6","magnitudeText":"Make a SIGNIFICANT change. Expand the complexity. Introduce new colors, varying pen sizes, and noticeably alter the geometry.","variants":[{"title":"Original/Base","code":"REPEAT 60 [ PU SETPC 1 SETPS 20 RT REPCOUNT * 6 FD 250 PD REPEAT 15 [ FD 15 RT 24 ] PU BK 250 ] REPEAT 10 [ SETPC REPCOUNT + 2 SETPS REPCOUNT REPEAT 6 [ FD 160 RT 60 REPEAT 10 [ FD 30 RT 36 SETPS REPCOUNT ] ] RT 36 PU FD 100 PD ]","score":3,"reason":"While the composition is far too geometric and the background is white rather than dark, the presence of various colors and some blue elements provides more potential for transformation than a solid color block.","isWinner":true},{"title":"Variant 1","code":"PU SETPC 14 SETPS 2000 FD 1 PD BK 1 PU REPEAT 12 [ SETPC REPCOUNT + 2 SETPS REPCOUNT REPEAT 6 [ FD 200 RT 60 REPEAT 12 [ FD 20 LT 30 SETPS REPCOUNT ] ] RT 30 ] REPEAT 36 [ PU RT REPCOUNT * 10 FD 300 PD SETPC 7 SETPS 3 REPEAT 5 [ FD 50 RT 144 ] PU BK 300 ]","score":1,"reason":"A solid yellow frame lacks the depth, color palette, and painterly texture associated with an impressionist night sky.","isWinner":false},{"title":"Variant 2","code":"PU SETPC 14 SETPS 2000 FD 1 PD BK 1 PU REPEAT 150 [ SETPC REPCOUNT SETPS REPCOUNT RT 101 FD REPCOUNT * 2 REPEAT 4 [ FD 30 RT 90 ] ] REPEAT 24 [ PU RT REPCOUNT * 15 FD 400 PD SETPC 10 SETPS 2 REPEAT 18 [ FD 20 BK 20 RT 20 ] PU BK 400 ]","score":1,"reason":"This is a monochrome yellow image that fails to meet any criteria for an impressionist representation of the night sky.","isWinner":false}]},{"stage":"Iteration 15","baseCode":"REPEAT 90 [ SETPS 60 SETPC 1 FD 1000 BK 1000 RT 4 ] REPEAT 72 [ SETPS 30 SETPC 13 FD 800 BK 800 RT 5 ] REPEAT 45 [ SETPS 15 SETPC 5 FD 600 BK 600 RT 8 ] REPEAT 10 [ PU FD 220 RT 36 PD REPEAT 15 [ SETPC 14 SETPS REPCOUNT FD 60 RT 24 REPEAT 12 [ SETPC 7 SETPS 3 FD 30 BK 15 RT 30 ] ] ]","code":"REPEAT 120 [ SETPS 60 SETPC 13 FD 1000 BK 1000 RT 3 ] REPEAT 60 [ SETPS 30 SETPC 1 FD 900 BK 900 RT 6 ] REPEAT 6 [ PU FD 180 RT 60 PD REPEAT 20 [ SETPC 11 SETPS REPCOUNT FD 80 RT 18 REPEAT 12 [ SETPC 6 SETPS 3 FD 45 REPEAT 3 [ FD 10 RT 120 ] BK 20 RT 30 REPEAT 6 [ SETPC 14 SETPS 2 FD 15 BK 15 RT 60 ] ] ] ]","feedback":"\u003cspan class=\"text-amber-600 font-bold\">Original won but backups exist. The top Backup variant was promoted to current.\u003c/span>\u003cbr>\u003cbr>You were promoted from the backup list (Score: 3). Please improve this further based on your taste.","taste":"Impressionist painting of the night sky","magnitude":"6","magnitudeText":"Make a SIGNIFICANT change. Expand the complexity. Introduce new colors, varying pen sizes, and noticeably alter the geometry.","variants":[{"title":"Original/Base","code":"REPEAT 90 [ SETPS 60 SETPC 1 FD 1000 BK 1000 RT 4 ] REPEAT 72 [ SETPS 30 SETPC 13 FD 800 BK 800 RT 5 ] REPEAT 45 [ SETPS 15 SETPC 5 FD 600 BK 600 RT 8 ] REPEAT 10 [ PU FD 220 RT 36 PD REPEAT 15 [ SETPC 14 SETPS REPCOUNT FD 60 RT 24 REPEAT 12 [ SETPC 7 SETPS 3 FD 30 BK 15 RT 30 ] ] ]","score":3,"reason":"While the style is far too graphic, the deep purple background is the closest to a nocturnal palette, and the white jagged elements could be interpreted as very abstract celestial light.","isWinner":true},{"title":"Variant 1","code":"REPEAT 120 [ SETPC 0 SETPS 1 FD 2000 BK 2000 RT 3 ] REPEAT 60 [ SETPC 11 SETPS REPCOUNT / 2 FD 800 BK 800 RT 6 ] REPEAT 36 [ SETPC 14 SETPS 5 FD 600 RT 160 FD 600 RT 20 ] REPEAT 10 [ PU FD 400 RT 36 PD REPEAT 18 [ SETPC 13 SETPS REPCOUNT / 2 FD 100 RT 20 REPEAT 8 [ SETPC 15 SETPS 2 FD 40 BK 20 RT 45 ] ] ]","score":2,"reason":"The teal background feels more like a bright daytime sky, and the sparse, flat geometric shapes lack the movement and texture found in Impressionist works.","isWinner":false},{"title":"Variant 2","code":"REPEAT 90 [ SETPC 4 SETPS 40 FD 1200 BK 1200 RT 4 ] REPEAT 45 [ SETPC 6 SETPS 20 FD 900 BK 900 RT 8 ] REPEAT 12 [ PU FD 350 RT 30 PD REPEAT 30 [ SETPC 10 SETPS 4 FD 150 LT 170 REPEAT 4 [ SETPC 7 FD 50 RT 90 ] ] ] REPEAT 200 [ SETPC 13 SETPS 1 FD REPCOUNT * 4 RT 121 ]","score":1,"reason":"The aggressive yellow and red sunburst is completely at odds with the serene and dark aesthetic of a night sky, and the rigid geometry lacks organic flow.","isWinner":false}]},{"stage":"Iteration 16","baseCode":"REPEAT 120 [ SETPS 60 SETPC 13 FD 1000 BK 1000 RT 3 ] REPEAT 60 [ SETPS 30 SETPC 1 FD 900 BK 900 RT 6 ] REPEAT 6 [ PU FD 180 RT 60 PD REPEAT 20 [ SETPC 11 SETPS REPCOUNT FD 80 RT 18 REPEAT 12 [ SETPC 6 SETPS 3 FD 45 REPEAT 3 [ FD 10 RT 120 ] BK 20 RT 30 REPEAT 6 [ SETPC 14 SETPS 2 FD 15 BK 15 RT 60 ] ] ] ]","code":"REPEAT 80 [ PU SETPC 4 SETPS 25 RT REPCOUNT * 4 FD 350 PD REPEAT 12 [ FD 20 LT 30 ] PU BK 350 ] REPEAT 15 [ SETPC REPCOUNT + 5 SETPS 2 REPEAT 8 [ FD 200 RT 45 REPEAT 5 [ FD 60 RT 72 SETPS REPCOUNT * 2 ] ] RT 24 PU FD 50 PD ]","feedback":"\u003cspan class=\"text-amber-600 font-bold\">Original won but backups exist. The top Backup variant was promoted to current.\u003c/span>\u003cbr>\u003cbr>You were promoted from the backup list (Score: 2). Please improve this further based on your taste.","taste":"Impressionist painting of the night sky","magnitude":"7","magnitudeText":"Make a MAJOR change. Transform the core structure. Multiply the geometry, add sweeping spirals or dense fractal-like branching.","variants":[{"title":"Original/Base","code":"REPEAT 120 [ SETPS 60 SETPC 13 FD 1000 BK 1000 RT 3 ] REPEAT 60 [ SETPS 30 SETPC 1 FD 900 BK 900 RT 6 ] REPEAT 6 [ PU FD 180 RT 60 PD REPEAT 20 [ SETPC 11 SETPS REPCOUNT FD 80 RT 18 REPEAT 12 [ SETPC 6 SETPS 3 FD 45 REPEAT 3 [ FD 10 RT 120 ] BK 20 RT 30 REPEAT 6 [ SETPC 14 SETPS 2 FD 15 BK 15 RT 60 ] ] ] ]","score":5,"reason":"The deep blue background and yellow bursts capture the basic color palette of a night sky, but the execution is too geometric and lacks the soft, swirling brushwork of Impressionism.","isWinner":true},{"title":"Variant 2","code":"REPEAT 120 [ SETPC 13 SETPS 1 FD 1000 BK 1000 RT 3 ] REPEAT 8 [ PU FD 200 RT 45 PD REPEAT 20 [ SETPC 1 SETPS 8 FD 150 REPEAT 10 [ SETPC 11 SETPS 4 FD 75 REPEAT 12 [ SETPC 14 SETPS 2 FD 30 BK 30 RT 30 ] BK 75 RT 36 ] BK 150 RT 18 ] ]","score":4,"reason":"While it uses appropriate colors like purple and yellow, the sharp, straight lines are the antithesis of the fluid, expressive strokes found in Impressionist art.","isWinner":false},{"title":"Variant 1","code":"REPEAT 12 [ PU FD 400 RT 30 PD REPEAT 100 [ SETPC 13 SETPS 1 FD REPCOUNT * 2 RT 121 REPEAT 6 [ SETPC 11 FD 50 RT 60 REPEAT 10 [ SETPC 14 FD 10 BK 10 RT 36 ] ] ] ] REPEAT 180 [ SETPC 1 SETPS 1 FD 1000 BK 1000 RT 2 ]","score":2,"reason":"The white background and isolated geometric figure fail to evoke a night sky atmosphere, feeling more like a technical diagram than a painting.","isWinner":false}]},{"stage":"Iteration 17","baseCode":"REPEAT 80 [ PU SETPC 4 SETPS 25 RT REPCOUNT * 4 FD 350 PD REPEAT 12 [ FD 20 LT 30 ] PU BK 350 ] REPEAT 15 [ SETPC REPCOUNT + 5 SETPS 2 REPEAT 8 [ FD 200 RT 45 REPEAT 5 [ FD 60 RT 72 SETPS REPCOUNT * 2 ] ] RT 24 PU FD 50 PD ]","code":"REPEAT 180 [ SETPC REPCOUNT / 12 + 1 SETPS REPCOUNT / 60 + 1 RT 137.5 FD REPCOUNT * 3 REPEAT 3 [ FD 80 RT 120 REPEAT 10 [ FD 20 LT 36 ] ] PU BK REPCOUNT * 3 PD ] REPEAT 20 [ SETPC 10 SETPS 2 RT 18 REPEAT 36 [ FD 200 RT 170 ] ]","feedback":"Replace the thin green lines with thick, swirling impasto brushstrokes of vibrant gold and deep indigo to create a textured, painterly celestial effect.","taste":"Impressionist painting of the night sky","magnitude":"7","magnitudeText":"Make a MAJOR change. Transform the core structure. Multiply the geometry, add sweeping spirals or dense fractal-like branching.","variants":[{"title":"Variant 2","code":"REPEAT 180 [ SETPC REPCOUNT / 12 + 1 SETPS REPCOUNT / 60 + 1 RT 137.5 FD REPCOUNT * 3 REPEAT 3 [ FD 80 RT 120 REPEAT 10 [ FD 20 LT 36 ] ] PU BK REPCOUNT * 3 PD ] REPEAT 20 [ SETPC 10 SETPS 2 RT 18 REPEAT 36 [ FD 200 RT 170 ] ]","score":3,"reason":"The radial, star-like structure is the closest to a celestial theme, providing a central focal point that could be interpreted as a stylized star, though the colors are incorrect.","isWinner":true},{"title":"Original/Base","code":"REPEAT 80 [ PU SETPC 4 SETPS 25 RT REPCOUNT * 4 FD 350 PD REPEAT 12 [ FD 20 LT 30 ] PU BK 350 ] REPEAT 15 [ SETPC REPCOUNT + 5 SETPS 2 REPEAT 8 [ FD 200 RT 45 REPEAT 5 [ FD 60 RT 72 SETPS REPCOUNT * 2 ] ] RT 24 PU FD 50 PD ]","score":2,"reason":"The sharp geometric polygons and stark white background are the antithesis of a moody night sky; it lacks any painterly texture or nocturnal atmosphere.","isWinner":false},{"title":"Variant 1","code":"REPEAT 15 [ SETPC REPCOUNT SETPS 1 RT 24 REPEAT 8 [ FD 150 RT 45 REPEAT 6 [ FD 50 RT 60 REPEAT 6 [ FD 15 RT 60 SETPS REPCOUNT ] ] ] ] REPEAT 36 [ SETPC 4 SETPS 2 PU FD 250 PD REPEAT 10 [ FD 30 RT 36 ] PU BK 250 RT 10 ]","score":2,"reason":"While the complexity is higher, the bright color palette and chaotic geometric shapes fail to evoke the serene, swirling emotional depth of an impressionist landscape.","isWinner":false}]},{"stage":"Iteration 18","baseCode":"REPEAT 180 [ SETPC REPCOUNT / 12 + 1 SETPS REPCOUNT / 60 + 1 RT 137.5 FD REPCOUNT * 3 REPEAT 3 [ FD 80 RT 120 REPEAT 10 [ FD 20 LT 36 ] ] PU BK REPCOUNT * 3 PD ] REPEAT 20 [ SETPC 10 SETPS 2 RT 18 REPEAT 36 [ FD 200 RT 170 ] ]","code":"REPEAT 15 [ SETPC REPCOUNT SETPS 1 RT 24 REPEAT 8 [ FD 150 RT 45 REPEAT 6 [ FD 50 RT 60 REPEAT 6 [ FD 15 RT 60 SETPS REPCOUNT ] ] ] ] REPEAT 36 [ SETPC 4 SETPS 2 PU FD 250 PD REPEAT 10 [ FD 30 RT 36 ] PU BK 250 RT 10 ]","feedback":"\u003cspan class=\"text-amber-600 font-bold\">Original won but backups exist. The top Backup variant was promoted to current.\u003c/span>\u003cbr>\u003cbr>You were promoted from the backup list (Score: 2). Please improve this further based on your taste.","taste":"Impressionist painting of the night sky","magnitude":"7","magnitudeText":"Make a MAJOR change. Transform the core structure. Multiply the geometry, add sweeping spirals or dense fractal-like branching.","variants":[{"title":"Original/Base","code":"REPEAT 180 [ SETPC REPCOUNT / 12 + 1 SETPS REPCOUNT / 60 + 1 RT 137.5 FD REPCOUNT * 3 REPEAT 3 [ FD 80 RT 120 REPEAT 10 [ FD 20 LT 36 ] ] PU BK REPCOUNT * 3 PD ] REPEAT 20 [ SETPC 10 SETPS 2 RT 18 REPEAT 36 [ FD 200 RT 170 ] ]","score":3,"reason":"The radial symmetry suggests a celestial focal point like a star or galaxy, but the geometric green lines are too clinical and lack the expressive, textured brushwork of Impressionism.","isWinner":true},{"title":"Variant 2","code":"REPEAT 120 [ SETPC 6 SETPS 20 RT 3 FD 250 REPEAT 10 [ SETPC 13 SETPS 12 RT 36 FD 150 REPEAT 8 [ FD 40 LT 45 ] BK 150 ] BK 250 ] REPEAT 40 [ SETPC 13 SETPS 6 RT 9 REPEAT 40 [ FD 600 RT 172 ] ]","score":2,"reason":"While the purple hue is closer to a twilight palette, a solid block of color offers no texture, light, or painterly movement.","isWinner":false},{"title":"Variant 1","code":"REPEAT 180 [ SETPC 13 SETPS 12 RT 137.5 FD REPCOUNT * 4 REPEAT 6 [ SETPC 6 SETPS 15 RT 60 FD 80 REPEAT 10 [ FD 25 LT 36 ] ] PU BK REPCOUNT * 4 PD ] REPEAT 45 [ SETPC 6 SETPS 10 RT 8 REPEAT 36 [ FD 500 RT 175 ] ]","score":1,"reason":"The garish yellow background and flat, jagged shapes are completely disconnected from the dark, atmospheric aesthetic of a night sky.","isWinner":false}]}];
+        const winnersData = ["SETPS 50\nSETPC 15\nREPEAT 100 [\n  SETPS REPCOUNT\n  FD 8\n  RT 10\n]\nPD\nSETPS 10\nREPEAT 15 [\n  REPEAT 3 [\n    REPEAT 12 [\n      SETPC 1\n      FD 15\n      RT 5\n      SETPC 6\n      FD 5\n      LT 3\n    ]\n    RT 120\n  ]\n  RT 24\n]","SETPS 5\nREPEAT 12 [\n  REPEAT 4 [\n    REPEAT 20 [\n      SETPC 6\n      FD 5\n      RT 1\n      SETPC 1\n      FD 2\n      RT 2\n    ]\n    RT 50\n  ]\n  RT 30\n  PU\n  FD 10\n  RT 10\n  PD\n]","SETPS 30\nSETPC 15\nREPEAT 20 [\n  PU FD 80\n  PD\n  REPEAT 10 [ FD 20 RT 36 ]\n  PU BK 80\n  RT 18\n]\nPD\nSETPS 8\nREPEAT 12 [\n  REPEAT 5 [\n    REPEAT 15 [\n      SETPC 1\n      FD 10\n      RT 4\n      SETPC 6\n      FD 3\n      LT 2\n    ]\n    RT 72\n  ]\n  RT 30\n]","REPEAT 120 [ SETPS 70 SETPC 13 FD 1000 BK 1000 RT 3 ] REPEAT 60 [ SETPS 35 SETPC 1 FD 900 BK 900 RT 6 ] REPEAT 6 [ PU FD 180 RT 60 PD REPEAT 20 [ SETPC 11 SETPS REPCOUNT FD 80 RT 18 REPEAT 15 [ SETPC 6 SETPS 4 REPEAT 8 [ FD 4 RT 15 ] BK 15 RT 24 REPEAT 6 [ SETPC 14 SETPS 2 FD 15 BK 15 RT 60 ] ] ] ]","REPEAT 60 [ PU SETPC 1 SETPS 20 RT REPCOUNT * 6 FD 250 PD REPEAT 15 [ FD 15 RT 24 ] PU BK 250 ] REPEAT 10 [ SETPC REPCOUNT + 2 SETPS REPCOUNT REPEAT 6 [ FD 160 RT 60 REPEAT 10 [ FD 30 RT 36 SETPS REPCOUNT ] ] RT 36 PU FD 100 PD ]","REPEAT 90 [ SETPS 60 SETPC 1 FD 1000 BK 1000 RT 4 ] REPEAT 72 [ SETPS 30 SETPC 13 FD 800 BK 800 RT 5 ] REPEAT 45 [ SETPS 15 SETPC 5 FD 600 BK 600 RT 8 ] REPEAT 10 [ PU FD 220 RT 36 PD REPEAT 15 [ SETPC 14 SETPS REPCOUNT FD 60 RT 24 REPEAT 12 [ SETPC 7 SETPS 3 FD 30 BK 15 RT 30 ] ] ]","REPEAT 120 [ SETPS 60 SETPC 13 FD 1000 BK 1000 RT 3 ] REPEAT 60 [ SETPS 30 SETPC 1 FD 900 BK 900 RT 6 ] REPEAT 6 [ PU FD 180 RT 60 PD REPEAT 20 [ SETPC 11 SETPS REPCOUNT FD 80 RT 18 REPEAT 12 [ SETPC 6 SETPS 3 FD 45 REPEAT 3 [ FD 10 RT 120 ] BK 20 RT 30 REPEAT 6 [ SETPC 14 SETPS 2 FD 15 BK 15 RT 60 ] ] ] ]","REPEAT 180 [ SETPC REPCOUNT / 12 + 1 SETPS REPCOUNT / 60 + 1 RT 137.5 FD REPCOUNT * 3 REPEAT 3 [ FD 80 RT 120 REPEAT 10 [ FD 20 LT 36 ] ] PU BK REPCOUNT * 3 PD ] REPEAT 20 [ SETPC 10 SETPS 2 RT 18 REPEAT 36 [ FD 200 RT 170 ] ]"];
+        
+        // Embedded Execution Engine
+        const activeAnimations = {};
+        function compileLogo(code, canvasWidth, canvasHeight) {
+            let state = { x: canvasWidth / 2, y: canvasHeight / 2, angle: -Math.PI / 2, penDown: true, opCount: 0, color: '#0f172a', width: 1.5 };
+            let queue = [];
+            const tokens = code.toUpperCase().replace(/\[/g, ' [ ').replace(/\]/g, ' ] ').trim().split(/\s+/);
+            
+            function parseBlock(t) {
+                let block = [];
+                while (t.length > 0) {
+                    let token = t.shift();
+                    if (!token) continue;
+                    if (token === ']') return block; 
+                    if (token === 'REPEAT') {
+                        let countStr = t.shift();
+                        let count = parseInt(countStr) || 0;
+                        if (countStr === 'REPCOUNT') count = 'REPCOUNT';
+                        let bracket = t.shift();
+                        if (bracket === '[') block.push({ cmd: 'REPEAT', count: count, body: parseBlock(t) });
+                    } else if (['FD', 'BK', 'RT', 'LT', 'SETPS', 'SETW', 'PENSIZE', 'SETPC', 'COLOR'].includes(token)) {
+                        block.push({ cmd: token, arg: t.shift() });
+                    } else if (['PU', 'PD'].includes(token)) block.push({ cmd: token });
+                }
+                return block;
+            }
+
+            const ast = parseBlock(tokens);
+
+            function runAST(nodes, repcount) {
+                for (let node of nodes) {
+                    if (state.opCount > 100000) return; 
+                    state.opCount++;
+
+                    if (node.cmd === 'REPEAT') {
+                        let count = node.count === 'REPCOUNT' ? repcount : node.count;
+                        let iters = Math.min(count, 1000); 
+                        for (let i = 1; i <= iters; i++) {
+                            if (state.opCount > 100000) return;
+                            runAST(node.body, i);
+                        }
+                    } else {
+                        let argStr = node.arg;
+                        let argVal = argStr === 'REPCOUNT' ? repcount : parseFloat(argStr);
+                        let prevX = state.x, prevY = state.y;
+
+                        if (node.cmd === 'FD') {
+                            state.x += (argVal || 0) * Math.cos(state.angle);
+                            state.y += (argVal || 0) * Math.sin(state.angle);
+                            if (state.penDown) queue.push({type: 'line', x1: prevX, y1: prevY, x2: state.x, y2: state.y, c: state.color, w: state.width});
+                        } else if (node.cmd === 'BK') {
+                            state.x -= (argVal || 0) * Math.cos(state.angle);
+                            state.y -= (argVal || 0) * Math.sin(state.angle);
+                            if (state.penDown) queue.push({type: 'line', x1: prevX, y1: prevY, x2: state.x, y2: state.y, c: state.color, w: state.width});
+                        } else if (node.cmd === 'RT') {
+                            state.angle += (argVal || 0) * Math.PI / 180;
+                        } else if (node.cmd === 'LT') {
+                            state.angle -= (argVal || 0) * Math.PI / 180;
+                        } else if (node.cmd === 'PU') {
+                            state.penDown = false;
+                        } else if (node.cmd === 'PD') {
+                            state.penDown = true;
+                        } else if (node.cmd === 'SETPS' || node.cmd === 'SETW' || node.cmd === 'PENSIZE') {
+                            state.width = argVal || 1;
+                        } else if (node.cmd === 'SETPC' || node.cmd === 'COLOR') {
+                            const logoColors = ['#000000', '#0000FF', '#00FF00', '#00FFFF', '#FF0000', '#FF00FF', '#FFFF00', '#FFFFFF', '#A52A2A', '#D2B48C', '#008000', '#40E0D0', '#FFA500', '#800080', '#FFD700', '#C0C0C0'];
+                            let colorIndex = parseInt(argStr === 'REPCOUNT' ? repcount : argStr);
+                            state.color = (!isNaN(colorIndex) && colorIndex >= 0 && colorIndex <= 15) ? logoColors[colorIndex] : argStr;
+                        }
+                    }
+                }
+            }
+            runAST(ast, 1);
+            return queue;
+        }
+        function renderQueue(canvasObj, queue, speedMultiplier = 0) {
+            const canvas = typeof canvasObj === 'string' ? document.getElementById(canvasObj) : canvasObj;
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.globalCompositeOperation = 'destination-over';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.globalCompositeOperation = 'source-over';
+
+            if (activeAnimations[canvas.id]) cancelAnimationFrame(activeAnimations[canvas.id]);
+
+            if (speedMultiplier === 0 || queue.length === 0) {
+                for (let op of queue) {
+                    ctx.beginPath(); ctx.moveTo(op.x1, op.y1); ctx.lineTo(op.x2, op.y2);
+                    ctx.strokeStyle = op.c; ctx.lineWidth = op.w; ctx.stroke();
+                }
+                return;
+            }
+
+            let i = 0;
+            let linesPerFrame = Math.max(1, Math.floor(speedMultiplier)); 
+            
+            function animate() {
+                let limit = Math.min(i + linesPerFrame, queue.length);
+                for (; i < limit; i++) {
+                    let op = queue[i];
+                    ctx.beginPath(); ctx.moveTo(op.x1, op.y1); ctx.lineTo(op.x2, op.y2);
+                    ctx.strokeStyle = op.c; ctx.lineWidth = op.w; ctx.stroke();
+                }
+                if (i < queue.length) activeAnimations[canvas.id] = requestAnimationFrame(animate);
+            }
+            animate();
+        }
+        function autoFitQueue(queue, canvasWidth, canvasHeight) {
+            if (queue.length === 0) return queue;
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            for (let op of queue) {
+                if (op.x1 < minX) minX = op.x1; if (op.x1 > maxX) maxX = op.x1;
+                if (op.y1 < minY) minY = op.y1; if (op.y1 > maxY) maxY = op.y1;
+                if (op.x2 < minX) minX = op.x2; if (op.x2 > maxX) maxX = op.x2;
+                if (op.y2 < minY) minY = op.y2; if (op.y2 > maxY) maxY = op.y2;
+            }
+            const drawW = maxX - minX;
+            const drawH = maxY - minY;
+            if (drawW === 0 && drawH === 0) return queue;
+            
+            const padX = canvasWidth * 0.05;
+            const padY = canvasHeight * 0.05;
+            const availW = canvasWidth - padX * 2;
+            const availH = canvasHeight - padY * 2;
+            
+            let scaleX = drawW > 0 ? availW / drawW : Infinity;
+            let scaleY = drawH > 0 ? availH / drawH : Infinity;
+            let scale = Math.min(scaleX, scaleY);
+            if (scale === Infinity) scale = 1;
+
+            const cx = (minX + maxX) / 2;
+            const cy = (minY + maxY) / 2;
+            const offsetX = canvasWidth / 2 - cx * scale;
+            const offsetY = canvasHeight / 2 - cy * scale;
+            
+            return queue.map(op => ({
+                ...op, x1: op.x1 * scale + offsetX, y1: op.y1 * scale + offsetY,
+                x2: op.x2 * scale + offsetX, y2: op.y2 * scale + offsetY, w: Math.max(1, op.w * scale)
+            }));
+        }
+        function generateDiffHTML(oldStr, newStr) {
+            if (!oldStr) oldStr = "";
+            const oldTokens = oldStr.trim().split(/\s+/).filter(Boolean);
+            const newTokens = newStr.trim().split(/\s+/).filter(Boolean);
+            
+            const dp = Array(oldTokens.length + 1).fill(null).map(() => new Int32Array(newTokens.length + 1));
+            for (let i = 1; i <= oldTokens.length; i++) {
+                for (let j = 1; j <= newTokens.length; j++) {
+                    if (oldTokens[i - 1] === newTokens[j - 1]) dp[i][j] = dp[i - 1][j - 1] + 1;
+                    else dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+                }
+            }
+            
+            let i = oldTokens.length, j = newTokens.length;
+            const diff = [];
+            while (i > 0 || j > 0) {
+                if (i > 0 && j > 0 && oldTokens[i - 1] === newTokens[j - 1]) {
+                    diff.unshift({ val: oldTokens[i - 1], type: 'eq' });
+                    i--; j--;
+                } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+                    diff.unshift({ val: newTokens[j - 1], type: 'add' });
+                    j--;
+                } else { i--; }
+            }
+            
+            let html = '';
+            let currentType = null;
+            let currentText = [];
+            const flush = () => {
+                if (currentText.length > 0) {
+                    if (currentType === 'add') html += `<span class="diff-add font-bold px-1 rounded">${currentText.join(' ')}</span> `;
+                    else html += `<span>${currentText.join(' ')}</span> `;
+                }
+            };
+            for (const d of diff) {
+                if (d.type !== currentType) { flush(); currentType = d.type; currentText = [d.val]; }
+                else currentText.push(d.val);
+            }
+            flush();
+            return html.trim();
+        }
+        function parseMarkdown(text) {
+            if (!text) return "";
+            return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>');                          
+        }
+
+        // --- LAZY OBSERVER FOR EXPORTED HTML ---
+        const lazyObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const canvas = entry.target;
+                    const eIdx = canvas.getAttribute('data-entry-index');
+                    const vIdx = canvas.getAttribute('data-var-index');
+                    if (eIdx !== null) {
+                        const hEntry = historyData[eIdx];
+                        let code = "";
+                        if (vIdx === 'main') {
+                            code = hEntry.code;
+                        } else if (hEntry.variants && hEntry.variants[vIdx]) {
+                            code = hEntry.variants[vIdx].code;
+                        }
+                        
+                        if (code) {
+                            let queue = compileLogo(code, canvas.width, canvas.height);
+                            if (canvas.classList.contains('tree-canvas')) {
+                                queue = autoFitQueue(queue, canvas.width, canvas.height);
+                            }
+                            renderQueue(canvas, queue, 0); // Always instant for lazy loads
+                        }
+                        canvas.removeAttribute('data-entry-index');
+                    }
+                    observer.unobserve(canvas);
+                }
+            });
+        }, { rootMargin: '300px' });
+
+        function renderEntries() {
+            const container = document.getElementById('historyEntries');
+            let html = '';
+            
+            historyData.forEach((entry, index) => {
+                html += `
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-2xl font-bold text-blue-600 mb-6">${entry.stage}</h2>
+                `;
+
+                if (entry.taste && entry.magnitude) {
+                    html += `
+                    <div class="bg-green-50 border-l-4 border-green-600 p-4 rounded mb-6 flex flex-col sm:flex-row gap-4 justify-between">
+                        <div>
+                            <h3 class="font-bold text-green-800 text-sm uppercase tracking-wider mb-2">Parameters</h3>
+                            <p class="text-slate-700 text-sm"><strong>Magnitude:</strong> Level ${entry.magnitude}/10 (${entry.magnitudeText})</p>
+                            <p class="text-slate-700 text-sm"><strong>Taste:</strong> "${entry.taste}"</p>
+                        </div>
+                    </div>`;
+                }
+
+                if (entry.variants && entry.variants.length > 0) {
+                    html += `
+                    <div class="mb-8">
+                        <h3 class="font-bold text-slate-800 text-lg mb-4">Evaluated Variants</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">`;
+                        
+                    entry.variants.forEach((v, vIndex) => {
+                        html += `
+                            <div class="bg-slate-50 border ${v.isWinner ? 'border-green-500 ring-2 ring-green-200' : 'border-slate-200'} rounded-lg p-4 flex flex-col h-full">
+                                <div class="font-bold text-slate-800 flex justify-between items-center mb-3">
+                                    <span>${v.title}</span>
+                                    ${v.isWinner ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold">🏆 Winner</span>' : ''}
+                                </div>
+                                <div class="relative group cursor-pointer bg-white border border-slate-200 rounded p-2 mb-3" onclick="openModal(${index}, ${vIndex})">
+                                    <canvas class="lazy-canvas w-full h-auto rounded shadow-sm" width="400" height="300" data-entry-index="${index}" data-var-index="${vIndex}"></canvas>
+                                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition rounded">
+                                        <span class="text-white font-bold bg-blue-600 px-3 py-1 rounded-full text-sm shadow">🔍 Enlarge & Replay</span>
+                                    </div>
+                                </div>
+                                <div class="font-bold text-purple-700 text-sm mb-1">Score: ${v.score}/10</div>
+                                <div class="text-sm text-slate-600 italic mb-3 line-clamp-3" title="${v.reason.replace(/"/g, '&quot;')}">${v.reason}</div>
+                                <div class="mt-auto bg-slate-800 text-slate-200 p-2 rounded text-[10px] font-mono overflow-y-auto custom-scroll max-h-32">
+                                    ${generateDiffHTML(entry.baseCode, v.code)}
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += `</div></div>`;
+                } else {
+                    html += `
+                    <div class="mb-8">
+                        <h3 class="font-bold text-slate-800 text-lg mb-4">Result</h3>
+                        <div class="relative group cursor-pointer bg-white border border-slate-200 rounded p-2 mb-3 inline-block" onclick="openModal(${index}, 'main')">
+                            <canvas class="lazy-canvas max-w-md w-full h-auto rounded shadow-sm" width="400" height="300" data-entry-index="${index}" data-var-index="main"></canvas>
+                            <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition rounded">
+                                <span class="text-white font-bold bg-blue-600 px-3 py-1 rounded-full text-sm shadow">🔍 Enlarge & Replay</span>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }
+                
+                html += `
+                    <div class="mb-6">
+                        <div class="flex justify-between items-end mb-2">
+                            <h3 class="font-bold text-slate-700 uppercase text-sm">Main Logo Code Applied</h3>
+                        </div>
+                        <div class="code-block custom-scroll">${generateDiffHTML(entry.baseCode, entry.code)}</div>
+                    </div>
+                `;
+
+                if (entry.feedback) {
+                    html += `
+                    <div class="bg-purple-50 border-l-4 border-purple-600 p-4 rounded mt-6">
+                        <h3 class="font-bold text-purple-800 text-sm uppercase tracking-wider mb-2">Critic Feedback & Next Step</h3>
+                        <div class="text-purple-900">${parseMarkdown(entry.feedback)}</div>
+                    </div>`;
+                }
+                
+                html += `</div>`;
+            });
+            
+            container.innerHTML = html;
+
+            const finalEntry = historyData[historyData.length - 1];
+            if (finalEntry) {
+                const finalCodes = [...new Set([...winnersData, finalEntry.code])];
+                const titleText = finalCodes.length > 1 ? "Final Masterpieces" : "Final Masterpiece";
+                let masterPiecesHtml = `<h2 class="text-4xl font-bold text-green-700 mb-8">${titleText}</h2><div class="space-y-12 w-full flex flex-col items-center">`;
+                
+                finalCodes.forEach((code, idx) => {
+                    const finalId = 'canvas_final_masterpiece_' + idx;
+                    masterPiecesHtml += `
+                        <div class="inline-block border-4 border-green-500 rounded-xl p-4 bg-white shadow-2xl relative w-full max-w-4xl flex flex-col items-center gap-4">
+                            <canvas id="${finalId}" width="800" height="600" class="w-full rounded bg-white"></canvas>
+                            <div class="flex flex-col sm:flex-row items-center justify-between w-full gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <div class="flex items-center gap-3 w-full sm:w-1/2">
+                                    <label class="text-sm font-semibold text-slate-700 whitespace-nowrap">Speed: <span id="masterpieceSpeedLabel_${idx}" class="text-blue-600">Medium</span></label>
+                                    <input type="range" id="masterpieceSpeed_${idx}" min="0" max="100" value="50" oninput="updateMasterpieceSpeedLabel(${idx}, this.value)" class="w-full accent-emerald-600">
+                                </div>
+                                <button onclick="playMasterpiece('${finalId}', ${idx})" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold shadow transition flex items-center gap-2 whitespace-nowrap">▶ Replay</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                masterPiecesHtml += `</div>`;
+                document.getElementById('finalMasterpiece').innerHTML = masterPiecesHtml;
+            }
+        }
+        
+        function updateMasterpieceSpeedLabel(idx, val) {
+            val = parseInt(val);
+            document.getElementById('masterpieceSpeedLabel_' + idx).innerText = val === 100 ? "Instant" : (val < 30 ? "Slow" : (val < 70 ? "Medium" : "Fast"));
+        }
+
+        function getMasterpieceSpeed(idx) {
+            let val = parseInt(document.getElementById('masterpieceSpeed_' + idx).value);
+            if (val === 100) return 0;
+            return Math.max(1, (val / 100) * 50); 
+        }
+
+        function playMasterpiece(canvasId, idx) {
+            const finalCodes = [...new Set([...winnersData, historyData[historyData.length - 1].code])];
+            const code = finalCodes[idx];
+            const canvas = document.getElementById(canvasId);
+            let queue = compileLogo(code, canvas.width, canvas.height);
+            queue = autoFitQueue(queue, canvas.width, canvas.height);
+            renderQueue(canvas, queue, getMasterpieceSpeed(idx));
+        }
+
+        // Modal Logic (Exported)
+        let currentModalCode = '';
+        
+        function updateModalSpeedLabel(val) {
+            val = parseInt(val);
+            document.getElementById('modalSpeedLabel').innerText = val === 100 ? "Instant" : (val < 30 ? "Slow" : (val < 70 ? "Medium" : "Fast"));
+        }
+
+        function getModalSpeed() {
+            let val = parseInt(document.getElementById('modalAnimSpeed').value);
+            if (val === 100) return 0;
+            return Math.max(1, (val / 100) * 50); 
+        }
+
+        function openModal(entryIndex, varIndex) {
+            const entry = historyData[entryIndex];
+            if (!entry) return;
+            currentModalCode = varIndex === 'main' ? entry.code : entry.variants[varIndex].code;
+            const title = varIndex === 'main' ? entry.stage : `${entry.stage} - ${entry.variants[varIndex].title}`;
+            
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalCodeDisplay').textContent = currentModalCode;
+            document.getElementById('replayModal').classList.remove('hidden');
+            document.getElementById('replayModal').classList.add('flex');
+            playModal();
+        }
+
+        function closeModal() {
+            document.getElementById('replayModal').classList.add('hidden');
+            document.getElementById('replayModal').classList.remove('flex');
+            if (activeAnimations['modalCanvas']) cancelAnimationFrame(activeAnimations['modalCanvas']);
+        }
+
+        function showParamModal(encodedContent) {
+            document.getElementById('paramModalContent').innerHTML = decodeURIComponent(encodedContent);
+            document.getElementById('paramModal').classList.remove('hidden');
+            document.getElementById('paramModal').classList.add('flex');
+        }
+
+        function closeParamModal() {
+            document.getElementById('paramModal').classList.add('hidden');
+            document.getElementById('paramModal').classList.remove('flex');
+        }
+
+        function playModal() {
+            let queue = compileLogo(currentModalCode, 800, 600);
+            queue = autoFitQueue(queue, 800, 600);
+            renderQueue('modalCanvas', queue, getModalSpeed());
+        }
+
+        // --- TREE BUILDER ---
+        function buildAndRenderTree() {
+            if (historyData.length < 2) return;
+            document.getElementById('treeContainer').classList.remove('hidden');
+
+            const nodesMap = {};
+            const rootNode = {
+                id: 'root',
+                code: historyData[0].code,
+                title: 'Original',
+                score: null,
+                isWinner: true,
+                paramChanged: false,
+                paramChangeText: "",
+                entryIndex: 0,
+                varIndex: 'main',
+                children: []
+            };
+            nodesMap[historyData[0].code] = rootNode;
+
+            for (let i = 1; i < historyData.length; i++) {
+                const entry = historyData[i];
+                const parentNode = nodesMap[entry.baseCode] || rootNode;
+                
+                let pChanged = false;
+                let paramChangeText = "";
+                if (i > 1) {
+                    const prev = historyData[i-1];
+                    let diffs = [];
+                    if (String(entry.taste) !== String(prev.taste)) {
+                        diffs.push(`<strong>Taste:</strong><br><span style="text-decoration:line-through; color:#64748b">${prev.taste}</span><br><span style="color:#16a34a">${entry.taste}</span>`);
+                    }
+                    if (String(entry.magnitude) !== String(prev.magnitude)) {
+                        diffs.push(`<strong>Magnitude:</strong><br><span style="text-decoration:line-through; color:#64748b">Level ${prev.magnitude} (${prev.magnitudeText})</span><br><span style="color:#16a34a">Level ${entry.magnitude} (${entry.magnitudeText})</span>`);
+                    }
+                    if (diffs.length > 0) {
+                        pChanged = true;
+                        paramChangeText = encodeURIComponent(diffs.join("<br><br>"));
+                    }
+                }
+
+                if (entry.variants && entry.variants.length > 0) {
+                    entry.variants.forEach((v, vIdx) => {
+                        if (v.title === 'Original/Base') return;
+
+                        const childNode = {
+                            id: `var_${i}_${vIdx}`,
+                            code: v.code,
+                            title: `Iter ${i}: ${v.title}`,
+                            score: v.score,
+                            isWinner: v.code === entry.code,
+                            entryIndex: i,
+                            varIndex: vIdx,
+                            paramChanged: pChanged,
+                            paramChangeText: paramChangeText,
+                            children: []
+                        };
+                        parentNode.children.push(childNode);
+                        if (!nodesMap[v.code]) {
+                            nodesMap[v.code] = childNode;
+                        }
+                    });
+                } else if (entry.code) {
+                    const childNode = {
+                        id: `iter_${i}`,
+                        code: entry.code,
+                        title: `Iter ${i}`,
+                        score: null,
+                        isWinner: true,
+                        entryIndex: i,
+                        varIndex: 'main',
+                        paramChanged: pChanged,
+                        paramChangeText: paramChangeText,
+                        children: []
+                    };
+                    parentNode.children.push(childNode);
+                    if (!nodesMap[entry.code]) {
+                        nodesMap[entry.code] = childNode;
+                    }
+                }
+            }
+
+            function renderNode(node) {
+                let html = '<li>';
+                let winnerClass = node.isWinner ? 'winner' : '';
+                let clickHandler = node.id === 'root' 
+                    ? "openModal(0, 'main')" 
+                    : `openModal(${node.entryIndex}, '${node.varIndex}')`;
+                    
+                html += `
+                    <div class="tree-node ${winnerClass}" onclick="${clickHandler}">
+                        <canvas class="lazy-canvas tree-canvas" width="140" height="105" data-entry-index="${node.entryIndex}" data-var-index="${node.varIndex}"></canvas>
+                        <div class="node-title" title="${node.title}">${node.title}</div>
+                        ${node.score ? `<div class="node-score">${node.score}/10</div>` : ''}
+                        ${node.paramChanged ? `<div class="mt-1 bg-amber-100 hover:bg-amber-200 text-amber-800 text-[10px] font-bold px-1 rounded flex items-center justify-center gap-1 mx-auto w-fit transition-colors" title="Click to view parameter changes" onclick="event.stopPropagation(); showParamModal('${node.paramChangeText}')">⚙️ Params changed</div>` : ''}
+                    </div>
+                `;
+                
+                if (node.children && node.children.length > 0) {
+                    html += '<ul>';
+                    node.children.forEach(c => { html += renderNode(c); });
+                    html += '</ul>';
+                }
+                html += '</li>';
+                return html;
+            }
+
+            document.getElementById('treeRoot').innerHTML = renderNode(rootNode);
+        }
+
+        window.onload = () => {
+            renderEntries();
+            buildAndRenderTree();
+            
+            document.querySelectorAll('.lazy-canvas').forEach(c => lazyObserver.observe(c));
+            
+            // Auto-play the final masterpieces on load
+            if (historyData.length > 0) {
+                const finalCodes = [...new Set([...winnersData, historyData[historyData.length - 1].code])];
+                finalCodes.forEach((code, idx) => {
+                    playMasterpiece('canvas_final_masterpiece_' + idx, idx);
+                });
+            }
+        };
+    </script>
+</body>
+</html>

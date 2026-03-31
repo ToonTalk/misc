@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turtle Graphics Agent History</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #0f172a; line-height: 1.5; padding: 20px;}
+        .canvas-container { border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; background: #f8fafc; display: flex; justify-content: center; position: relative; }
+        pre, .code-block { background: #0f172a; color: #f8fafc; padding: 16px; border-radius: 8px; overflow-y: auto; font-family: ui-monospace, monospace; font-size: 14px; white-space: pre-wrap; word-wrap: break-word; max-height: 200px; }
+        .diff-add { background-color: #fcd34d; color: #78350f; font-weight: bold; padding: 0 4px; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        
+        /* CSS Tree Hierarchy Styles */
+        .css-tree { display: flex; justify-content: center; min-width: max-content; padding-bottom: 2rem; }
+        .css-tree ul { display: flex; padding-top: 20px; position: relative; margin: 0; padding-left: 0; }
+        .css-tree li { display: flex; flex-direction: column; align-items: center; list-style-type: none; position: relative; padding: 20px 10px 0 10px; }
+        .css-tree li::before, .css-tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid #cbd5e1; width: 50%; height: 20px; z-index: 1; }
+        .css-tree li::after { right: auto; left: 50%; border-left: 2px solid #cbd5e1; }
+        .css-tree li:only-child::after, .css-tree li:only-child::before { display: none; }
+        .css-tree li:only-child { padding-top: 0; }
+        .css-tree li:first-child::before, .css-tree li:last-child::after { border: 0 none; }
+        .css-tree li:last-child::before { border-right: 2px solid #cbd5e1; border-radius: 0 5px 0 0; }
+        .css-tree li:first-child::after { border-radius: 5px 0 0 0; }
+        .css-tree ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid #cbd5e1; width: 0; height: 20px; z-index: 1; margin-left: -1px; }
+        
+        .tree-node { background: white; border: 2px solid #e2e8f0; border-radius: 8px; padding: 6px; width: 140px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; position: relative; z-index: 2; }
+        .tree-node:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #3b82f6;}
+        .tree-node.winner { border-color: #22c55e; border-width: 3px; }
+        .tree-node canvas { width: 100%; border-radius: 4px; background: white; border: 1px solid #f1f5f9; display: block; }
+        .tree-node .node-title { font-size: 11px; font-weight: bold; margin-top: 6px; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+        .tree-node .node-score { font-size: 11px; color: #8b5cf6; font-weight: bold; margin-top: 2px; text-align: center; }
+    </style>
+</head>
+<body class="max-w-5xl mx-auto space-y-8">
+    <h1 class="text-3xl font-bold text-center text-slate-800 mb-8">Multi-Agent Turtle Graphics History</h1>
+    
+    <div id="historyEntries" class="space-y-12"></div>
+    <div id="finalMasterpiece" class="mt-16 text-center pb-10 flex flex-col items-center"></div>
+    
+    <div id="treeContainer" class="mt-8 mb-20 bg-white p-8 rounded-xl shadow-sm border border-slate-200 hidden flex flex-col items-center">
+        <h2 class="text-3xl font-bold text-center text-slate-800 mb-8">Evolution Tree</h2>
+        <div id="treeWrapper" class="w-full overflow-x-auto flex justify-center pb-4 relative">
+            <div class="css-tree" id="cssTree">
+                <ul id="treeRoot"></ul>
+            </div>
+        </div>
+        <button id="fitTreeBtn" onclick="toggleFitTree()" class="mt-4 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2 px-6 rounded-lg transition shadow-sm border border-slate-300">Fit to Screen</button>
+    </div>
+
+    <!-- Replay Modal (Exported) -->
+    <div id="replayModal" class="fixed inset-0 bg-slate-900/90 hidden z-[100] overflow-y-auto p-4 sm:p-8">
+        <button onclick="closeModal()" class="fixed top-4 right-4 sm:top-6 sm:right-8 text-white hover:text-slate-300 text-5xl leading-none z-[110] drop-shadow-md">&times;</button>
+        <div class="bg-white rounded-xl p-6 w-full max-w-5xl mx-auto flex flex-col items-center relative shadow-2xl mt-4 sm:mt-8 mb-10">
+            <h3 class="text-2xl font-bold mb-6 text-slate-800" id="modalTitle">Replay</h3>
+            <div class="bg-slate-50 border rounded w-full flex justify-center p-2 mb-4">
+                <canvas id="modalCanvas" width="800" height="600" class="max-w-full h-auto bg-white rounded shadow"></canvas>
+            </div>
+            <div id="modalCodeDisplay" class="w-full bg-slate-800 text-slate-200 p-4 rounded-lg font-mono text-[10px] sm:text-xs overflow-y-auto max-h-40 mb-4 custom-scroll whitespace-pre-wrap break-words"></div>
+            <div class="flex flex-col sm:flex-row items-center justify-between w-full gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <div class="flex items-center gap-3 w-full sm:w-1/2">
+                    <label class="text-sm font-semibold text-slate-700 whitespace-nowrap">Speed: <span id="modalSpeedLabel" class="text-blue-600">Medium</span></label>
+                    <input type="range" id="modalAnimSpeed" min="0" max="100" value="50" oninput="updateModalSpeedLabel(this.value)" class="w-full accent-emerald-600">
+                </div>
+                <button onclick="playModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold shadow transition flex items-center gap-2 whitespace-nowrap">▶ Replay Animation</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Param Changes Modal (Exported) -->
+    <div id="paramModal" class="fixed inset-0 bg-slate-900/80 hidden z-[110] overflow-y-auto p-4 items-center justify-center">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md relative shadow-2xl mx-auto">
+            <button onclick="closeParamModal()" class="absolute top-3 right-4 text-slate-400 hover:text-slate-800 text-3xl leading-none">&times;</button>
+            <h3 class="text-xl font-bold mb-4 text-slate-800 border-b pb-2">Parameter Changes</h3>
+            <div id="paramModalContent" class="text-sm text-slate-700 leading-relaxed"></div>
+        </div>
+    </div>
+
+    <script>
+        const historyData = [{"stage":"Original Version","baseCode":"","code":"REPEAT 4 [ FD 100 RT 90 ]","feedback":null},{"stage":"Iteration 1","baseCode":"REPEAT 4 [ FD 100 RT 90 ]","code":"REPEAT 12 [\n  SETPC REPCOUNT\n  REPEAT 4 [ FD 100 RT 90 ]\n  RT 30\n]","feedback":"Round the sharp corners of the squares into soft, organic curves to make the structure more closely resemble natural flower petals.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Variant 1","code":"REPEAT 12 [\n  SETPC REPCOUNT\n  REPEAT 4 [ FD 100 RT 90 ]\n  RT 30\n]","score":7,"reason":"The radial symmetry and variety of colors create a structure that starts to resemble a single, abstract blossom.","isWinner":true},{"title":"Variant 2","code":"REPEAT 4 [\n  REPEAT 5 [\n    FD 20\n    RT 90\n    FD 20\n    LT 90\n  ]\n  RT 90\n  SETPC REPCOUNT\n  SETPS REPCOUNT\n]","score":3,"reason":"The jagged, stepped lines and singular shape feel too digital and rigid to evoke the organic softness of flowers.","isWinner":false},{"title":"Original/Base","code":"REPEAT 4 [ FD 100 RT 90 ]","score":1,"reason":"A single, dark geometric outline is the opposite of a vibrant, multi-colored floral landscape.","isWinner":false}]},{"stage":"Iteration 2","baseCode":"REPEAT 12 [\n  SETPC REPCOUNT\n  REPEAT 4 [ FD 100 RT 90 ]\n  RT 30\n]","code":"REPEAT 12 [\n  SETPC REPCOUNT\n  REPEAT 4 [\n    REPEAT 15 [ FD 2 RT 2 ]\n    FD 40\n    REPEAT 15 [ FD 2 RT 4 ]\n  ]\n  RT 30\n]","feedback":"Scale down the central motif and duplicate it dozens of times across the entire canvas with varying sizes and slight color shifts to create the appearance of a dense, vibrant field of flowers.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Variant 2","code":"REPEAT 12 [\n  SETPC REPCOUNT\n  REPEAT 4 [\n    REPEAT 15 [ FD 2 RT 2 ]\n    FD 40\n    REPEAT 15 [ FD 2 RT 4 ]\n  ]\n  RT 30\n]","score":7,"reason":"The elongated, teardrop-shaped loops are the most successful at evoking the graceful, flowing curves of natural petals.","isWinner":true},{"title":"Variant 1","code":"SETPS 2\nREPEAT 12 [\n  SETPC REPCOUNT\n  REPEAT 4 [\n    FD 40\n    REPEAT 30 [ FD 2 RT 3 ]\n  ]\n  RT 30\n]","score":6,"reason":"The rounded edges significantly improve the composition by creating a petal-like appearance, though it still feels like a single isolated object.","isWinner":false},{"title":"Original/Base","code":"REPEAT 12 [\n  SETPC REPCOUNT\n  REPEAT 4 [ FD 100 RT 90 ]\n  RT 30\n]","score":3,"reason":"The sharp, geometric squares are too rigid and clinical, failing to capture the organic softness and beauty of a flower.","isWinner":false}]},{"stage":"Iteration 3","baseCode":"REPEAT 12 [\n  SETPC REPCOUNT\n  REPEAT 4 [\n    REPEAT 15 [ FD 2 RT 2 ]\n    FD 40\n    REPEAT 15 [ FD 2 RT 4 ]\n  ]\n  RT 30\n]","code":"REPEAT 30 [\n  PU FD 150 RT 123 PD\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      REPEAT 12 [ FD 1 RT 3 ]\n      FD 15\n      REPEAT 12 [ FD 1 RT 6 ]\n    ]\n    RT 45\n  ]\n  PU BK 150 PD\n]","feedback":"Distribute the colorful circular clusters across the bottom two-thirds of the canvas at varying scales to create a sense of perspective and an expansive field.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Variant 1","code":"REPEAT 30 [\n  PU FD 150 RT 123 PD\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      REPEAT 12 [ FD 1 RT 3 ]\n      FD 15\n      REPEAT 12 [ FD 1 RT 6 ]\n    ]\n    RT 45\n  ]\n  PU BK 150 PD\n]","score":7,"reason":"The repetition of many small, colorful looped elements effectively mimics a collection of flowers, bringing it closest to the desired field aesthetic.","isWinner":true},{"title":"Variant 2","code":"REPEAT 45 [\n  PU RT 137 FD 4 * REPCOUNT PD\n  REPEAT 12 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      REPEAT 8 [ FD 1 RT 4 ]\n      FD 10\n      REPEAT 8 [ FD 1 RT 8 ]\n    ]\n    RT 30\n  ]\n  PU BK 4 * REPCOUNT PD\n]","score":4,"reason":"While colorful and dense, the central tangle feels like a single pom-pom or object rather than an expansive field of distinct flowers.","isWinner":false},{"title":"Original/Base","code":"REPEAT 12 [\n  SETPC REPCOUNT\n  REPEAT 4 [\n    REPEAT 15 [ FD 2 RT 2 ]\n    FD 40\n    REPEAT 15 [ FD 2 RT 4 ]\n  ]\n  RT 30\n]","score":3,"reason":"This image represents a single, isolated flower-like structure, which fails to convey the multiplicity and scale of a field.","isWinner":false}]},{"stage":"Iteration 4","baseCode":"REPEAT 30 [\n  PU FD 150 RT 123 PD\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      REPEAT 12 [ FD 1 RT 3 ]\n      FD 15\n      REPEAT 12 [ FD 1 RT 6 ]\n    ]\n    RT 45\n  ]\n  PU BK 150 PD\n]","code":"SETPS 2\nREPEAT 12 [\n  SETPC REPCOUNT\n  REPEAT 4 [\n    FD 40\n    REPEAT 30 [ FD 2 RT 3 ]\n  ]\n  RT 30\n]","feedback":"\u003cspan class=\"text-amber-600 font-bold\">Original won but backups exist. The top Backup variant was promoted to current.\u003c/span>\u003cbr>\u003cbr>You were promoted from the backup list (Score: 6). Please improve this further based on your taste.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Original/Base","code":"REPEAT 30 [\n  PU FD 150 RT 123 PD\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      REPEAT 12 [ FD 1 RT 3 ]\n      FD 15\n      REPEAT 12 [ FD 1 RT 6 ]\n    ]\n    RT 45\n  ]\n  PU BK 150 PD\n]","score":7,"reason":"This image features a vibrant, large-scale circular arrangement of loops that effectively captures the complexity and color of a flower, though it remains a single isolated object.","isWinner":true},{"title":"Variant 1","code":"REPEAT 20 [\n  PU RT 130 + REPCOUNT FD 100 + REPCOUNT * 8 PD\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      REPEAT 12 [ FD 1 + REPCOUNT / 4 RT 3 ]\n      FD 15\n      REPEAT 12 [ FD 1 + REPCOUNT / 4 RT 6 ]\n    ]\n    RT 45\n  ]\n  PU BK 100 + REPCOUNT * 8 LT 130 + REPCOUNT PD\n]","score":5,"reason":"The compact, multi-colored form resembles a dense flower head, but its small size and isolation on the canvas do not evoke the feeling of a field.","isWinner":false},{"title":"Variant 2","code":"REPEAT 12 [\n  PU RT 180 FD 40 + REPCOUNT * 18 LT 90 FD -200 + REPCOUNT * 35 PD\n  SETPS 1 + REPCOUNT / 3\n  REPEAT 10 [\n    SETPC REPCOUNT\n    REPEAT 3 [\n      REPEAT 12 [ FD 1 RT 3 ]\n      FD 5 + REPCOUNT\n      REPEAT 12 [ FD 1 RT 6 ]\n      RT 10\n    ]\n    RT 36\n  ]\n  PU BK -200 + REPCOUNT * 35 RT 90 BK 40 + REPCOUNT * 18 LT 180 PD\n]","score":4,"reason":"While the shape is clearly petal-like, the colors are more muted than the others and the single small element makes the composition feel empty.","isWinner":false}]},{"stage":"Iteration 5","baseCode":"SETPS 2\nREPEAT 12 [\n  SETPC REPCOUNT\n  REPEAT 4 [\n    FD 40\n    REPEAT 30 [ FD 2 RT 3 ]\n  ]\n  RT 30\n]","code":"SETPS 2\nREPEAT 12 [\n  SETPC REPCOUNT\n  REPEAT 4 [\n    FD 50\n    REPEAT 30 [ FD 2 RT 3 ]\n    REPEAT 10 [ FD 4 LT 36 ]\n  ]\n  RT 30\n]","feedback":"Scatter multiple instances of this floral motif in different sizes and color variations across the entire frame to create a true field of flowers.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Variant 1","code":"SETPS 2\nREPEAT 12 [\n  SETPC REPCOUNT\n  REPEAT 4 [\n    FD 50\n    REPEAT 30 [ FD 2 RT 3 ]\n    REPEAT 10 [ FD 4 LT 36 ]\n  ]\n  RT 30\n]","score":7,"reason":"The small circular accents added to the lines evoke the appearance of budding seeds or pollen, making the structure feel more like a detailed botanical specimen.","isWinner":true},{"title":"Original/Base","code":"SETPS 2\nREPEAT 12 [\n  SETPC REPCOUNT\n  REPEAT 4 [\n    FD 40\n    REPEAT 30 [ FD 2 RT 3 ]\n  ]\n  RT 30\n]","score":6,"reason":"The overlapping loops capture the essence of a single colorful flower with a clean, petal-like structure, though it lacks the density of a field.","isWinner":false},{"title":"Variant 2","code":"SETPS 2\nREPEAT 12 [\n  SETPC REPCOUNT\n  REPEAT 4 [\n    FD 40\n    REPEAT 30 [ FD 2 RT 3 ]\n    BK 20\n    REPEAT 3 [ FD 20 RT 120 ]\n  ]\n  RT 30\n  PU FD 20 PD\n]","score":4,"reason":"The sharp triangles introduce a harsh geometric quality that disrupts the soft, organic aesthetic typically associated with a floral meadow.","isWinner":false}]},{"stage":"Iteration 6","baseCode":"SETPS 2\nREPEAT 12 [\n  SETPC REPCOUNT\n  REPEAT 4 [\n    FD 50\n    REPEAT 30 [ FD 2 RT 3 ]\n    REPEAT 10 [ FD 4 LT 36 ]\n  ]\n  RT 30\n]","code":"SETPS 1\nREPEAT 8 [\n  PU FD 160 RT 45 PD\n  REPEAT 10 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 30\n      REPEAT 30 [ FD 1 RT 3 ]\n      REPEAT 10 [ FD 2 LT 36 ]\n    ]\n    RT 36\n  ]\n  PU BK 160 RT 20 PD\n]","feedback":"Distribute the floral clusters across the entire canvas, specifically filling the empty white space at the bottom, to create a true landscape-style field composition.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Variant 1","code":"SETPS 1\nREPEAT 8 [\n  PU FD 160 RT 45 PD\n  REPEAT 10 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 30\n      REPEAT 30 [ FD 1 RT 3 ]\n      REPEAT 10 [ FD 2 LT 36 ]\n    ]\n    RT 36\n  ]\n  PU BK 160 RT 20 PD\n]","score":8,"reason":"The dense accumulation of overlapping floral shapes creates a vibrant and lush feeling that effectively evokes a crowded field of blooms.","isWinner":true},{"title":"Variant 2","code":"SETPS 1\nREPEAT 6 [\n  PU FD 120 RT 60 PD\n  REPEAT 12 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 40\n      REPEAT 30 [ FD 1.5 RT 3 ]\n      REPEAT 10 [ FD 3 LT 36 ]\n    ]\n    REPEAT 4 [\n      SETPC REPCOUNT + 2\n      FD 15\n      REPEAT 30 [ FD 0.5 RT 3 ]\n      REPEAT 10 [ FD 1 LT 36 ]\n    ]\n    RT 30\n  ]\n  PU BK 120 RT 15 PD\n]","score":6,"reason":"While very colorful, the extreme density in the center causes the individual floral forms to become a tangled, chaotic mass rather than a field of distinct flowers.","isWinner":false},{"title":"Original/Base","code":"SETPS 2\nREPEAT 12 [\n  SETPC REPCOUNT\n  REPEAT 4 [\n    FD 50\n    REPEAT 30 [ FD 2 RT 3 ]\n    REPEAT 10 [ FD 4 LT 36 ]\n  ]\n  RT 30\n]","score":5,"reason":"This image features a single, well-executed geometric flower, but it fails to capture the expansive, multi-floral nature of a field.","isWinner":false}]},{"stage":"Iteration 7","baseCode":"SETPS 1\nREPEAT 8 [\n  PU FD 160 RT 45 PD\n  REPEAT 10 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 30\n      REPEAT 30 [ FD 1 RT 3 ]\n      REPEAT 10 [ FD 2 LT 36 ]\n    ]\n    RT 36\n  ]\n  PU BK 160 RT 20 PD\n]","code":"SETPS 1\nREPEAT 4 [\n  PU BK 300 FD REPCOUNT * 150 RT 90 BK 300 PD\n  REPEAT 5 [\n    PU FD 120 LT 90 PD\n    REPEAT 8 [\n      SETPC REPCOUNT\n      REPEAT 4 [\n        FD 20\n        REPEAT 20 [ FD 1 RT 5 ]\n        REPEAT 10 [ FD 2 LT 36 ]\n      ]\n      RT 45\n    ]\n    PU RT 90 PD\n  ]\n]","feedback":"Add several smaller, more transparent floral clusters in the empty white spaces to create a sense of depth and a more densely populated field.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Variant 1","code":"SETPS 1\nREPEAT 4 [\n  PU BK 300 FD REPCOUNT * 150 RT 90 BK 300 PD\n  REPEAT 5 [\n    PU FD 120 LT 90 PD\n    REPEAT 8 [\n      SETPC REPCOUNT\n      REPEAT 4 [\n        FD 20\n        REPEAT 20 [ FD 1 RT 5 ]\n        REPEAT 10 [ FD 2 LT 36 ]\n      ]\n      RT 45\n    ]\n    PU RT 90 PD\n  ]\n]","score":9,"reason":"The distribution of multiple floral clusters across the canvas perfectly captures the 'field' aspect of my aesthetic preference while maintaining vibrant color.","isWinner":true},{"title":"Variant 2","code":"SETPS 1\nREPEAT 20 [\n  PU RT REPCOUNT * 137.5 FD REPCOUNT * 12 PD\n  REPEAT 6 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 15\n      REPEAT 25 [ FD 1 RT 4 ]\n      REPEAT 12 [ FD 2 LT 30 ]\n    ]\n    RT 60\n  ]\n  PU BK 20 RT 45 FD 30 PD\n  REPEAT 3 [\n    SETPC REPCOUNT + 4\n    REPEAT 4 [\n      FD 10\n      REPEAT 10 [ FD 1 RT 15 ]\n      REPEAT 5 [ FD 2 LT 40 ]\n    ]\n    RT 120\n  ]\n]","score":7,"reason":"While the density and brightness are appealing, the single-point composition feels more like a single bloom than a field of flowers.","isWinner":false},{"title":"Original/Base","code":"SETPS 1\nREPEAT 8 [\n  PU FD 160 RT 45 PD\n  REPEAT 10 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 30\n      REPEAT 30 [ FD 1 RT 3 ]\n      REPEAT 10 [ FD 2 LT 36 ]\n    ]\n    RT 36\n  ]\n  PU BK 160 RT 20 PD\n]","score":6,"reason":"The composition features a nice variety of colors, but as a single isolated cluster, it lacks the expansive quality of a field.","isWinner":false}]},{"stage":"Iteration 8","baseCode":"SETPS 1\nREPEAT 4 [\n  PU BK 300 FD REPCOUNT * 150 RT 90 BK 300 PD\n  REPEAT 5 [\n    PU FD 120 LT 90 PD\n    REPEAT 8 [\n      SETPC REPCOUNT\n      REPEAT 4 [\n        FD 20\n        REPEAT 20 [ FD 1 RT 5 ]\n        REPEAT 10 [ FD 2 LT 36 ]\n      ]\n      RT 45\n    ]\n    PU RT 90 PD\n  ]\n]","code":"SETPS 1\nREPEAT 4 [\n  PU BK 300 FD REPCOUNT * 150 RT 90 BK 300 PD\n  REPEAT 5 [\n    PU FD 120 LT 90 PD\n    REPEAT 8 [\n      SETPC REPCOUNT\n      REPEAT 4 [\n        FD 20\n        REPEAT 20 [ FD 1 RT 5 ]\n        REPEAT 10 [ FD 2 LT 36 ]\n      ]\n      RT 45\n    ]\n    REPEAT 2 [\n      PU LT 60 FD 50 PD\n      REPEAT 6 [\n        SETPC 14\n        REPEAT 4 [\n          FD 8\n          REPEAT 5 [ FD 1 RT 15 ]\n          REPEAT 5 [ FD 1 LT 15 ]\n        ]\n        RT 60\n      ]\n      PU BK 50 RT 60 PD\n      RT 180\n    ]\n    PU RT 90 PD\n  ]\n]","feedback":"Add thin, vertical green lines extending from the bottom of each colorful cluster to the base of the frame to serve as stems and ground the flowers in the field.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Variant 2","code":"SETPS 1\nREPEAT 4 [\n  PU BK 300 FD REPCOUNT * 150 RT 90 BK 300 PD\n  REPEAT 5 [\n    PU FD 120 LT 90 PD\n    REPEAT 8 [\n      SETPC REPCOUNT\n      REPEAT 4 [\n        FD 20\n        REPEAT 20 [ FD 1 RT 5 ]\n        REPEAT 10 [ FD 2 LT 36 ]\n      ]\n      RT 45\n    ]\n    REPEAT 2 [\n      PU LT 60 FD 50 PD\n      REPEAT 6 [\n        SETPC 14\n        REPEAT 4 [\n          FD 8\n          REPEAT 5 [ FD 1 RT 15 ]\n          REPEAT 5 [ FD 1 LT 15 ]\n        ]\n        RT 60\n      ]\n      PU BK 50 RT 60 PD\n      RT 180\n    ]\n    PU RT 90 PD\n  ]\n]","score":8,"reason":"The golden-yellow lattice successfully evokes the warmth of a sun-drenched meadow, providing a much stronger 'field' atmosphere for the colorful floral elements.","isWinner":true},{"title":"Variant 1","code":"SETPS 1\nREPEAT 4 [\n  PU BK 300 FD REPCOUNT * 150 RT 90 BK 300 PD\n  REPEAT 5 [\n    PU FD 120 LT 90 PD\n    REPEAT 8 [\n      SETPC REPCOUNT\n      REPEAT 4 [\n        FD 20\n        REPEAT 20 [ FD 1 RT 5 ]\n        REPEAT 10 [ FD 2 LT 36 ]\n      ]\n      RT 45\n    ]\n    PU RT 45 FD 65 PD\n    REPEAT 10 [\n      SETPC 11\n      REPEAT 3 [\n        FD 10\n        REPEAT 10 [ FD 1 RT 10 ]\n        REPEAT 5 [ FD 1 LT 20 ]\n      ]\n      RT 36\n    ]\n    PU BK 65 LT 45 PD\n    PU RT 90 PD\n  ]\n]","score":6,"reason":"The addition of cyan wavy lines creates a sense of growth and interconnectedness, though the color temperature feels a bit cool for a natural landscape.","isWinner":false},{"title":"Original/Base","code":"SETPS 1\nREPEAT 4 [\n  PU BK 300 FD REPCOUNT * 150 RT 90 BK 300 PD\n  REPEAT 5 [\n    PU FD 120 LT 90 PD\n    REPEAT 8 [\n      SETPC REPCOUNT\n      REPEAT 4 [\n        FD 20\n        REPEAT 20 [ FD 1 RT 5 ]\n        REPEAT 10 [ FD 2 LT 36 ]\n      ]\n      RT 45\n    ]\n    PU RT 90 PD\n  ]\n]","score":4,"reason":"The vibrant, circular clusters effectively suggest flower heads, but the vast white space lacks the density and environmental context of a field.","isWinner":false}]},{"stage":"Iteration 9","baseCode":"SETPS 1\nREPEAT 4 [\n  PU BK 300 FD REPCOUNT * 150 RT 90 BK 300 PD\n  REPEAT 5 [\n    PU FD 120 LT 90 PD\n    REPEAT 8 [\n      SETPC REPCOUNT\n      REPEAT 4 [\n        FD 20\n        REPEAT 20 [ FD 1 RT 5 ]\n        REPEAT 10 [ FD 2 LT 36 ]\n      ]\n      RT 45\n    ]\n    REPEAT 2 [\n      PU LT 60 FD 50 PD\n      REPEAT 6 [\n        SETPC 14\n        REPEAT 4 [\n          FD 8\n          REPEAT 5 [ FD 1 RT 15 ]\n          REPEAT 5 [ FD 1 LT 15 ]\n        ]\n        RT 60\n      ]\n      PU BK 50 RT 60 PD\n      RT 180\n    ]\n    PU RT 90 PD\n  ]\n]","code":"SETPS 1\nREPEAT 20 [\n  PU RT REPCOUNT * 137.5 FD REPCOUNT * 12 PD\n  REPEAT 6 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 15\n      REPEAT 25 [ FD 1 RT 4 ]\n      REPEAT 12 [ FD 2 LT 30 ]\n    ]\n    RT 60\n  ]\n  PU BK 20 RT 45 FD 30 PD\n  REPEAT 3 [\n    SETPC REPCOUNT + 4\n    REPEAT 4 [\n      FD 10\n      REPEAT 10 [ FD 1 RT 15 ]\n      REPEAT 5 [ FD 2 LT 40 ]\n    ]\n    RT 120\n  ]\n]","feedback":"\u003cspan class=\"text-amber-600 font-bold\">Original won but backups exist. The top Backup variant was promoted to current.\u003c/span>\u003cbr>\u003cbr>You were promoted from the backup list (Score: 7). Please improve this further based on your taste.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Original/Base","code":"SETPS 1\nREPEAT 4 [\n  PU BK 300 FD REPCOUNT * 150 RT 90 BK 300 PD\n  REPEAT 5 [\n    PU FD 120 LT 90 PD\n    REPEAT 8 [\n      SETPC REPCOUNT\n      REPEAT 4 [\n        FD 20\n        REPEAT 20 [ FD 1 RT 5 ]\n        REPEAT 10 [ FD 2 LT 36 ]\n      ]\n      RT 45\n    ]\n    REPEAT 2 [\n      PU LT 60 FD 50 PD\n      REPEAT 6 [\n        SETPC 14\n        REPEAT 4 [\n          FD 8\n          REPEAT 5 [ FD 1 RT 15 ]\n          REPEAT 5 [ FD 1 LT 15 ]\n        ]\n        RT 60\n      ]\n      PU BK 50 RT 60 PD\n      RT 180\n    ]\n    PU RT 90 PD\n  ]\n]","score":8,"reason":"This image features the highest density of colorful, petal-like clusters, effectively capturing the lush and vibrant feel of a field of flowers.","isWinner":true},{"title":"Variant 1","code":"SETPS 1\nREPEAT 4 [\n  PU BK 300 FD REPCOUNT * 150 RT 90 BK 300 PD\n  REPEAT 5 [\n    PU FD 120 LT 90 PD\n    SETPC 2\n    BK 500 FD 500\n    REPEAT 10 [\n      SETPC REPCOUNT\n      REPEAT 5 [\n        FD 25\n        REPEAT 15 [ FD 1 RT 12 ]\n        REPEAT 12 [ FD 1 LT 20 ]\n      ]\n      RT 36\n    ]\n    REPEAT 2 [\n      PU LT 60 FD 50 PD\n      REPEAT 6 [\n        SETPC 14\n        REPEAT 4 [\n          FD 10\n          REPEAT 8 [ FD 1 RT 15 ]\n          REPEAT 8 [ FD 1 LT 15 ]\n        ]\n        RT 60\n      ]\n      PU BK 50 RT 60 PD\n      RT 180\n    ]\n    PU RT 90 PD\n  ]\n]","score":5,"reason":"The clusters are well-formed, but the composition is less dense and the sharp diagonal lines feel too geometric for a natural flower field.","isWinner":false},{"title":"Variant 2","code":"SETPS 1\nREPEAT 4 [\n  PU BK 300 FD REPCOUNT * 150 RT 90 BK 300 PD\n  REPEAT 5 [\n    PU FD 120 LT 90 PD\n    SETPC 10\n    BK 600 FD 600\n    REPEAT 8 [\n      SETPC REPCOUNT\n      REPEAT 6 [\n        FD 15\n        REPEAT 10 [ FD 3 RT 18 ]\n        REPEAT 10 [ FD 1 LT 36 ]\n      ]\n      RT 45\n    ]\n    REPEAT 3 [\n      PU LT 45 FD 60 PD\n      REPEAT 6 [\n        SETPC 2\n        REPEAT 4 [\n          FD 12\n          REPEAT 6 [ FD 2 RT 20 ]\n          REPEAT 6 [ FD 2 LT 20 ]\n        ]\n        RT 60\n      ]\n      PU BK 60 RT 45 PD\n    ]\n    PU RT 90 PD\n  ]\n]","score":3,"reason":"The grid-like structure and sparse placement of color make this feel more like a technical diagram than a field of flowers.","isWinner":false}]},{"stage":"Iteration 10","baseCode":"SETPS 1\nREPEAT 20 [\n  PU RT REPCOUNT * 137.5 FD REPCOUNT * 12 PD\n  REPEAT 6 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 15\n      REPEAT 25 [ FD 1 RT 4 ]\n      REPEAT 12 [ FD 2 LT 30 ]\n    ]\n    RT 60\n  ]\n  PU BK 20 RT 45 FD 30 PD\n  REPEAT 3 [\n    SETPC REPCOUNT + 4\n    REPEAT 4 [\n      FD 10\n      REPEAT 10 [ FD 1 RT 15 ]\n      REPEAT 5 [ FD 2 LT 40 ]\n    ]\n    RT 120\n  ]\n]","code":"SETPS 1\nREPEAT 30 [\n  PU RT REPCOUNT * 137.5 FD REPCOUNT * 14 PD\n  RT REPCOUNT\n  REPEAT 6 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 12\n      REPEAT 18 [ FD 1 RT 10 ]\n      REPEAT 10 [ FD 2 LT 18 ]\n    ]\n    RT 60\n  ]\n  PU BK 25 RT 45 FD 35 PD\n  REPEAT 4 [\n    SETPC REPCOUNT + 5\n    REPEAT 4 [\n      FD 8\n      REPEAT 12 [ FD 1 RT 15 ]\n      REPEAT 6 [ FD 2 LT 30 ]\n    ]\n    RT 90\n  ]\n]","feedback":"Replicate this circular floral motif multiple times across the bottom two-thirds of the canvas at varying sizes to create the depth and abundance of a true field of flowers.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Variant 1","code":"SETPS 1\nREPEAT 30 [\n  PU RT REPCOUNT * 137.5 FD REPCOUNT * 14 PD\n  RT REPCOUNT\n  REPEAT 6 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 12\n      REPEAT 18 [ FD 1 RT 10 ]\n      REPEAT 10 [ FD 2 LT 18 ]\n    ]\n    RT 60\n  ]\n  PU BK 25 RT 45 FD 35 PD\n  REPEAT 4 [\n    SETPC REPCOUNT + 5\n    REPEAT 4 [\n      FD 8\n      REPEAT 12 [ FD 1 RT 15 ]\n      REPEAT 6 [ FD 2 LT 30 ]\n    ]\n    RT 90\n  ]\n]","score":9,"reason":"The expansive, layered wavy lines create a vibrant and complex pattern that beautifully evokes the petals of a large, blooming flower filling the frame.","isWinner":true},{"title":"Original/Base","code":"SETPS 1\nREPEAT 20 [\n  PU RT REPCOUNT * 137.5 FD REPCOUNT * 12 PD\n  REPEAT 6 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 15\n      REPEAT 25 [ FD 1 RT 4 ]\n      REPEAT 12 [ FD 2 LT 30 ]\n    ]\n    RT 60\n  ]\n  PU BK 20 RT 45 FD 30 PD\n  REPEAT 3 [\n    SETPC REPCOUNT + 4\n    REPEAT 4 [\n      FD 10\n      REPEAT 10 [ FD 1 RT 15 ]\n      REPEAT 5 [ FD 2 LT 40 ]\n    ]\n    RT 120\n  ]\n]","score":6,"reason":"The dense, colorful cluster captures the essence of a single flower head, but the composition feels too isolated and small to represent a field.","isWinner":false},{"title":"Variant 2","code":"SETPS 1\nREPEAT 25 [\n  PU RT REPCOUNT * 137.5 FD REPCOUNT * 11 PD\n  REPEAT 2 [\n    REPEAT 6 [\n      SETPC REPCOUNT + 2\n      REPEAT 3 [\n        FD 20\n        REPEAT 15 [ FD 1 RT 12 ]\n        REPEAT 10 [ FD 2 LT 15 ]\n      ]\n      RT 60\n    ]\n    PU RT 180 FD 10 PD\n  ]\n  PU BK 15 RT 30 FD 25 PD\n  REPEAT 5 [\n    SETPC REPCOUNT\n    REPEAT 3 [\n      FD 12\n      REPEAT 8 [ FD 1 RT 20 ]\n      REPEAT 4 [ FD 2 LT 40 ]\n    ]\n    RT 72\n  ]\n]","score":4,"reason":"The composition is too sparse and lacks the structural density required to effectively communicate the beauty of a floral field.","isWinner":false}]},{"stage":"Iteration 11","baseCode":"SETPS 1\nREPEAT 30 [\n  PU RT REPCOUNT * 137.5 FD REPCOUNT * 14 PD\n  RT REPCOUNT\n  REPEAT 6 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 12\n      REPEAT 18 [ FD 1 RT 10 ]\n      REPEAT 10 [ FD 2 LT 18 ]\n    ]\n    RT 60\n  ]\n  PU BK 25 RT 45 FD 35 PD\n  REPEAT 4 [\n    SETPC REPCOUNT + 5\n    REPEAT 4 [\n      FD 8\n      REPEAT 12 [ FD 1 RT 15 ]\n      REPEAT 6 [ FD 2 LT 30 ]\n    ]\n    RT 90\n  ]\n]","code":"SETPS 1\nREPEAT 6 [\n  PU FD 120 RT 60 PD\n  REPEAT 12 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 40\n      REPEAT 30 [ FD 1.5 RT 3 ]\n      REPEAT 10 [ FD 3 LT 36 ]\n    ]\n    REPEAT 4 [\n      SETPC REPCOUNT + 2\n      FD 15\n      REPEAT 30 [ FD 0.5 RT 3 ]\n      REPEAT 10 [ FD 1 LT 36 ]\n    ]\n    RT 30\n  ]\n  PU BK 120 RT 15 PD\n]","feedback":"\u003cspan class=\"text-amber-600 font-bold\">Original won but backups exist. The top Backup variant was promoted to current.\u003c/span>\u003cbr>\u003cbr>You were promoted from the backup list (Score: 6). Please improve this further based on your taste.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Original/Base","code":"SETPS 1\nREPEAT 30 [\n  PU RT REPCOUNT * 137.5 FD REPCOUNT * 14 PD\n  RT REPCOUNT\n  REPEAT 6 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 12\n      REPEAT 18 [ FD 1 RT 10 ]\n      REPEAT 10 [ FD 2 LT 18 ]\n    ]\n    RT 60\n  ]\n  PU BK 25 RT 45 FD 35 PD\n  REPEAT 4 [\n    SETPC REPCOUNT + 5\n    REPEAT 4 [\n      FD 8\n      REPEAT 12 [ FD 1 RT 15 ]\n      REPEAT 6 [ FD 2 LT 30 ]\n    ]\n    RT 90\n  ]\n]","score":8,"reason":"The dense, radial arrangement of vibrant colors beautifully mimics the layered petals of a single large bloom, making it the most visually appealing and representative of the floral theme.","isWinner":true},{"title":"Variant 1","code":"SETPS 1\nPU BK 150 PD\nREPEAT 15 [\n  PU RT REPCOUNT * 137.5 FD REPCOUNT * 8 PD\n  RT REPCOUNT\n  REPEAT 5 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 8\n      REPEAT 18 [ FD 1 RT 10 ]\n      REPEAT 10 [ FD 2 LT 18 ]\n    ]\n    RT 72\n  ]\n  PU BK 15 RT 45 FD 25 PD\n  REPEAT 4 [\n    SETPC REPCOUNT + 6\n    REPEAT 4 [\n      FD 5\n      REPEAT 12 [ FD 1 RT 15 ]\n      REPEAT 6 [ FD 2 LT 30 ]\n    ]\n    RT 90\n  ]\n]\nSETPS 2\nREPEAT 15 [\n  PU RT (REPCOUNT + 15) * 137.5 FD (REPCOUNT + 15) * 11 PD\n  RT REPCOUNT\n  REPEAT 5 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 16\n      REPEAT 18 [ FD 1 RT 10 ]\n      REPEAT 10 [ FD 2 LT 18 ]\n    ]\n    RT 72\n  ]\n  PU BK 30 RT 45 FD 45 PD\n  REPEAT 4 [\n    SETPC REPCOUNT + 6\n    REPEAT 4 [\n      FD 10\n      REPEAT 12 [ FD 1 RT 15 ]\n      REPEAT 6 [ FD 2 LT 30 ]\n    ]\n    RT 90\n  ]\n]","score":5,"reason":"The composition feels unbalanced due to the large amount of empty space at the top, which detracts from the lushness expected in a floral scene.","isWinner":false},{"title":"Variant 2","code":"SETPS 1\nPU BK 180 PD\nREPEAT 15 [\n  PU RT REPCOUNT * 137.5 FD REPCOUNT * 9 PD\n  RT 15\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 10\n      REPEAT 18 [ FD 1 RT 10 ]\n      REPEAT 10 [ FD 2 LT 18 ]\n    ]\n    RT 45\n  ]\n  PU BK 20 RT 30 FD 30 PD\n  REPEAT 6 [\n    SETPC REPCOUNT + 8\n    REPEAT 4 [\n      FD 6\n      REPEAT 12 [ FD 1 RT 15 ]\n      REPEAT 6 [ FD 2 LT 30 ]\n    ]\n    RT 60\n  ]\n  REPEAT 12 [ SETPC REPCOUNT FD 3 BK 3 RT 30 ]\n]\nREPEAT 15 [\n  PU RT (REPCOUNT + 15) * 137.5 FD (REPCOUNT + 15) * 13 PD\n  RT 15\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 20\n      REPEAT 18 [ FD 1 RT 10 ]\n      REPEAT 10 [ FD 2 LT 18 ]\n    ]\n    RT 45\n  ]\n  PU BK 40 RT 30 FD 50 PD\n  REPEAT 6 [\n    SETPC REPCOUNT + 8\n    REPEAT 4 [\n      FD 12\n      REPEAT 12 [ FD 1 RT 15 ]\n      REPEAT 6 [ FD 2 LT 30 ]\n    ]\n    RT 60\n  ]\n  REPEAT 12 [ SETPC REPCOUNT FD 6 BK 6 RT 30 ]\n]","score":4,"reason":"The lines are too spread out and the zoom is too tight, causing the image to lose its floral character and appear more like generic abstract lines.","isWinner":false}]},{"stage":"Iteration 12","baseCode":"SETPS 1\nREPEAT 6 [\n  PU FD 120 RT 60 PD\n  REPEAT 12 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 40\n      REPEAT 30 [ FD 1.5 RT 3 ]\n      REPEAT 10 [ FD 3 LT 36 ]\n    ]\n    REPEAT 4 [\n      SETPC REPCOUNT + 2\n      FD 15\n      REPEAT 30 [ FD 0.5 RT 3 ]\n      REPEAT 10 [ FD 1 LT 36 ]\n    ]\n    RT 30\n  ]\n  PU BK 120 RT 15 PD\n]","code":"SETPS 2\nREPEAT 8 [\n  PU FD 140 RT 45 PD\n  REPEAT 10 [\n    SETPC REPCOUNT\n    REPEAT 5 [\n      FD 50\n      REPEAT 18 [ FD 2.5 RT 5 ]\n      REPEAT 12 [ FD 3.5 LT 30 ]\n      RT 15\n    ]\n    REPEAT 3 [\n      SETPC REPCOUNT + 6\n      FD 25\n      REPEAT 15 [ FD 1 RT 6 ]\n      REPEAT 10 [ FD 2 LT 36 ]\n    ]\n    RT 36\n  ]\n  PU BK 140 RT 22.5 PD\n]","feedback":"Distribute several smaller clusters of these colorful circles across the bottom half of the canvas to create a horizontal horizon line and a sense of vast depth.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Variant 1","code":"SETPS 2\nREPEAT 8 [\n  PU FD 140 RT 45 PD\n  REPEAT 10 [\n    SETPC REPCOUNT\n    REPEAT 5 [\n      FD 50\n      REPEAT 18 [ FD 2.5 RT 5 ]\n      REPEAT 12 [ FD 3.5 LT 30 ]\n      RT 15\n    ]\n    REPEAT 3 [\n      SETPC REPCOUNT + 6\n      FD 25\n      REPEAT 15 [ FD 1 RT 6 ]\n      REPEAT 10 [ FD 2 LT 36 ]\n    ]\n    RT 36\n  ]\n  PU BK 140 RT 22.5 PD\n]","score":8,"reason":"The high density of overlapping, brightly colored circles creates a lush, petal-like effect that effectively captures the visual energy of a dense flower bed.","isWinner":true},{"title":"Original/Base","code":"SETPS 1\nREPEAT 6 [\n  PU FD 120 RT 60 PD\n  REPEAT 12 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 40\n      REPEAT 30 [ FD 1.5 RT 3 ]\n      REPEAT 10 [ FD 3 LT 36 ]\n    ]\n    REPEAT 4 [\n      SETPC REPCOUNT + 2\n      FD 15\n      REPEAT 30 [ FD 0.5 RT 3 ]\n      REPEAT 10 [ FD 1 LT 36 ]\n    ]\n    RT 30\n  ]\n  PU BK 120 RT 15 PD\n]","score":6,"reason":"The variety of colors is pleasing and vibrant, but the single, tangled central cluster feels more like a ball of yarn than a sprawling field of flowers.","isWinner":false},{"title":"Variant 2","code":"SETPS 1\nREPEAT 5 [\n  PU FD 150 RT 72 PD\n  REPEAT 12 [\n    SETPC REPCOUNT\n    REPEAT 3 [\n      FD 60\n      REPEAT 60 [ FD 1.2 RT 1.5 ]\n      REPEAT 20 [ FD 2.4 LT 18 ]\n      RT 120\n    ]\n    SETPC REPCOUNT + 3\n    REPEAT 6 [\n      FD 20\n      REPEAT 30 [ FD 0.6 RT 3 ]\n      REPEAT 10 [ FD 1.2 LT 36 ]\n      RT 60\n    ]\n    RT 30\n  ]\n  PU BK 150 RT 12 PD\n]","score":4,"reason":"The composition is far too sparse and the color palette is too restricted to satisfy the desire for a rich, colorful field.","isWinner":false}]},{"stage":"Iteration 13","baseCode":"SETPS 2\nREPEAT 8 [\n  PU FD 140 RT 45 PD\n  REPEAT 10 [\n    SETPC REPCOUNT\n    REPEAT 5 [\n      FD 50\n      REPEAT 18 [ FD 2.5 RT 5 ]\n      REPEAT 12 [ FD 3.5 LT 30 ]\n      RT 15\n    ]\n    REPEAT 3 [\n      SETPC REPCOUNT + 6\n      FD 25\n      REPEAT 15 [ FD 1 RT 6 ]\n      REPEAT 10 [ FD 2 LT 36 ]\n    ]\n    RT 36\n  ]\n  PU BK 140 RT 22.5 PD\n]","code":"SETPS 1\nREPEAT 4 [\n  PU BK 300 FD REPCOUNT * 150 RT 90 BK 300 PD\n  REPEAT 5 [\n    PU FD 120 LT 90 PD\n    REPEAT 8 [\n      SETPC REPCOUNT\n      REPEAT 4 [\n        FD 20\n        REPEAT 20 [ FD 1 RT 5 ]\n        REPEAT 10 [ FD 2 LT 36 ]\n      ]\n      RT 45\n    ]\n    PU RT 45 FD 65 PD\n    REPEAT 10 [\n      SETPC 11\n      REPEAT 3 [\n        FD 10\n        REPEAT 10 [ FD 1 RT 10 ]\n        REPEAT 5 [ FD 1 LT 20 ]\n      ]\n      RT 36\n    ]\n    PU BK 65 LT 45 PD\n    PU RT 90 PD\n  ]\n]","feedback":"\u003cspan class=\"text-amber-600 font-bold\">Original won but backups exist. The top Backup variant was promoted to current.\u003c/span>\u003cbr>\u003cbr>You were promoted from the backup list (Score: 6). Please improve this further based on your taste.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Original/Base","code":"SETPS 2\nREPEAT 8 [\n  PU FD 140 RT 45 PD\n  REPEAT 10 [\n    SETPC REPCOUNT\n    REPEAT 5 [\n      FD 50\n      REPEAT 18 [ FD 2.5 RT 5 ]\n      REPEAT 12 [ FD 3.5 LT 30 ]\n      RT 15\n    ]\n    REPEAT 3 [\n      SETPC REPCOUNT + 6\n      FD 25\n      REPEAT 15 [ FD 1 RT 6 ]\n      REPEAT 10 [ FD 2 LT 36 ]\n    ]\n    RT 36\n  ]\n  PU BK 140 RT 22.5 PD\n]","score":7,"reason":"This image features a high density of vibrant colors and overlapping circular forms that evoke the complexity and variety of a cluster of flowers, though the composition feels top-heavy.","isWinner":true},{"title":"Variant 1","code":"SETPS 1\nPU LT 90 FD 400 RT 90 BK 200 PD\nREPEAT 5 [\n  REPEAT 8 [\n    PU FD 60 RT 45 PD\n    REPEAT 6 [\n      SETPC REPCOUNT\n      FD 30\n      REPEAT 12 [ FD 2 RT 12 ]\n      REPEAT 8 [ FD 3 LT 25 ]\n      RT 60\n    ]\n    REPEAT 3 [\n      SETPC REPCOUNT + 6\n      FD 20\n      REPEAT 10 [ FD 1.5 RT 10 ]\n      REPEAT 8 [ FD 2 LT 20 ]\n    ]\n    PU BK 60 RT 22.5 PD\n  ]\n  PU RT 90 FD 200 LT 90 PD\n]","score":3,"reason":"The thin, sparse lines lack the visual weight and density required to represent a field; it feels more like abstract static than floral life.","isWinner":false},{"title":"Variant 2","code":"SETPS 1\nPU LT 90 FD 400 RT 90 BK 250 PD\nREPEAT 3 [\n  REPEAT 4 [\n    REPEAT 6 [\n      PU FD 35 RT 60 PD\n      REPEAT 5 [\n        SETPC REPCOUNT\n        FD 15\n        REPEAT 10 [ FD 1 RT 15 ]\n        REPEAT 8 [ FD 1.5 LT 30 ]\n        RT 72\n      ]\n      REPEAT 2 [\n        SETPC REPCOUNT + 7\n        FD 8\n        REPEAT 10 [ FD 0.8 RT 12 ]\n        REPEAT 10 [ FD 0.8 LT 12 ]\n      ]\n      PU BK 35 RT 30 PD\n    ]\n    PU RT 90 FD 200 LT 90 PD\n  ]\n  PU LT 90 BK 800 RT 90 FD 90 PD\n]","score":1,"reason":"A single isolated line is far too minimalist to capture the abundance and lushness of a field of flowers.","isWinner":false}]},{"stage":"Iteration 14","baseCode":"SETPS 1\nREPEAT 4 [\n  PU BK 300 FD REPCOUNT * 150 RT 90 BK 300 PD\n  REPEAT 5 [\n    PU FD 120 LT 90 PD\n    REPEAT 8 [\n      SETPC REPCOUNT\n      REPEAT 4 [\n        FD 20\n        REPEAT 20 [ FD 1 RT 5 ]\n        REPEAT 10 [ FD 2 LT 36 ]\n      ]\n      RT 45\n    ]\n    PU RT 45 FD 65 PD\n    REPEAT 10 [\n      SETPC 11\n      REPEAT 3 [\n        FD 10\n        REPEAT 10 [ FD 1 RT 10 ]\n        REPEAT 5 [ FD 1 LT 20 ]\n      ]\n      RT 36\n    ]\n    PU BK 65 LT 45 PD\n    PU RT 90 PD\n  ]\n]","code":"REPEAT 45 [\n  PU RT 137 FD 4 * REPCOUNT PD\n  REPEAT 12 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      REPEAT 8 [ FD 1 RT 4 ]\n      FD 10\n      REPEAT 8 [ FD 1 RT 8 ]\n    ]\n    RT 30\n  ]\n  PU BK 4 * REPCOUNT PD\n]","feedback":"\u003cspan class=\"text-amber-600 font-bold\">Original won but backups exist. The top Backup variant was promoted to current.\u003c/span>\u003cbr>\u003cbr>You were promoted from the backup list (Score: 4). Please improve this further based on your taste.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Original/Base","code":"SETPS 1\nREPEAT 4 [\n  PU BK 300 FD REPCOUNT * 150 RT 90 BK 300 PD\n  REPEAT 5 [\n    PU FD 120 LT 90 PD\n    REPEAT 8 [\n      SETPC REPCOUNT\n      REPEAT 4 [\n        FD 20\n        REPEAT 20 [ FD 1 RT 5 ]\n        REPEAT 10 [ FD 2 LT 36 ]\n      ]\n      RT 45\n    ]\n    PU RT 45 FD 65 PD\n    REPEAT 10 [\n      SETPC 11\n      REPEAT 3 [\n        FD 10\n        REPEAT 10 [ FD 1 RT 10 ]\n        REPEAT 5 [ FD 1 LT 20 ]\n      ]\n      RT 36\n    ]\n    PU BK 65 LT 45 PD\n    PU RT 90 PD\n  ]\n]","score":9,"reason":"The dense clusters of overlapping, multi-colored circular shapes perfectly evoke the appearance of a vibrant and lush field of flowers.","isWinner":true},{"title":"Variant 1","code":"SETPS 1\nREPEAT 4 [\n  PU BK 300 FD REPCOUNT * 150 RT 90 BK 300 PD\n  REPEAT 4 [\n    PU FD 150 LT 90 PD\n    REPEAT 12 [\n      SETPC REPCOUNT\n      REPEAT 4 [\n        FD 25\n        REPEAT 10 [ FD 2 RT 18 ]\n        BK 15\n        REPEAT 5 [ FD 1 LT 36 ]\n      ]\n      RT 30\n    ]\n    PU RT 15 FD 55 PD\n    REPEAT 9 [\n      SETPC 13\n      REPEAT 3 [\n        FD 15\n        REPEAT 12 [ FD 2 RT 30 ]\n        REPEAT 6 [ FD 1 LT 60 ]\n      ]\n      RT 40\n    ]\n    PU BK 55 LT 15 PD\n    PU RT 90 PD\n  ]\n]","score":4,"reason":"The geometric shapes and sparse arrangement feel more like abstract diagrams than organic flora, failing to create the 'field' effect.","isWinner":false},{"title":"Variant 2","code":"SETPS 1\nREPEAT 3 [\n  PU BK 300 FD REPCOUNT * 200 RT 90 BK 300 PD\n  REPEAT 3 [\n    PU FD 200 LT 90 PD\n    REPEAT 8 [\n      SETPC REPCOUNT + 7\n      REPEAT 6 [\n        FD 35\n        REPEAT 15 [ FD 2 RT 12 ]\n        REPEAT 10 [ FD 1 LT 18 ]\n        BK 10\n      ]\n      RT 45\n    ]\n    PU RT 22.5 FD 75 PD\n    REPEAT 15 [\n      SETPC 10\n      REPEAT 4 [\n        FD 18\n        REPEAT 12 [ FD 1 RT 30 ]\n        REPEAT 12 [ FD 1 LT 30 ]\n      ]\n      RT 24\n    ]\n    PU BK 75 LT 22.5 PD\n    PU RT 90 PD\n  ]\n]","score":2,"reason":"The composition is far too empty and lacks the necessary color density and variety to represent a field of flowers.","isWinner":false}]},{"stage":"Iteration 15","baseCode":"REPEAT 45 [\n  PU RT 137 FD 4 * REPCOUNT PD\n  REPEAT 12 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      REPEAT 8 [ FD 1 RT 4 ]\n      FD 10\n      REPEAT 8 [ FD 1 RT 8 ]\n    ]\n    RT 30\n  ]\n  PU BK 4 * REPCOUNT PD\n]","code":"REPEAT 60 [\n  PU RT 137.5 FD 3 * REPCOUNT PD\n  SETPS 1\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 6 [\n      REPEAT 10 [ FD 1 RT 5 ]\n      REPEAT 3 [ FD 4 RT 120 ]\n      FD 15\n      REPEAT 10 [ FD 1 RT 10 ]\n      RT 60\n    ]\n    RT 45\n  ]\n  PU BK 3 * REPCOUNT PD\n]","feedback":"Duplicate and scatter the floral motif across the entire canvas in varying scales and colors to create the effect of an expansive field.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Variant 2","code":"REPEAT 60 [\n  PU RT 137.5 FD 3 * REPCOUNT PD\n  SETPS 1\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 6 [\n      REPEAT 10 [ FD 1 RT 5 ]\n      REPEAT 3 [ FD 4 RT 120 ]\n      FD 15\n      REPEAT 10 [ FD 1 RT 10 ]\n      RT 60\n    ]\n    RT 45\n  ]\n  PU BK 3 * REPCOUNT PD\n]","score":6,"reason":"The radial symmetry and layered loops create a clear floral motif with a pleasing color palette, though it is still only a single object.","isWinner":true},{"title":"Original/Base","code":"REPEAT 45 [\n  PU RT 137 FD 4 * REPCOUNT PD\n  REPEAT 12 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      REPEAT 8 [ FD 1 RT 4 ]\n      FD 10\n      REPEAT 8 [ FD 1 RT 8 ]\n    ]\n    RT 30\n  ]\n  PU BK 4 * REPCOUNT PD\n]","score":3,"reason":"While colorful, the image is a single chaotic tangle that lacks the specific structure of a flower and fails to represent a field.","isWinner":false},{"title":"Variant 1","code":"REPEAT 45 [\n  PU RT 137 FD 5 * REPCOUNT PD\n  REPEAT 15 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      REPEAT 8 [ FD 1 RT 4 ]\n      REPEAT 4 [ FD 3 RT 90 ]\n      FD 12\n      REPEAT 8 [ FD 1 RT 8 ]\n    ]\n    RT 24\n  ]\n  PU BK 5 * REPCOUNT PD\n]","score":2,"reason":"This version is less vibrant than the first and remains a single, unorganized cluster rather than a floral scene.","isWinner":false}]},{"stage":"Iteration 16","baseCode":"REPEAT 60 [\n  PU RT 137.5 FD 3 * REPCOUNT PD\n  SETPS 1\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 6 [\n      REPEAT 10 [ FD 1 RT 5 ]\n      REPEAT 3 [ FD 4 RT 120 ]\n      FD 15\n      REPEAT 10 [ FD 1 RT 10 ]\n      RT 60\n    ]\n    RT 45\n  ]\n  PU BK 3 * REPCOUNT PD\n]","code":"REPEAT 60 [\n  PU RT 137.5 FD 12 * REPCOUNT PD\n  SETPS 1\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 6 [\n      REPEAT 10 [ FD REPCOUNT / 2 RT 5 ]\n      REPEAT 3 [ FD REPCOUNT RT 120 ]\n      FD REPCOUNT * 2\n      REPEAT 10 [ FD REPCOUNT / 2 RT 10 ]\n      RT 60\n    ]\n    RT 45\n  ]\n  PU BK 12 * REPCOUNT PD\n]","feedback":"Scatter multiple smaller versions of this intricate floral pattern across the entire canvas at different positions and scales to create a dense field.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Variant 1","code":"REPEAT 60 [\n  PU RT 137.5 FD 12 * REPCOUNT PD\n  SETPS 1\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 6 [\n      REPEAT 10 [ FD REPCOUNT / 2 RT 5 ]\n      REPEAT 3 [ FD REPCOUNT RT 120 ]\n      FD REPCOUNT * 2\n      REPEAT 10 [ FD REPCOUNT / 2 RT 10 ]\n      RT 60\n    ]\n    RT 45\n  ]\n  PU BK 12 * REPCOUNT PD\n]","score":7,"reason":"The intricate, colorful lines create a lovely individual bloom, though it remains a solitary object on a blank canvas.","isWinner":true},{"title":"Variant 2","code":"REPEAT 50 [\n  PU RT 137.5 FD 15 * REPCOUNT PD\n  SETPS REPCOUNT / 15\n  REPEAT 10 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      REPEAT 10 [ FD REPCOUNT RT 6 ]\n      REPEAT 4 [ FD REPCOUNT * 2 RT 90 ]\n      FD REPCOUNT * 3\n      REPEAT 10 [ FD REPCOUNT RT 12 ]\n      LT 90\n    ]\n    RT 36\n  ]\n  PU BK 15 * REPCOUNT PD\n]","score":5,"reason":"The colors are vibrant and the composition is full, but the shapes are too abstract and lack the delicate detail of a flower.","isWinner":false},{"title":"Original/Base","code":"REPEAT 60 [\n  PU RT 137.5 FD 3 * REPCOUNT PD\n  SETPS 1\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 6 [\n      REPEAT 10 [ FD 1 RT 5 ]\n      REPEAT 3 [ FD 4 RT 120 ]\n      FD 15\n      REPEAT 10 [ FD 1 RT 10 ]\n      RT 60\n    ]\n    RT 45\n  ]\n  PU BK 3 * REPCOUNT PD\n]","score":3,"reason":"The floral element is too small and singular, failing to convey the abundance of a field.","isWinner":false}]},{"stage":"Iteration 17","baseCode":"REPEAT 60 [\n  PU RT 137.5 FD 12 * REPCOUNT PD\n  SETPS 1\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 6 [\n      REPEAT 10 [ FD REPCOUNT / 2 RT 5 ]\n      REPEAT 3 [ FD REPCOUNT RT 120 ]\n      FD REPCOUNT * 2\n      REPEAT 10 [ FD REPCOUNT / 2 RT 10 ]\n      RT 60\n    ]\n    RT 45\n  ]\n  PU BK 12 * REPCOUNT PD\n]","code":"REPEAT 50 [\n  PU RT 137.5 FD 15 * REPCOUNT PD\n  SETPS REPCOUNT / 15\n  REPEAT 10 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      REPEAT 10 [ FD REPCOUNT RT 6 ]\n      REPEAT 4 [ FD REPCOUNT * 2 RT 90 ]\n      FD REPCOUNT * 3\n      REPEAT 10 [ FD REPCOUNT RT 12 ]\n      LT 90\n    ]\n    RT 36\n  ]\n  PU BK 15 * REPCOUNT PD\n]","feedback":"\u003cspan class=\"text-amber-600 font-bold\">Original won but backups exist. The top Backup variant was promoted to current.\u003c/span>\u003cbr>\u003cbr>You were promoted from the backup list (Score: 5). Please improve this further based on your taste.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Original/Base","code":"REPEAT 60 [\n  PU RT 137.5 FD 12 * REPCOUNT PD\n  SETPS 1\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 6 [\n      REPEAT 10 [ FD REPCOUNT / 2 RT 5 ]\n      REPEAT 3 [ FD REPCOUNT RT 120 ]\n      FD REPCOUNT * 2\n      REPEAT 10 [ FD REPCOUNT / 2 RT 10 ]\n      RT 60\n    ]\n    RT 45\n  ]\n  PU BK 12 * REPCOUNT PD\n]","score":7,"reason":"This image features a vibrant, complex mandala-like structure that strongly evokes the intricate petals of a flower, providing an excellent base for a field-themed composition.","isWinner":true},{"title":"Variant 2","code":"REPEAT 10 [\n  RT 137.5\n  PU FD REPCOUNT * 25 PD\n  REPEAT 20 [\n    PU RT 137.5 FD 4 * REPCOUNT PD\n    SETPS 1\n    REPEAT 6 [\n      SETPC REPCOUNT\n      REPEAT 4 [\n        REPEAT 8 [ FD REPCOUNT / 3 RT 8 ]\n        REPEAT 6 [ FD REPCOUNT RT 60 ]\n        BK REPCOUNT * 1.5\n        REPEAT 8 [ FD REPCOUNT / 3 RT 15 ]\n        RT 90\n      ]\n      RT 60\n    ]\n    PU BK 4 * REPCOUNT PD\n  ]\n  PU BK REPCOUNT * 25 PD\n]","score":5,"reason":"While the smaller scale is a step towards creating a field, the internal structure of the flower is less defined and less visually rich than the first image.","isWinner":false},{"title":"Variant 1","code":"REPEAT 5 [\n  RT 72\n  PU FD 200 PD\n  REPEAT 30 [\n    PU RT 137.5 FD 5 * REPCOUNT PD\n    SETPS 1\n    REPEAT 8 [\n      SETPC REPCOUNT\n      REPEAT 5 [\n        REPEAT 10 [ FD REPCOUNT / 2 RT 6 ]\n        REPEAT 4 [ FD REPCOUNT RT 90 ]\n        FD REPCOUNT * 2\n        REPEAT 10 [ FD REPCOUNT / 2 RT 12 ]\n        RT 72\n      ]\n      RT 45\n    ]\n    PU BK 5 * REPCOUNT PD\n  ]\n  PU BK 200 PD\n]","score":3,"reason":"The off-center placement and cropping diminish the beauty of the floral form and fail to suggest a sprawling field or garden.","isWinner":false}]},{"stage":"Iteration 18","baseCode":"REPEAT 50 [\n  PU RT 137.5 FD 15 * REPCOUNT PD\n  SETPS REPCOUNT / 15\n  REPEAT 10 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      REPEAT 10 [ FD REPCOUNT RT 6 ]\n      REPEAT 4 [ FD REPCOUNT * 2 RT 90 ]\n      FD REPCOUNT * 3\n      REPEAT 10 [ FD REPCOUNT RT 12 ]\n      LT 90\n    ]\n    RT 36\n  ]\n  PU BK 15 * REPCOUNT PD\n]","code":"REPEAT 55 [\n  PU RT 137.5 FD 16 * REPCOUNT PD\n  SETPS REPCOUNT / 20\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 3 [\n      REPEAT 15 [ FD REPCOUNT RT 4 ]\n      REPEAT 4 [\n        REPEAT 4 [ FD REPCOUNT * 3 RT 90 ]\n        RT 90\n      ]\n      FD REPCOUNT * 5\n      REPEAT 15 [ FD REPCOUNT RT 8 ]\n      LT 120\n    ]\n    RT 45\n  ]\n  PU BK 16 * REPCOUNT PD\n]","feedback":"Add small, bright yellow or black circular dots to the center of the curved shapes to create the appearance of distinct flower hearts.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Variant 2","code":"REPEAT 55 [\n  PU RT 137.5 FD 16 * REPCOUNT PD\n  SETPS REPCOUNT / 20\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 3 [\n      REPEAT 15 [ FD REPCOUNT RT 4 ]\n      REPEAT 4 [\n        REPEAT 4 [ FD REPCOUNT * 3 RT 90 ]\n        RT 90\n      ]\n      FD REPCOUNT * 5\n      REPEAT 15 [ FD REPCOUNT RT 8 ]\n      LT 120\n    ]\n    RT 45\n  ]\n  PU BK 16 * REPCOUNT PD\n]","score":8,"reason":"This image best captures the essence of a field by filling the entire canvas with a dense, rhythmic pattern of vibrant, interlocking colors.","isWinner":true},{"title":"Original/Base","code":"REPEAT 50 [\n  PU RT 137.5 FD 15 * REPCOUNT PD\n  SETPS REPCOUNT / 15\n  REPEAT 10 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      REPEAT 10 [ FD REPCOUNT RT 6 ]\n      REPEAT 4 [ FD REPCOUNT * 2 RT 90 ]\n      FD REPCOUNT * 3\n      REPEAT 10 [ FD REPCOUNT RT 12 ]\n      LT 90\n    ]\n    RT 36\n  ]\n  PU BK 15 * REPCOUNT PD\n]","score":5,"reason":"The central cluster has a nice variety of colors, but it feels like a single isolated object rather than an expansive field.","isWinner":false},{"title":"Variant 1","code":"REPEAT 45 [\n  PU RT 137.5 FD 14 * REPCOUNT PD\n  SETPS REPCOUNT / 12\n  REPEAT 6 [\n    SETPC REPCOUNT\n    REPEAT 5 [\n      REPEAT 12 [ FD REPCOUNT RT 5 ]\n      REPEAT 2 [\n        REPEAT 4 [ FD REPCOUNT * 2 RT 90 ]\n        RT 180\n      ]\n      FD REPCOUNT * 3\n      REPEAT 12 [ FD REPCOUNT RT 10 ]\n      LT 72\n    ]\n    RT 60\n  ]\n  PU BK 14 * REPCOUNT PD\n]","score":3,"reason":"The composition is too zoomed-in and the color palette is limited, failing to capture the diversity of a floral landscape.","isWinner":false}]},{"stage":"Iteration 19","baseCode":"REPEAT 55 [\n  PU RT 137.5 FD 16 * REPCOUNT PD\n  SETPS REPCOUNT / 20\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 3 [\n      REPEAT 15 [ FD REPCOUNT RT 4 ]\n      REPEAT 4 [\n        REPEAT 4 [ FD REPCOUNT * 3 RT 90 ]\n        RT 90\n      ]\n      FD REPCOUNT * 5\n      REPEAT 15 [ FD REPCOUNT RT 8 ]\n      LT 120\n    ]\n    RT 45\n  ]\n  PU BK 16 * REPCOUNT PD\n]","code":"REPEAT 55 [\n  PU RT 137.5 FD 16 * REPCOUNT PD\n  SETPS 1 + REPCOUNT / 20\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 3 [\n      REPEAT 15 [ FD REPCOUNT RT 4 ]\n      PU RT 90 FD 3 PD SETPC 6 REPEAT 18 [ FD 1 RT 20 ] PU BK 3 LT 90 PD SETPC REPCOUNT\n      REPEAT 5 [\n        REPEAT 4 [ FD REPCOUNT * 2 RT 90 ]\n        RT 72\n      ]\n      FD REPCOUNT * 5\n      REPEAT 15 [ FD REPCOUNT RT 8 ]\n      LT 120\n    ]\n    RT 45\n  ]\n  PU BK 16 * REPCOUNT PD\n]","feedback":"Replace the thin geometric lines with soft-edged, solid-colored petal shapes in warm tones like pink and orange to create a more lush and organic meadow appearance.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Variant 1","code":"REPEAT 55 [\n  PU RT 137.5 FD 16 * REPCOUNT PD\n  SETPS 1 + REPCOUNT / 20\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 3 [\n      REPEAT 15 [ FD REPCOUNT RT 4 ]\n      PU RT 90 FD 3 PD SETPC 6 REPEAT 18 [ FD 1 RT 20 ] PU BK 3 LT 90 PD SETPC REPCOUNT\n      REPEAT 5 [\n        REPEAT 4 [ FD REPCOUNT * 2 RT 90 ]\n        RT 72\n      ]\n      FD REPCOUNT * 5\n      REPEAT 15 [ FD REPCOUNT RT 8 ]\n      LT 120\n    ]\n    RT 45\n  ]\n  PU BK 16 * REPCOUNT PD\n]","score":8,"reason":"The radial symmetry creates a beautiful central bloom, and the small icons effectively suggest a field of tiny, vibrant flowers.","isWinner":true},{"title":"Variant 2","code":"REPEAT 55 [\n  PU RT 137.5 FD 20 * REPCOUNT PD\n  SETPS 1 + REPCOUNT / 25\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 3 [\n      REPEAT 20 [ FD REPCOUNT RT 3 ]\n      PU FD 10 RT 90 FD 5 PD SETPC 0 REPEAT 12 [ FD 2 RT 30 ] PU BK 5 LT 90 BK 10 PD SETPC REPCOUNT\n      REPEAT 3 [\n        REPEAT 4 [ FD REPCOUNT * 4 RT 90 ]\n        RT 120\n      ]\n      FD REPCOUNT * 8\n      REPEAT 20 [ FD REPCOUNT RT 6 ]\n      LT 120\n    ]\n    RT 45\n  ]\n  PU BK 20 * REPCOUNT PD\n]","score":6,"reason":"While it shares the floral structure of image 2, the addition of black circular outlines introduces a mechanical aesthetic that clashes with the natural theme.","isWinner":false},{"title":"Original/Base","code":"REPEAT 55 [\n  PU RT 137.5 FD 16 * REPCOUNT PD\n  SETPS REPCOUNT / 20\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 3 [\n      REPEAT 15 [ FD REPCOUNT RT 4 ]\n      REPEAT 4 [\n        REPEAT 4 [ FD REPCOUNT * 3 RT 90 ]\n        RT 90\n      ]\n      FD REPCOUNT * 5\n      REPEAT 15 [ FD REPCOUNT RT 8 ]\n      LT 120\n    ]\n    RT 45\n  ]\n  PU BK 16 * REPCOUNT PD\n]","score":2,"reason":"The thick, chaotic strokes are colorful but lack the delicate, organic structure required to resemble a field of flowers.","isWinner":false}]},{"stage":"Iteration 20","baseCode":"REPEAT 55 [\n  PU RT 137.5 FD 16 * REPCOUNT PD\n  SETPS 1 + REPCOUNT / 20\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 3 [\n      REPEAT 15 [ FD REPCOUNT RT 4 ]\n      PU RT 90 FD 3 PD SETPC 6 REPEAT 18 [ FD 1 RT 20 ] PU BK 3 LT 90 PD SETPC REPCOUNT\n      REPEAT 5 [\n        REPEAT 4 [ FD REPCOUNT * 2 RT 90 ]\n        RT 72\n      ]\n      FD REPCOUNT * 5\n      REPEAT 15 [ FD REPCOUNT RT 8 ]\n      LT 120\n    ]\n    RT 45\n  ]\n  PU BK 16 * REPCOUNT PD\n]","code":"REPEAT 55 [\n  PU RT 137.5 FD 16 * REPCOUNT PD\n  SETPS 6\n  REPEAT 8 [\n    SETPC 7\n    REPEAT 3 [\n      REPEAT 30 [ FD REPCOUNT / 3 RT 4 ]\n      PU RT 90 FD 5 PD SETPC 12 REPEAT 20 [ FD 1.5 RT 18 ] PU BK 5 LT 90 PD\n      SETPC 2\n      REPEAT 5 [\n        REPEAT 15 [ FD REPCOUNT / 2 RT 12 ]\n        RT 72\n      ]\n      FD REPCOUNT * 4\n      REPEAT 20 [ FD REPCOUNT / 3 RT 6 ]\n      LT 120\n    ]\n    RT 45\n  ]\n  PU BK 16 * REPCOUNT PD\n]","feedback":"Change the color of several orange dots to vibrant shades of pink, purple, and blue to increase the color variety of the blossoms and better match the 'colorful' aesthetic.","taste":"a field of colorful flowers","magnitude":"5","magnitudeText":"Make a MODERATE change. Evolve the shape noticeably. You can add new nested loops, but the original DNA should still be visible.","variants":[{"title":"Variant 2","code":"REPEAT 55 [\n  PU RT 137.5 FD 16 * REPCOUNT PD\n  SETPS 6\n  REPEAT 8 [\n    SETPC 7\n    REPEAT 3 [\n      REPEAT 30 [ FD REPCOUNT / 3 RT 4 ]\n      PU RT 90 FD 5 PD SETPC 12 REPEAT 20 [ FD 1.5 RT 18 ] PU BK 5 LT 90 PD\n      SETPC 2\n      REPEAT 5 [\n        REPEAT 15 [ FD REPCOUNT / 2 RT 12 ]\n        RT 72\n      ]\n      FD REPCOUNT * 4\n      REPEAT 20 [ FD REPCOUNT / 3 RT 6 ]\n      LT 120\n    ]\n    RT 45\n  ]\n  PU BK 16 * REPCOUNT PD\n]","score":8,"reason":"The dense, overlapping green patterns create a successful sense of thick foliage, and the scattered orange dots effectively represent blossoms across a field.","isWinner":true},{"title":"Original/Base","code":"REPEAT 55 [\n  PU RT 137.5 FD 16 * REPCOUNT PD\n  SETPS 1 + REPCOUNT / 20\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 3 [\n      REPEAT 15 [ FD REPCOUNT RT 4 ]\n      PU RT 90 FD 3 PD SETPC 6 REPEAT 18 [ FD 1 RT 20 ] PU BK 3 LT 90 PD SETPC REPCOUNT\n      REPEAT 5 [\n        REPEAT 4 [ FD REPCOUNT * 2 RT 90 ]\n        RT 72\n      ]\n      FD REPCOUNT * 5\n      REPEAT 15 [ FD REPCOUNT RT 8 ]\n      LT 120\n    ]\n    RT 45\n  ]\n  PU BK 16 * REPCOUNT PD\n]","score":6,"reason":"The color palette is diverse and the small floral motifs are clear, but the rigid radial symmetry makes the composition feel more like a graphic mandala than an organic field.","isWinner":false},{"title":"Variant 1","code":"REPEAT 55 [\n  PU RT 137.5 FD 15 * REPCOUNT PD\n  SETPS 4 + REPCOUNT / 12\n  REPEAT 6 [\n    SETPC 13\n    REPEAT 3 [\n      REPEAT 45 [ FD REPCOUNT / 4 RT 2 ]\n      PU RT 90 FD 4 PD SETPC 12 REPEAT 18 [ FD 2 RT 20 ] PU BK 4 LT 90 PD \n      SETPC 14\n      REPEAT 5 [\n        REPEAT 10 [ FD REPCOUNT / 2 RT 18 ]\n        RT 72\n      ]\n      FD REPCOUNT * 3\n      REPEAT 15 [ FD REPCOUNT / 2 RT 8 ]\n      LT 120\n    ]\n    RT 60\n  ]\n  PU BK 15 * REPCOUNT PD\n]","score":3,"reason":"This variant is too sparse and minimal, lacking the density and variety of color required to evoke the feeling of a lush field of flowers.","isWinner":false}]}];
+        const winnersData = ["REPEAT 30 [\n  PU FD 150 RT 123 PD\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      REPEAT 12 [ FD 1 RT 3 ]\n      FD 15\n      REPEAT 12 [ FD 1 RT 6 ]\n    ]\n    RT 45\n  ]\n  PU BK 150 PD\n]","SETPS 1\nREPEAT 4 [\n  PU BK 300 FD REPCOUNT * 150 RT 90 BK 300 PD\n  REPEAT 5 [\n    PU FD 120 LT 90 PD\n    REPEAT 8 [\n      SETPC REPCOUNT\n      REPEAT 4 [\n        FD 20\n        REPEAT 20 [ FD 1 RT 5 ]\n        REPEAT 10 [ FD 2 LT 36 ]\n      ]\n      RT 45\n    ]\n    REPEAT 2 [\n      PU LT 60 FD 50 PD\n      REPEAT 6 [\n        SETPC 14\n        REPEAT 4 [\n          FD 8\n          REPEAT 5 [ FD 1 RT 15 ]\n          REPEAT 5 [ FD 1 LT 15 ]\n        ]\n        RT 60\n      ]\n      PU BK 50 RT 60 PD\n      RT 180\n    ]\n    PU RT 90 PD\n  ]\n]","SETPS 1\nREPEAT 30 [\n  PU RT REPCOUNT * 137.5 FD REPCOUNT * 14 PD\n  RT REPCOUNT\n  REPEAT 6 [\n    SETPC REPCOUNT\n    REPEAT 4 [\n      FD 12\n      REPEAT 18 [ FD 1 RT 10 ]\n      REPEAT 10 [ FD 2 LT 18 ]\n    ]\n    RT 60\n  ]\n  PU BK 25 RT 45 FD 35 PD\n  REPEAT 4 [\n    SETPC REPCOUNT + 5\n    REPEAT 4 [\n      FD 8\n      REPEAT 12 [ FD 1 RT 15 ]\n      REPEAT 6 [ FD 2 LT 30 ]\n    ]\n    RT 90\n  ]\n]","SETPS 2\nREPEAT 8 [\n  PU FD 140 RT 45 PD\n  REPEAT 10 [\n    SETPC REPCOUNT\n    REPEAT 5 [\n      FD 50\n      REPEAT 18 [ FD 2.5 RT 5 ]\n      REPEAT 12 [ FD 3.5 LT 30 ]\n      RT 15\n    ]\n    REPEAT 3 [\n      SETPC REPCOUNT + 6\n      FD 25\n      REPEAT 15 [ FD 1 RT 6 ]\n      REPEAT 10 [ FD 2 LT 36 ]\n    ]\n    RT 36\n  ]\n  PU BK 140 RT 22.5 PD\n]","SETPS 1\nREPEAT 4 [\n  PU BK 300 FD REPCOUNT * 150 RT 90 BK 300 PD\n  REPEAT 5 [\n    PU FD 120 LT 90 PD\n    REPEAT 8 [\n      SETPC REPCOUNT\n      REPEAT 4 [\n        FD 20\n        REPEAT 20 [ FD 1 RT 5 ]\n        REPEAT 10 [ FD 2 LT 36 ]\n      ]\n      RT 45\n    ]\n    PU RT 45 FD 65 PD\n    REPEAT 10 [\n      SETPC 11\n      REPEAT 3 [\n        FD 10\n        REPEAT 10 [ FD 1 RT 10 ]\n        REPEAT 5 [ FD 1 LT 20 ]\n      ]\n      RT 36\n    ]\n    PU BK 65 LT 45 PD\n    PU RT 90 PD\n  ]\n]","REPEAT 60 [\n  PU RT 137.5 FD 12 * REPCOUNT PD\n  SETPS 1\n  REPEAT 8 [\n    SETPC REPCOUNT\n    REPEAT 6 [\n      REPEAT 10 [ FD REPCOUNT / 2 RT 5 ]\n      REPEAT 3 [ FD REPCOUNT RT 120 ]\n      FD REPCOUNT * 2\n      REPEAT 10 [ FD REPCOUNT / 2 RT 10 ]\n      RT 60\n    ]\n    RT 45\n  ]\n  PU BK 12 * REPCOUNT PD\n]"];
+        
+        // Embedded Execution Engine
+        const activeAnimations = {};
+        function stripHtmlAndEscape(str) {
+            if (!str) return "";
+            return str.replace(/<[^>]*>?/gm, '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        function compileLogo(code, canvasWidth, canvasHeight) {
+            let state = { x: canvasWidth / 2, y: canvasHeight / 2, angle: -Math.PI / 2, penDown: true, opCount: 0, color: '#0f172a', width: 1.5 };
+            let queue = [];
+            const tokens = code.toUpperCase().replace(/\[/g, ' [ ').replace(/\]/g, ' ] ').trim().split(/\s+/);
+            
+            function parseBlock(t) {
+                let block = [];
+                while (t.length > 0) {
+                    let token = t.shift();
+                    if (!token) continue;
+                    if (token === ']') return block; 
+                    if (token === 'REPEAT') {
+                        let countStr = t.shift();
+                        let count = parseInt(countStr) || 0;
+                        if (countStr === 'REPCOUNT') count = 'REPCOUNT';
+                        let bracket = t.shift();
+                        if (bracket === '[') block.push({ cmd: 'REPEAT', count: count, body: parseBlock(t) });
+                    } else if (['FD', 'BK', 'RT', 'LT', 'SETPS', 'SETW', 'PENSIZE', 'SETPC', 'COLOR'].includes(token)) {
+                        block.push({ cmd: token, arg: t.shift() });
+                    } else if (['PU', 'PD'].includes(token)) block.push({ cmd: token });
+                }
+                return block;
+            }
+
+            const ast = parseBlock(tokens);
+
+            function runAST(nodes, repcount) {
+                for (let node of nodes) {
+                    if (state.opCount > 100000) return; 
+                    state.opCount++;
+
+                    if (node.cmd === 'REPEAT') {
+                        let count = node.count === 'REPCOUNT' ? repcount : node.count;
+                        let iters = Math.min(count, 1000); 
+                        for (let i = 1; i <= iters; i++) {
+                            if (state.opCount > 100000) return;
+                            runAST(node.body, i);
+                        }
+                    } else {
+                        let argStr = node.arg;
+                        let argVal = argStr === 'REPCOUNT' ? repcount : parseFloat(argStr);
+                        let prevX = state.x, prevY = state.y;
+
+                        if (node.cmd === 'FD') {
+                            state.x += (argVal || 0) * Math.cos(state.angle);
+                            state.y += (argVal || 0) * Math.sin(state.angle);
+                            if (state.penDown) queue.push({type: 'line', x1: prevX, y1: prevY, x2: state.x, y2: state.y, c: state.color, w: state.width});
+                        } else if (node.cmd === 'BK') {
+                            state.x -= (argVal || 0) * Math.cos(state.angle);
+                            state.y -= (argVal || 0) * Math.sin(state.angle);
+                            if (state.penDown) queue.push({type: 'line', x1: prevX, y1: prevY, x2: state.x, y2: state.y, c: state.color, w: state.width});
+                        } else if (node.cmd === 'RT') {
+                            state.angle += (argVal || 0) * Math.PI / 180;
+                        } else if (node.cmd === 'LT') {
+                            state.angle -= (argVal || 0) * Math.PI / 180;
+                        } else if (node.cmd === 'PU') {
+                            state.penDown = false;
+                        } else if (node.cmd === 'PD') {
+                            state.penDown = true;
+                        } else if (node.cmd === 'SETPS' || node.cmd === 'SETW' || node.cmd === 'PENSIZE') {
+                            state.width = argVal || 1;
+                        } else if (node.cmd === 'SETPC' || node.cmd === 'COLOR') {
+                            const logoColors = ['#000000', '#0000FF', '#00FF00', '#00FFFF', '#FF0000', '#FF00FF', '#FFFF00', '#FFFFFF', '#A52A2A', '#D2B48C', '#008000', '#40E0D0', '#FFA500', '#800080', '#FFD700', '#C0C0C0'];
+                            let colorIndex = parseInt(argStr === 'REPCOUNT' ? repcount : argStr);
+                            state.color = (!isNaN(colorIndex) && colorIndex >= 0 && colorIndex <= 15) ? logoColors[colorIndex] : argStr;
+                        }
+                    }
+                }
+            }
+            runAST(ast, 1);
+            return queue;
+        }
+        function renderQueue(canvasObj, queue, speedMultiplier = 0) {
+            const canvas = typeof canvasObj === 'string' ? document.getElementById(canvasObj) : canvasObj;
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.globalCompositeOperation = 'destination-over';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.globalCompositeOperation = 'source-over';
+
+            if (activeAnimations[canvas.id]) cancelAnimationFrame(activeAnimations[canvas.id]);
+
+            if (speedMultiplier === 0 || queue.length === 0) {
+                for (let op of queue) {
+                    ctx.beginPath(); ctx.moveTo(op.x1, op.y1); ctx.lineTo(op.x2, op.y2);
+                    ctx.strokeStyle = op.c; ctx.lineWidth = op.w; ctx.stroke();
+                }
+                return;
+            }
+
+            let i = 0;
+            let linesPerFrame = Math.max(1, Math.floor(speedMultiplier)); 
+            
+            function animate() {
+                let limit = Math.min(i + linesPerFrame, queue.length);
+                for (; i < limit; i++) {
+                    let op = queue[i];
+                    ctx.beginPath(); ctx.moveTo(op.x1, op.y1); ctx.lineTo(op.x2, op.y2);
+                    ctx.strokeStyle = op.c; ctx.lineWidth = op.w; ctx.stroke();
+                }
+                if (i < queue.length) activeAnimations[canvas.id] = requestAnimationFrame(animate);
+            }
+            animate();
+        }
+        function autoFitQueue(queue, canvasWidth, canvasHeight) {
+            if (queue.length === 0) return queue;
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            for (let op of queue) {
+                if (op.x1 < minX) minX = op.x1; if (op.x1 > maxX) maxX = op.x1;
+                if (op.y1 < minY) minY = op.y1; if (op.y1 > maxY) maxY = op.y1;
+                if (op.x2 < minX) minX = op.x2; if (op.x2 > maxX) maxX = op.x2;
+                if (op.y2 < minY) minY = op.y2; if (op.y2 > maxY) maxY = op.y2;
+            }
+            const drawW = maxX - minX;
+            const drawH = maxY - minY;
+            if (drawW === 0 && drawH === 0) return queue;
+            
+            const padX = canvasWidth * 0.05;
+            const padY = canvasHeight * 0.05;
+            const availW = canvasWidth - padX * 2;
+            const availH = canvasHeight - padY * 2;
+            
+            let scaleX = drawW > 0 ? availW / drawW : Infinity;
+            let scaleY = drawH > 0 ? availH / drawH : Infinity;
+            let scale = Math.min(scaleX, scaleY);
+            if (scale === Infinity) scale = 1;
+
+            const cx = (minX + maxX) / 2;
+            const cy = (minY + maxY) / 2;
+            const offsetX = canvasWidth / 2 - cx * scale;
+            const offsetY = canvasHeight / 2 - cy * scale;
+            
+            return queue.map(op => ({
+                ...op, x1: op.x1 * scale + offsetX, y1: op.y1 * scale + offsetY,
+                x2: op.x2 * scale + offsetX, y2: op.y2 * scale + offsetY, w: Math.max(1, op.w * scale)
+            }));
+        }
+        function generateDiffHTML(oldStr, newStr) {
+            if (!oldStr) oldStr = "";
+            const oldTokens = oldStr.trim().split(/\s+/).filter(Boolean);
+            const newTokens = newStr.trim().split(/\s+/).filter(Boolean);
+            
+            const dp = Array(oldTokens.length + 1).fill(null).map(() => new Int32Array(newTokens.length + 1));
+            for (let i = 1; i <= oldTokens.length; i++) {
+                for (let j = 1; j <= newTokens.length; j++) {
+                    if (oldTokens[i - 1] === newTokens[j - 1]) dp[i][j] = dp[i - 1][j - 1] + 1;
+                    else dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+                }
+            }
+            
+            let i = oldTokens.length, j = newTokens.length;
+            const diff = [];
+            while (i > 0 || j > 0) {
+                if (i > 0 && j > 0 && oldTokens[i - 1] === newTokens[j - 1]) {
+                    diff.unshift({ val: oldTokens[i - 1], type: 'eq' });
+                    i--; j--;
+                } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+                    diff.unshift({ val: newTokens[j - 1], type: 'add' });
+                    j--;
+                } else { i--; }
+            }
+            
+            let html = '';
+            let currentType = null;
+            let currentText = [];
+            const flush = () => {
+                if (currentText.length > 0) {
+                    if (currentType === 'add') html += `<span class="diff-add font-bold px-1 rounded">${currentText.join(' ')}</span> `;
+                    else html += `<span>${currentText.join(' ')}</span> `;
+                }
+            };
+            for (const d of diff) {
+                if (d.type !== currentType) { flush(); currentType = d.type; currentText = [d.val]; }
+                else currentText.push(d.val);
+            }
+            flush();
+            return html.trim();
+        }
+        function parseMarkdown(text) {
+            if (!text) return "";
+            return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>');                          
+        }
+
+        // --- LAZY OBSERVER FOR EXPORTED HTML ---
+        const lazyObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const canvas = entry.target;
+                    const eIdx = canvas.getAttribute('data-entry-index');
+                    const vIdx = canvas.getAttribute('data-var-index');
+                    if (eIdx !== null) {
+                        const hEntry = historyData[eIdx];
+                        let code = "";
+                        if (vIdx === 'main') {
+                            code = hEntry.code;
+                        } else if (hEntry.variants && hEntry.variants[vIdx]) {
+                            code = hEntry.variants[vIdx].code;
+                        }
+                        
+                        if (code) {
+                            let queue = compileLogo(code, canvas.width, canvas.height);
+                            if (canvas.classList.contains('tree-canvas')) {
+                                queue = autoFitQueue(queue, canvas.width, canvas.height);
+                            }
+                            renderQueue(canvas, queue, 0); // Always instant for lazy loads
+                        }
+                        canvas.removeAttribute('data-entry-index');
+                    }
+                    observer.unobserve(canvas);
+                }
+            });
+        }, { rootMargin: '300px' });
+
+        function renderEntries() {
+            const container = document.getElementById('historyEntries');
+            let html = '';
+            
+            historyData.forEach((entry, index) => {
+                html += `
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-2xl font-bold text-blue-600 mb-6">${entry.stage}</h2>
+                `;
+
+                if (entry.taste && entry.magnitude) {
+                    html += `
+                    <div class="bg-green-50 border-l-4 border-green-600 p-4 rounded mb-6 flex flex-col sm:flex-row gap-4 justify-between">
+                        <div>
+                            <h3 class="font-bold text-green-800 text-sm uppercase tracking-wider mb-2">Parameters</h3>
+                            <p class="text-slate-700 text-sm"><strong>Magnitude:</strong> Level ${entry.magnitude}/10 (${entry.magnitudeText})</p>
+                            <p class="text-slate-700 text-sm"><strong>Taste:</strong> "${entry.taste}"</p>
+                        </div>
+                    </div>`;
+                }
+
+                if (entry.variants && entry.variants.length > 0) {
+                    html += `
+                    <div class="mb-8">
+                        <h3 class="font-bold text-slate-800 text-lg mb-4">Evaluated Variants</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">`;
+                        
+                    entry.variants.forEach((v, vIndex) => {
+                        html += `
+                            <div class="bg-slate-50 border ${v.isWinner ? 'border-green-500 ring-2 ring-green-200' : 'border-slate-200'} rounded-lg p-4 flex flex-col h-full">
+                                <div class="font-bold text-slate-800 flex justify-between items-center mb-3">
+                                    <span>${v.title}</span>
+                                    ${v.isWinner ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold">🏆 Winner</span>' : ''}
+                                </div>
+                                <div class="relative group cursor-pointer bg-white border border-slate-200 rounded p-2 mb-3" onclick="openModal(${index}, ${vIndex})" title="${stripHtmlAndEscape(v.reason)}">
+                                    <canvas class="lazy-canvas w-full h-auto rounded shadow-sm" width="400" height="300" data-entry-index="${index}" data-var-index="${vIndex}"></canvas>
+                                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition rounded">
+                                        <span class="text-white font-bold bg-blue-600 px-3 py-1 rounded-full text-sm shadow">🔍 Enlarge & Replay</span>
+                                    </div>
+                                </div>
+                                <div class="font-bold text-purple-700 text-sm mb-1">Score: ${v.score}/10</div>
+                                <div class="text-sm text-slate-600 italic mb-3 line-clamp-3" title="${v.reason.replace(/"/g, '&quot;')}">${v.reason}</div>
+                                <div class="mt-auto bg-slate-800 text-slate-200 p-2 rounded text-[10px] font-mono overflow-y-auto custom-scroll max-h-32">
+                                    ${generateDiffHTML(entry.baseCode, v.code)}
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += `</div></div>`;
+                } else {
+                    html += `
+                    <div class="mb-8">
+                        <h3 class="font-bold text-slate-800 text-lg mb-4">Result</h3>
+                        <div class="relative group cursor-pointer bg-white border border-slate-200 rounded p-2 mb-3 inline-block" onclick="openModal(${index}, 'main')" title="${stripHtmlAndEscape(entry.feedback)}">
+                            <canvas class="lazy-canvas max-w-md w-full h-auto rounded shadow-sm" width="400" height="300" data-entry-index="${index}" data-var-index="main"></canvas>
+                            <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition rounded">
+                                <span class="text-white font-bold bg-blue-600 px-3 py-1 rounded-full text-sm shadow">🔍 Enlarge & Replay</span>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }
+                
+                html += `
+                    <div class="mb-6">
+                        <div class="flex justify-between items-end mb-2">
+                            <h3 class="font-bold text-slate-700 uppercase text-sm">Main Logo Code Applied</h3>
+                        </div>
+                        <div class="code-block custom-scroll">${generateDiffHTML(entry.baseCode, entry.code)}</div>
+                    </div>
+                `;
+
+                if (entry.feedback) {
+                    html += `
+                    <div class="bg-purple-50 border-l-4 border-purple-600 p-4 rounded mt-6">
+                        <h3 class="font-bold text-purple-800 text-sm uppercase tracking-wider mb-2">Critic Feedback & Next Step</h3>
+                        <div class="text-purple-900">${parseMarkdown(entry.feedback)}</div>
+                    </div>`;
+                }
+                
+                html += `</div>`;
+            });
+            
+            container.innerHTML = html;
+
+            const finalEntry = historyData[historyData.length - 1];
+            if (finalEntry) {
+                const finalCodes = [...new Set([...winnersData, finalEntry.code])];
+                const titleText = finalCodes.length > 1 ? "Final Masterpieces" : "Final Masterpiece";
+                let masterPiecesHtml = `<h2 class="text-4xl font-bold text-green-700 mb-8">${titleText}</h2><div class="space-y-12 w-full flex flex-col items-center">`;
+                
+                finalCodes.forEach((code, idx) => {
+                    const finalId = 'canvas_final_masterpiece_' + idx;
+                    masterPiecesHtml += `
+                        <div class="inline-block border-4 border-green-500 rounded-xl p-4 bg-white shadow-2xl relative w-full max-w-4xl flex flex-col items-center gap-4">
+                            <canvas id="${finalId}" width="800" height="600" class="w-full rounded bg-white"></canvas>
+                            <div class="flex flex-col sm:flex-row items-center justify-between w-full gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <div class="flex items-center gap-3 w-full sm:w-1/2">
+                                    <label class="text-sm font-semibold text-slate-700 whitespace-nowrap">Speed: <span id="masterpieceSpeedLabel_${idx}" class="text-blue-600">Medium</span></label>
+                                    <input type="range" id="masterpieceSpeed_${idx}" min="0" max="100" value="50" oninput="updateMasterpieceSpeedLabel(${idx}, this.value)" class="w-full accent-emerald-600">
+                                </div>
+                                <button onclick="playMasterpiece('${finalId}', ${idx})" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold shadow transition flex items-center gap-2 whitespace-nowrap">▶ Replay</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                masterPiecesHtml += `</div>`;
+                document.getElementById('finalMasterpiece').innerHTML = masterPiecesHtml;
+            }
+        }
+        
+        function updateMasterpieceSpeedLabel(idx, val) {
+            val = parseInt(val);
+            document.getElementById('masterpieceSpeedLabel_' + idx).innerText = val === 100 ? "Instant" : (val < 30 ? "Slow" : (val < 70 ? "Medium" : "Fast"));
+        }
+
+        function getMasterpieceSpeed(idx) {
+            let val = parseInt(document.getElementById('masterpieceSpeed_' + idx).value);
+            if (val === 100) return 0;
+            return Math.max(1, (val / 100) * 50); 
+        }
+
+        function playMasterpiece(canvasId, idx) {
+            const finalCodes = [...new Set([...winnersData, historyData[historyData.length - 1].code])];
+            const code = finalCodes[idx];
+            const canvas = document.getElementById(canvasId);
+            let queue = compileLogo(code, canvas.width, canvas.height);
+            queue = autoFitQueue(queue, canvas.width, canvas.height);
+            renderQueue(canvas, queue, getMasterpieceSpeed(idx));
+        }
+
+        // Modal Logic (Exported)
+        let currentModalCode = '';
+        
+        function updateModalSpeedLabel(val) {
+            val = parseInt(val);
+            document.getElementById('modalSpeedLabel').innerText = val === 100 ? "Instant" : (val < 30 ? "Slow" : (val < 70 ? "Medium" : "Fast"));
+        }
+
+        function getModalSpeed() {
+            let val = parseInt(document.getElementById('modalAnimSpeed').value);
+            if (val === 100) return 0;
+            return Math.max(1, (val / 100) * 50); 
+        }
+
+        function openModal(entryIndex, varIndex) {
+            const entry = historyData[entryIndex];
+            if (!entry) return;
+            currentModalCode = varIndex === 'main' ? entry.code : entry.variants[varIndex].code;
+            const title = varIndex === 'main' ? entry.stage : `${entry.stage} - ${entry.variants[varIndex].title}`;
+            
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalCodeDisplay').textContent = currentModalCode;
+            document.getElementById('replayModal').classList.remove('hidden');
+            document.getElementById('replayModal').classList.add('flex');
+            playModal();
+        }
+
+        function closeModal() {
+            document.getElementById('replayModal').classList.add('hidden');
+            document.getElementById('replayModal').classList.remove('flex');
+            if (activeAnimations['modalCanvas']) cancelAnimationFrame(activeAnimations['modalCanvas']);
+        }
+
+        function showParamModal(encodedContent) {
+            document.getElementById('paramModalContent').innerHTML = decodeURIComponent(encodedContent);
+            document.getElementById('paramModal').classList.remove('hidden');
+            document.getElementById('paramModal').classList.add('flex');
+        }
+
+        function closeParamModal() {
+            document.getElementById('paramModal').classList.add('hidden');
+            document.getElementById('paramModal').classList.remove('flex');
+        }
+
+        function playModal() {
+            let queue = compileLogo(currentModalCode, 800, 600);
+            queue = autoFitQueue(queue, 800, 600);
+            renderQueue('modalCanvas', queue, getModalSpeed());
+        }
+
+        // --- TREE BUILDER ---
+        function buildAndRenderTree() {
+            if (historyData.length < 2) return;
+            document.getElementById('treeContainer').classList.remove('hidden');
+
+            const nodesMap = {};
+            const rootNode = {
+                id: 'root',
+                code: historyData[0].code,
+                title: 'Original',
+                score: null,
+                isWinner: true,
+                paramChanged: false,
+                paramChangeText: "",
+                reason: "Original Logo Code",
+                entryIndex: 0,
+                varIndex: 'main',
+                children: []
+            };
+            nodesMap[historyData[0].code] = rootNode;
+
+            for (let i = 1; i < historyData.length; i++) {
+                const entry = historyData[i];
+                const parentNode = nodesMap[entry.baseCode] || rootNode;
+                
+                let pChanged = false;
+                let paramChangeText = "";
+                if (i > 1) {
+                    const prev = historyData[i-1];
+                    let diffs = [];
+                    if (String(entry.taste) !== String(prev.taste)) {
+                        diffs.push(`<strong>Taste:</strong><br><span style="text-decoration:line-through; color:#64748b">${prev.taste}</span><br><span style="color:#16a34a">${entry.taste}</span>`);
+                    }
+                    if (String(entry.magnitude) !== String(prev.magnitude)) {
+                        diffs.push(`<strong>Magnitude:</strong><br><span style="text-decoration:line-through; color:#64748b">Level ${prev.magnitude} (${prev.magnitudeText})</span><br><span style="color:#16a34a">Level ${entry.magnitude} (${entry.magnitudeText})</span>`);
+                    }
+                    if (diffs.length > 0) {
+                        pChanged = true;
+                        paramChangeText = encodeURIComponent(diffs.join("<br><br>"));
+                    }
+                }
+
+                let mainReason = entry.feedback ? stripHtmlAndEscape(entry.feedback) : "";
+
+                if (entry.variants && entry.variants.length > 0) {
+                    entry.variants.forEach((v, vIdx) => {
+                        if (v.title === 'Original/Base') return;
+
+                        const childNode = {
+                            id: `var_${i}_${vIdx}`,
+                            code: v.code,
+                            title: `Iter ${i}: ${v.title}`,
+                            score: v.score,
+                            isWinner: v.code === entry.code,
+                            entryIndex: i,
+                            varIndex: vIdx,
+                            paramChanged: pChanged,
+                            paramChangeText: paramChangeText,
+                            reason: v.reason,
+                            children: []
+                        };
+                        parentNode.children.push(childNode);
+                        if (!nodesMap[v.code]) {
+                            nodesMap[v.code] = childNode;
+                        }
+                    });
+                } else if (entry.code) {
+                    const childNode = {
+                        id: `iter_${i}`,
+                        code: entry.code,
+                        title: `Iter ${i}`,
+                        score: null,
+                        isWinner: true,
+                        entryIndex: i,
+                        varIndex: 'main',
+                        paramChanged: pChanged,
+                        paramChangeText: paramChangeText,
+                        reason: mainReason,
+                        children: []
+                    };
+                    parentNode.children.push(childNode);
+                    if (!nodesMap[entry.code]) {
+                        nodesMap[entry.code] = childNode;
+                    }
+                }
+            }
+
+            function renderNode(node) {
+                let html = '<li>';
+                let winnerClass = node.isWinner ? 'winner' : '';
+                let clickHandler = node.id === 'root' 
+                    ? "openModal(0, 'main')" 
+                    : `openModal(${node.entryIndex}, '${node.varIndex}')`;
+                let nodeTooltip = node.reason ? stripHtmlAndEscape(node.reason) : '';
+                    
+                html += `
+                    <div class="tree-node ${winnerClass}" onclick="${clickHandler}" title="${nodeTooltip}">
+                        <canvas class="lazy-canvas tree-canvas" width="140" height="105" data-entry-index="${node.entryIndex}" data-var-index="${node.varIndex}"></canvas>
+                        <div class="node-title" title="${node.title}">${node.title}</div>
+                        ${node.score ? `<div class="node-score">${node.score}/10</div>` : ''}
+                        ${node.paramChanged ? `<div class="mt-1 bg-amber-100 hover:bg-amber-200 text-amber-800 text-[10px] font-bold px-1 rounded flex items-center justify-center gap-1 mx-auto w-fit transition-colors" title="Click to view parameter changes" onclick="event.stopPropagation(); showParamModal('${node.paramChangeText}')">⚙️ Params changed</div>` : ''}
+                    </div>
+                `;
+                
+                if (node.children && node.children.length > 0) {
+                    html += '<ul>';
+                    node.children.forEach(c => { html += renderNode(c); });
+                    html += '</ul>';
+                }
+                html += '</li>';
+                return html;
+            }
+
+            document.getElementById('treeRoot').innerHTML = renderNode(rootNode);
+        }
+
+        let isTreeFit = false;
+        function toggleFitTree() {
+            const tree = document.getElementById('cssTree');
+            const wrapper = document.getElementById('treeWrapper');
+            const btn = document.getElementById('fitTreeBtn');
+            
+            isTreeFit = !isTreeFit;
+            if (isTreeFit) {
+                tree.style.transform = 'none';
+                const scale = Math.min(1, wrapper.clientWidth / tree.scrollWidth);
+                tree.style.transform = `scale(${scale})`;
+                tree.style.transformOrigin = 'top center';
+                wrapper.style.height = (tree.scrollHeight * scale) + 'px';
+                wrapper.style.overflowX = 'hidden';
+                btn.innerText = 'Actual Size';
+            } else {
+                tree.style.transform = 'none';
+                wrapper.style.height = 'auto';
+                wrapper.style.overflowX = 'auto';
+                btn.innerText = 'Fit to Screen';
+            }
+        }
+
+        window.onload = () => {
+            renderEntries();
+            buildAndRenderTree();
+            
+            document.querySelectorAll('.lazy-canvas').forEach(c => lazyObserver.observe(c));
+            
+            // Auto-play the final masterpieces on load
+            if (historyData.length > 0) {
+                const finalCodes = [...new Set([...winnersData, historyData[historyData.length - 1].code])];
+                finalCodes.forEach((code, idx) => {
+                    playMasterpiece('canvas_final_masterpiece_' + idx, idx);
+                });
+            }
+        };
+    </script>
+</body>
+</html>

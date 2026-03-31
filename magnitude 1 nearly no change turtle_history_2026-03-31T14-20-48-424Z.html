@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turtle Graphics Agent History</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #0f172a; line-height: 1.5; padding: 20px;}
+        .canvas-container { border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; background: #f8fafc; display: flex; justify-content: center; position: relative; }
+        pre, .code-block { background: #0f172a; color: #f8fafc; padding: 16px; border-radius: 8px; overflow-y: auto; font-family: ui-monospace, monospace; font-size: 14px; white-space: pre-wrap; word-wrap: break-word; max-height: 200px; }
+        .diff-add { background-color: #fcd34d; color: #78350f; font-weight: bold; padding: 0 4px; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        
+        /* CSS Tree Hierarchy Styles */
+        #treeWrapper { width: 100%; overflow: auto; max-height: 75vh; text-align: left; position: relative; transition: height 0.3s ease; padding-bottom: 20px; }
+        .css-tree { display: inline-flex; justify-content: center; min-width: max-content; padding-bottom: 2rem; margin: 0; transition: transform 0.3s ease; transform-origin: top left; }
+        .css-tree ul { display: flex; padding-top: 20px; position: relative; margin: 0; padding-left: 0; flex-wrap: nowrap; justify-content: center; }
+        .css-tree li { display: flex; flex-direction: column; align-items: center; list-style-type: none; position: relative; padding: 20px 10px 0 10px; flex-shrink: 0; }
+        .css-tree li::before, .css-tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid #cbd5e1; width: 50%; height: 20px; z-index: 1; }
+        .css-tree li::after { right: auto; left: 50%; border-left: 2px solid #cbd5e1; }
+        .css-tree li:only-child::after, .css-tree li:only-child::before { display: none; }
+        .css-tree li:only-child { padding-top: 0; }
+        .css-tree li:first-child::before, .css-tree li:last-child::after { border: 0 none; }
+        .css-tree li:last-child::before { border-right: 2px solid #cbd5e1; border-radius: 0 5px 0 0; }
+        .css-tree li:first-child::after { border-radius: 5px 0 0 0; }
+        .css-tree ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid #cbd5e1; width: 0; height: 20px; z-index: 1; margin-left: -1px; }
+        
+        .tree-node { background: white; border: 2px solid #e2e8f0; border-radius: 8px; padding: 6px; width: 140px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; position: relative; z-index: 2; }
+        .tree-node:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #3b82f6;}
+        .tree-node.winner { border-color: #22c55e; border-width: 3px; }
+        .tree-node canvas { width: 100%; border-radius: 4px; background: white; border: 1px solid #f1f5f9; display: block; }
+        .tree-node .node-title { font-size: 11px; font-weight: bold; margin-top: 6px; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+        .tree-node .node-score { font-size: 11px; color: #8b5cf6; font-weight: bold; margin-top: 2px; text-align: center; }
+    </style>
+</head>
+<body class="max-w-5xl mx-auto space-y-8">
+    <h1 class="text-3xl font-bold text-center text-slate-800 mb-8">Multi-Agent Turtle Graphics History</h1>
+    
+    <div id="historyEntries" class="space-y-12"></div>
+    <div id="finalMasterpiece" class="mt-16 text-center pb-10 flex flex-col items-center"></div>
+    
+    <div id="treeContainer" class="mt-8 mb-20 bg-white p-8 rounded-xl shadow-sm border border-slate-200 hidden flex flex-col items-center">
+        <h2 class="text-3xl font-bold text-center text-slate-800 mb-8">Evolution Tree</h2>
+        <div id="treeWrapper" class="w-full overflow-auto max-h-[75vh] pb-4 relative transition-all duration-300 select-none">
+            <div class="css-tree" id="cssTree">
+                <ul id="treeRoot"></ul>
+            </div>
+        </div>
+        <button id="fitTreeBtn" onclick="toggleFitTree()" class="mt-4 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2 px-6 rounded-lg transition shadow-sm border border-slate-300">Attempt to fit to screen</button>
+    </div>
+
+    <!-- Replay Modal (Exported) -->
+    <div id="replayModal" class="fixed inset-0 bg-slate-900/90 hidden z-[100] overflow-y-auto p-4 sm:p-8">
+        <button onclick="closeModal()" class="fixed top-4 right-4 sm:top-6 sm:right-8 text-white hover:text-slate-300 text-5xl leading-none z-[110] drop-shadow-md">&times;</button>
+        <div class="bg-white rounded-xl p-6 w-full max-w-5xl mx-auto flex flex-col items-center relative shadow-2xl mt-4 sm:mt-8 mb-10">
+            <h3 class="text-2xl font-bold mb-6 text-slate-800" id="modalTitle">Replay</h3>
+            <div id="modalAnalysisDisplay" class="w-full text-slate-700 italic text-sm mb-4 bg-slate-50 p-4 rounded-lg border border-slate-200 hidden"></div>
+            <div class="bg-slate-50 border rounded w-full flex justify-center p-2 mb-4">
+                <canvas id="modalCanvas" width="800" height="600" class="max-w-full h-auto bg-white rounded shadow"></canvas>
+            </div>
+            <div id="modalCodeDisplay" class="w-full bg-slate-800 text-slate-200 p-4 rounded-lg font-mono text-[10px] sm:text-xs overflow-y-auto max-h-40 mb-4 custom-scroll whitespace-pre-wrap break-words"></div>
+            <div class="flex flex-col sm:flex-row items-center justify-between w-full gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <div class="flex items-center gap-3 w-full sm:w-1/2">
+                    <label class="text-sm font-semibold text-slate-700 whitespace-nowrap">Speed: <span id="modalSpeedLabel" class="text-blue-600">Medium</span></label>
+                    <input type="range" id="modalAnimSpeed" min="0" max="100" value="50" class="w-full accent-emerald-600">
+                </div>
+                <button onclick="playModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold shadow transition flex items-center gap-2 whitespace-nowrap">▶ Replay Animation</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Param Changes Modal (Exported) -->
+    <div id="paramModal" class="fixed inset-0 bg-slate-900/80 hidden z-[110] overflow-y-auto p-4 items-center justify-center">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md relative shadow-2xl mx-auto mt-20">
+            <button onclick="closeParamModal()" class="absolute top-3 right-4 text-slate-400 hover:text-slate-800 text-3xl leading-none">&times;</button>
+            <h3 class="text-xl font-bold mb-4 text-slate-800 border-b pb-2">Parameter Changes</h3>
+            <div id="paramModalContent" class="text-sm text-slate-700 leading-relaxed"></div>
+        </div>
+    </div>
+
+    <script>
+        const historyData = JSON.parse(decodeURIComponent(escape(atob("W3sic3RhZ2UiOiJPcmlnaW5hbCBWZXJzaW9uIiwiYmFzZUNvZGUiOiIiLCJjb2RlIjoiRkQgMTAwIiwiZmVlZGJhY2siOm51bGx9LHsic3RhZ2UiOiJJdGVyYXRpb24gMSIsImJhc2VDb2RlIjoiRkQgMTAwIiwiY29kZSI6IkZEIDEwMCIsImZlZWRiYWNrIjoiQXBwbHkgYSByZWN1cnNpdmUgYnJhbmNoaW5nIHJ1bGUgdG8gdGhlIGxpbmUgc2VnbWVudHMgdG8gY3JlYXRlIGEgZnJhY3RhbC1iYXNlZCB0cmVlIHN0cnVjdHVyZSB0aGF0IGRlbW9uc3RyYXRlcyBlbWVyZ2VudCBjb21wbGV4aXR5IGZyb20gYSBzaW1wbGUgaXRlcmF0aXZlIHByb2Nlc3MuIiwic2VsZWN0aW9uTG9nIjoi8J+OsiBSb3VsZXR0ZSBTcGluIFdpbm5lcjogVGhlIE9yaWdpbmFsL0Jhc2UgaW1hZ2Ugd2FzIHNlbGVjdGVkIHRvIG11dGF0ZSBhZ2FpbiEgKEhpZ2hlc3Qgc2NvcmluZyBjYW5kaWRhdGUhKSIsInRhc3RlIjoiTWF0aGVtYXRpY2FsIGJlYXV0eSB3aGVyZSBzaW1wbGUgcnVsZXMgZ2VuZXJhdGUgY29tcGxleGl0eSIsIm1hZ25pdHVkZSI6IjEiLCJtYWduaXR1ZGVUZXh0IjoiTWFrZSBhbiBFWFRSRU1FTFkgU1VCVExFIGNoYW5nZS4gVHdlYWsgZXhhY3RseSBvbmUgbnVtYmVyIChsaWtlIGFuIGFuZ2xlIG9yIGRpc3RhbmNlKSBieSBhIHRpbnkgYW1vdW50LiBEbyBub3QgYWRkIGFueSBuZXcgY29tbWFuZHMuIiwidmFyaWFudHMiOlt7InRpdGxlIjoiT3JpZ2luYWwvQmFzZSIsImNvZGUiOiJGRCAxMDAiLCJzY29yZSI6IjIuMCIsImFlc3RoZXRpYyI6IjIuMCIsIm5vdmVsdHkiOiIwLjAiLCJyZWFzb24iOiJBIHNpbmdsZSB2ZXJ0aWNhbCBsaW5lIHJlcHJlc2VudHMgYSBzdGFydGluZyBwb2ludCBvZiBhIHJ1bGUsIGJ1dCBpdCBmYWlscyB0byBnZW5lcmF0ZSBhbnkgZW1lcmdlbnQgY29tcGxleGl0eSwgcmVzdWx0aW5nIGluIGEgc3RlcmlsZSBhbmQgb3Zlcmx5IHNpbXBsaXN0aWMgY29tcG9zaXRpb24uIiwiaXNXaW5uZXIiOnRydWV9LHsidGl0bGUiOiJWYXJpYW50IDEiLCJjb2RlIjoiRkQgMTAwLjEiLCJzY29yZSI6IjIuMCIsImFlc3RoZXRpYyI6IjIuMCIsIm5vdmVsdHkiOiIwLjAiLCJyZWFzb24iOiJUaGlzIHZhcmlhbnQgYXBwZWFycyBpZGVudGljYWwgdG8gdGhlIGZpcnN0IGltYWdlLCBwcm92aWRpbmcgbm8gdmlzdWFsIGRpc3RpbmN0aW9uIG9yIHByb2dyZXNzaW9uIHRvd2FyZCBhIGNvbXBsZXggbWF0aGVtYXRpY2FsIHN5c3RlbS4iLCJpc1dpbm5lciI6ZmFsc2V9LHsidGl0bGUiOiJWYXJpYW50IDIiLCJjb2RlIjoiRkQgOTkuOSIsInNjb3JlIjoiMi4wIiwiYWVzdGhldGljIjoiMi4wIiwibm92ZWx0eSI6IjAuMCIsInJlYXNvbiI6IlRoZXJlIGlzIG5vIGRpc2Nlcm5pYmxlIGNoYW5nZSBmcm9tIHRoZSBvcmlnaW5hbDsgdGhlIGxhY2sgb2YgdmFyaWF0aW9uIHByZXZlbnRzIHRoZSBleHBsb3JhdGlvbiBvZiBob3cgc2ltcGxlIHJ1bGVzIGNhbiBldm9sdmUgaW50byBpbnRyaWNhdGUgcGF0dGVybnMuIiwiaXNXaW5uZXIiOmZhbHNlfV19XQ=="))));
+        const winnersData = JSON.parse(decodeURIComponent(escape(atob("W10="))));
+        
+        // Embedded Execution Engine
+        const activeAnimations = {};
+        function stripHtmlAndEscape(str) {
+            if (!str) return "";
+            return String(str).replace(/<[^>]*>?/gm, '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        function compileLogo(code, canvasWidth, canvasHeight) {
+            let state = { x: canvasWidth / 2, y: canvasHeight / 2, angle: -Math.PI / 2, penDown: true, opCount: 0, color: '#0f172a', width: 1.5 };
+            let queue = [];
+            const tokens = code.toUpperCase().replace(/\[/g, ' [ ').replace(/\]/g, ' ] ').trim().split(/\s+/);
+            
+            function parseBlock(t) {
+                let block = [];
+                while (t.length > 0) {
+                    let token = t.shift();
+                    if (!token) continue;
+                    if (token === ']') return block; 
+                    if (token === 'REPEAT') {
+                        let countStr = t.shift();
+                        let count = parseInt(countStr) || 0;
+                        if (countStr === 'REPCOUNT') count = 'REPCOUNT';
+                        let bracket = t.shift();
+                        if (bracket === '[') block.push({ cmd: 'REPEAT', count: count, body: parseBlock(t) });
+                    } else if (['FD', 'BK', 'RT', 'LT', 'SETPS', 'SETW', 'PENSIZE', 'SETPC', 'COLOR'].includes(token)) {
+                        let argTokens = [];
+                        while (t.length > 0 && !['FD', 'BK', 'RT', 'LT', 'SETPS', 'SETW', 'PENSIZE', 'SETPC', 'COLOR', 'PU', 'PD', 'REPEAT', ']', '['].includes(t[0])) {
+                            argTokens.push(t.shift());
+                        }
+                        block.push({ cmd: token, arg: argTokens.join(' ') });
+                    } else if (['PU', 'PD'].includes(token)) block.push({ cmd: token });
+                }
+                return block;
+            }
+
+            const ast = parseBlock(tokens);
+
+            function runAST(nodes, repcount) {
+                for (let node of nodes) {
+                    if (state.opCount > 100000) return; 
+                    state.opCount++;
+
+                    if (node.cmd === 'REPEAT') {
+                        let countStr = String(node.count).replace(/REPCOUNT/g, repcount);
+                        let count = 0;
+                        try { 
+                            if (/[a-zA-Z#]/.test(countStr)) throw new Error();
+                            count = Function('"use strict";return (' + countStr + ')')(); 
+                        } catch(e) { count = parseInt(countStr) || 0; }
+                        let iters = Math.min(count, 1000); 
+                        for (let i = 1; i <= iters; i++) {
+                            if (state.opCount > 100000) return;
+                            runAST(node.body, i);
+                        }
+                    } else {
+                        let argStr = node.arg || "";
+                        let evalStr = argStr.replace(/REPCOUNT/g, repcount);
+                        let argVal;
+                        
+                        let sanitized = evalStr
+                            .replace(/SIN/gi, 'Math.sin')
+                            .replace(/COS/gi, 'Math.cos')
+                            .replace(/TAN/gi, 'Math.tan')
+                            .replace(/SQRT/gi, 'Math.sqrt')
+                            .replace(/RANDOM\s+(\d+)/gi, 'Math.floor(Math.random()*$1)')
+                            .replace(/RANDOM/gi, 'Math.random()');
+                            
+                        try {
+                            const cleanCheck = sanitized.replace(/Math\.[a-z]+/g, '').replace(/[0-9\.\+\-\*\/\(\)\s]/g, '');
+                            if (cleanCheck.length > 0) throw new Error();
+                            argVal = Function('"use strict";return (' + sanitized + ')')();
+                        } catch(e) {
+                            argVal = evalStr; 
+                        }
+
+                        let numVal = parseFloat(argVal) || 0;
+                        if (!isFinite(numVal)) numVal = 0; 
+                        
+                        let prevX = state.x, prevY = state.y;
+
+                        if (node.cmd === 'FD') {
+                            state.x += numVal * Math.cos(state.angle);
+                            state.y += numVal * Math.sin(state.angle);
+                            if (state.penDown) queue.push({type: 'line', x1: prevX, y1: prevY, x2: state.x, y2: state.y, c: state.color, w: state.width});
+                        } else if (node.cmd === 'BK') {
+                            state.x -= numVal * Math.cos(state.angle);
+                            state.y -= numVal * Math.sin(state.angle);
+                            if (state.penDown) queue.push({type: 'line', x1: prevX, y1: prevY, x2: state.x, y2: state.y, c: state.color, w: state.width});
+                        } else if (node.cmd === 'RT') {
+                            state.angle += numVal * Math.PI / 180;
+                        } else if (node.cmd === 'LT') {
+                            state.angle -= numVal * Math.PI / 180;
+                        } else if (node.cmd === 'PU') {
+                            state.penDown = false;
+                        } else if (node.cmd === 'PD') {
+                            state.penDown = true;
+                        } else if (node.cmd === 'SETPS' || node.cmd === 'SETW' || node.cmd === 'PENSIZE') {
+                            state.width = Math.max(0.1, numVal);
+                        } else if (node.cmd === 'SETPC' || node.cmd === 'COLOR') {
+                            const logoColors = [
+                                '#000000', '#0000FF', '#00FF00', '#00FFFF', '#FF0000', '#FF00FF', '#FFFF00', '#FFFFFF', 
+                                '#A52A2A', '#D2B48C', '#008000', '#40E0D0', '#FFA500', '#800080', '#FFD700', '#C0C0C0',
+                                '#F0F8FF', '#FAEBD7', '#7FFFD4', '#F0FFFF', '#F5F5DC', '#FFE4C4', '#FFEBCD', '#8A2BE2', 
+                                '#DEB887', '#5F9EA0', '#7FFF00', '#D2691E', '#FF7F50', '#6495ED', '#FFF8DC', '#DC143C', 
+                                '#00008B', '#008B8B', '#B8860B', '#A9A9A9', '#006400', '#BDB76B', '#8B008B', '#556B2F', 
+                                '#FF8C00', '#9932CC', '#8B0000', '#E9967A', '#8FBC8F', '#483D8B', '#2F4F4F', '#00CED1', 
+                                '#9400D3', '#FF1493', '#00BFFF', '#696969', '#1E90FF', '#B22222', '#FFFAF0', '#228B22', 
+                                '#DCDCDC', '#F8F8FF', '#DAA520', '#808080', '#ADFF2F', '#F0FFF0', '#FF69B4', '#CD5C5C', 
+                                '#4B0082', '#FFFFF0', '#F0E68C', '#E6E6FA', '#FFF0F5', '#7CFC00', '#FFFACD', '#ADD8E6', 
+                                '#F08080', '#E0FFFF', '#FAFAD2', '#D3D3D3', '#90EE90', '#FFB6C1', '#FFA07A', '#20B2AA', 
+                                '#87CEFA', '#778899', '#B0C4DE', '#FFFFE0', '#32CD32', '#FAF0E6', '#800000', '#66CDAA', 
+                                '#0000CD', '#BA55D3', '#9370DB', '#3CB371', '#7B68EE', '#00FA9A', '#48D1CC', '#C71585', 
+                                '#191970', '#F5FFFA', '#FFE4E1', '#FFE4B5', '#FFDEAD', '#000080', '#FDF5E6', '#808000', 
+                                '#6B8E23', '#FF4500', '#DA70D6', '#EEE8AA', '#98FB98', '#AFEEEE', '#DB7093', '#FFEFD5', 
+                                '#FFDAB9', '#CD853F', '#FFC0CB', '#DDA0DD', '#B0E0E6', '#BC8F8F', '#4169E1', '#8B4513', 
+                                '#FA8072', '#F4A460', '#2E8B57', '#FFF5EE', '#A0522D', '#87CEEB', '#6A5ACD', '#708090', 
+                                '#FFFAFA', '#00FF7F', '#4682B4', '#008080', '#D8BFD8', '#FF6347', '#EE82EE', '#F5DEB3', 
+                                '#F5F5F5', '#9ACD32'
+                            ];
+                            let colorIndex = parseInt(argVal);
+                            // Support modulo looping for numbers, but fall back to string colors like "red" or "#FF0000"
+                            if (!isNaN(colorIndex) && !String(argVal).startsWith('#')) {
+                                state.color = logoColors[Math.abs(colorIndex) % logoColors.length];
+                            } else {
+                                state.color = argVal;
+                            }
+                        }
+                    }
+                }
+            }
+            runAST(ast, 1);
+            return queue;
+        }
+        function renderQueue(canvasObj, queue, speedMultiplier = 0) {
+            const canvas = typeof canvasObj === 'string' ? document.getElementById(canvasObj) : canvasObj;
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.globalCompositeOperation = 'destination-over';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.strokeStyle = '#0f172a'; // Reset default color to prevent leaks across reused modal canvases
+
+            if (activeAnimations[canvas.id]) cancelAnimationFrame(activeAnimations[canvas.id]);
+
+            const getSpeed = () => typeof speedMultiplier === 'function' ? speedMultiplier() : speedMultiplier;
+            let initialSpeed = getSpeed();
+
+            if (initialSpeed === 0 || queue.length === 0) {
+                for (let op of queue) {
+                    ctx.beginPath(); ctx.moveTo(op.x1, op.y1); ctx.lineTo(op.x2, op.y2);
+                    ctx.strokeStyle = op.c; ctx.lineWidth = op.w; ctx.stroke();
+                }
+                return;
+            }
+
+            let i = 0;
+            
+            function animate() {
+                let currentSpeed = getSpeed();
+                if (currentSpeed === 0) {
+                    for (; i < queue.length; i++) {
+                        let op = queue[i];
+                        ctx.beginPath(); ctx.moveTo(op.x1, op.y1); ctx.lineTo(op.x2, op.y2);
+                        ctx.strokeStyle = op.c; ctx.lineWidth = op.w; ctx.stroke();
+                    }
+                    return;
+                }
+
+                let linesPerFrame = Math.max(1, Math.floor(currentSpeed)); 
+                let limit = Math.min(i + linesPerFrame, queue.length);
+                for (; i < limit; i++) {
+                    let op = queue[i];
+                    ctx.beginPath(); ctx.moveTo(op.x1, op.y1); ctx.lineTo(op.x2, op.y2);
+                    ctx.strokeStyle = op.c; ctx.lineWidth = op.w; ctx.stroke();
+                }
+                if (i < queue.length) activeAnimations[canvas.id] = requestAnimationFrame(animate);
+            }
+            animate();
+        }
+        function autoFitQueue(queue, canvasWidth, canvasHeight) {
+            if (queue.length === 0) return queue;
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            let hasLines = false;
+            for (let op of queue) {
+                hasLines = true;
+                if (op.x1 < minX) minX = op.x1; if (op.x1 > maxX) maxX = op.x1;
+                if (op.y1 < minY) minY = op.y1; if (op.y1 > maxY) maxY = op.y1;
+                if (op.x2 < minX) minX = op.x2; if (op.x2 > maxX) maxX = op.x2;
+                if (op.y2 < minY) minY = op.y2; if (op.y2 > maxY) maxY = op.y2;
+            }
+            if (!hasLines) return queue;
+            
+            const drawW = maxX - minX;
+            const drawH = maxY - minY;
+            if (drawW === 0 && drawH === 0) return queue;
+            
+            const padX = canvasWidth * 0.05;
+            const padY = canvasHeight * 0.05;
+            const availW = canvasWidth - padX * 2;
+            const availH = canvasHeight - padY * 2;
+            
+            let scaleX = drawW > 0 ? availW / drawW : Infinity;
+            let scaleY = drawH > 0 ? availH / drawH : Infinity;
+            let scale = Math.min(scaleX, scaleY);
+            if (scale === Infinity || isNaN(scale)) scale = 1;
+
+            const cx = (minX + maxX) / 2;
+            const cy = (minY + maxY) / 2;
+            const offsetX = canvasWidth / 2 - cx * scale;
+            const offsetY = canvasHeight / 2 - cy * scale;
+            
+            return queue.map(op => ({
+                ...op, x1: op.x1 * scale + offsetX, y1: op.y1 * scale + offsetY,
+                x2: op.x2 * scale + offsetX, y2: op.y2 * scale + offsetY, w: Math.max(0.1, op.w * scale)
+            }));
+        }
+        function executeLogo(canvasObj, code, speed = 0) {
+            const canvas = typeof canvasObj === 'string' ? document.getElementById(canvasObj) : canvasObj;
+            let queue = compileLogo(code, canvas.width, canvas.height);
+            queue = autoFitQueue(queue, canvas.width, canvas.height); 
+            renderQueue(canvas, queue, speed);
+        }
+        function generateDiffHTML(oldStr, newStr) {
+            if (!oldStr) oldStr = "";
+            const oldTokens = oldStr.trim().split(/\s+/).filter(Boolean);
+            const newTokens = newStr.trim().split(/\s+/).filter(Boolean);
+            
+            const dp = Array(oldTokens.length + 1).fill(null).map(() => new Int32Array(newTokens.length + 1));
+            for (let i = 1; i <= oldTokens.length; i++) {
+                for (let j = 1; j <= newTokens.length; j++) {
+                    if (oldTokens[i - 1] === newTokens[j - 1]) dp[i][j] = dp[i - 1][j - 1] + 1;
+                    else dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+                }
+            }
+            
+            let i = oldTokens.length, j = newTokens.length;
+            const diff = [];
+            while (i > 0 || j > 0) {
+                if (i > 0 && j > 0 && oldTokens[i - 1] === newTokens[j - 1]) {
+                    diff.unshift({ val: oldTokens[i - 1], type: 'eq' });
+                    i--; j--;
+                } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+                    diff.unshift({ val: newTokens[j - 1], type: 'add' });
+                    j--;
+                } else { i--; }
+            }
+            
+            let html = '';
+            let currentType = null;
+            let currentText = [];
+            const flush = () => {
+                if (currentText.length > 0) {
+                    if (currentType === 'add') html += `<span class="diff-add font-bold px-1 rounded">${currentText.join(' ')}</span> `;
+                    else html += `<span>${currentText.join(' ')}</span> `;
+                }
+            };
+            for (const d of diff) {
+                if (d.type !== currentType) { flush(); currentType = d.type; currentText = [d.val]; }
+                else currentText.push(d.val);
+            }
+            flush();
+            return html.trim();
+        }
+        function parseMarkdown(text) {
+            if (!text) return "";
+            return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>');                          
+        }
+        function enableDragScroll(wrapperId) {
+            const slider = document.getElementById(wrapperId);
+            if (!slider) return;
+            let isDown = false;
+            let isDragging = false;
+            let startX, startY, scrollLeft, scrollTop;
+
+            slider.addEventListener('mousedown', (e) => {
+                isDown = true;
+                isDragging = false;
+                slider.classList.add('cursor-grabbing');
+                slider.classList.remove('cursor-grab');
+                startX = e.pageX - slider.offsetLeft;
+                startY = e.pageY - slider.offsetTop;
+                scrollLeft = slider.scrollLeft;
+                scrollTop = slider.scrollTop;
+            });
+
+            slider.addEventListener('mouseleave', () => {
+                isDown = false;
+                slider.classList.remove('cursor-grabbing');
+                slider.classList.add('cursor-grab');
+            });
+
+            slider.addEventListener('mouseup', () => {
+                isDown = false;
+                slider.classList.remove('cursor-grabbing');
+                slider.classList.add('cursor-grab');
+            });
+
+            slider.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - slider.offsetLeft;
+                const y = e.pageY - slider.offsetTop;
+                const walkX = (x - startX) * 1.5;
+                const walkY = (y - startY) * 1.5;
+                
+                if (Math.abs(walkX) > 5 || Math.abs(walkY) > 5) {
+                    isDragging = true;
+                }
+
+                slider.scrollLeft = scrollLeft - walkX;
+                slider.scrollTop = scrollTop - walkY;
+            });
+
+            // Intercept clicks if the user was just dragging to pan
+            slider.addEventListener('click', (e) => {
+                if (isDragging) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                }
+            }, true);
+            
+            slider.classList.add('cursor-grab');
+        }
+        function playNotificationSound() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
+                
+                gainNode.gain.setValueAtTime(0, ctx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                
+                osc.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                
+                osc.start();
+                osc.stop(ctx.currentTime + 0.5);
+            } catch (e) {
+                console.log("Audio notification failed:", e);
+            }
+        }
+
+        // --- LAZY OBSERVER FOR EXPORTED HTML ---
+        const lazyObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const canvas = entry.target;
+                    const eIdx = canvas.getAttribute('data-entry-index');
+                    const vIdx = canvas.getAttribute('data-var-index');
+                    if (eIdx !== null) {
+                        const hEntry = historyData[eIdx];
+                        let code = "";
+                        if (vIdx === 'main') {
+                            code = hEntry.code;
+                        } else if (hEntry.variants && hEntry.variants[vIdx]) {
+                            code = hEntry.variants[vIdx].code;
+                        } else if (vIdx && vIdx.startsWith('pool_')) {
+                            const pIdx = parseInt(vIdx.split('_')[1]);
+                            code = hEntry.variants[pIdx].code;
+                        }
+                        
+                        if (code) {
+                            executeLogo(canvas, code, 0); 
+                        }
+                        canvas.removeAttribute('data-entry-index');
+                        canvas.removeAttribute('data-var-index');
+                    }
+                    observer.unobserve(canvas);
+                }
+            });
+        }, { rootMargin: '300px' });
+
+        function renderEntries() {
+            const container = document.getElementById('historyEntries');
+            let html = '';
+            
+            historyData.forEach((entry, index) => {
+                html += `
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-2xl font-bold text-blue-600 mb-6">${entry.stage}</h2>
+                `;
+
+                if (entry.taste && entry.magnitude) {
+                    html += `
+                    <div class="bg-green-50 border-l-4 border-green-600 p-4 rounded mb-6 flex flex-col sm:flex-row gap-4 justify-between">
+                        <div>
+                            <h3 class="font-bold text-green-800 text-sm uppercase tracking-wider mb-2">Parameters</h3>
+                            <p class="text-slate-700 text-sm"><strong>Magnitude:</strong> Level ${entry.magnitude}/10 (${entry.magnitudeText})</p>
+                            <p class="text-slate-700 text-sm"><strong>Taste:</strong> "${entry.taste}"</p>
+                        </div>
+                    </div>`;
+                }
+
+                if (entry.selectionLog) {
+                    html += `
+                    <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded mb-6 shadow-sm">
+                        <h3 class="font-bold text-indigo-800 text-sm uppercase tracking-wider mb-1">Selection Result</h3>
+                        <p class="text-indigo-900 font-medium">${entry.selectionLog}</p>
+                    </div>`;
+                }
+
+                if (entry.variants && entry.variants.length > 0) {
+                    html += `
+                    <div class="mb-8">
+                        <h3 class="font-bold text-slate-800 text-lg mb-4">Evaluated Pool (Variants & Backups)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">`;
+                        
+                    entry.variants.forEach((v, vIndex) => {
+                        html += `
+                            <div class="bg-slate-50 border ${v.isWinner ? 'border-green-500 ring-2 ring-green-200' : 'border-slate-200'} rounded-lg p-4 flex flex-col h-full">
+                                <div class="font-bold text-slate-800 flex justify-between items-center mb-3">
+                                    <span>${v.title}</span>
+                                    ${v.isWinner ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold">🏆 Winner</span>' : ''}
+                                </div>
+                                <div class="relative group cursor-pointer bg-white border border-slate-200 rounded p-2 mb-3" onclick="openModal(${index}, 'pool_${vIndex}')" title="${stripHtmlAndEscape(v.reason)}">
+                                    <canvas class="lazy-canvas w-full h-auto rounded shadow-sm" width="400" height="300" data-entry-index="${index}" data-var-index="pool_${vIndex}"></canvas>
+                                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition rounded">
+                                        <span class="text-white font-bold bg-blue-600 px-3 py-1 rounded-full text-sm shadow">🔍 Enlarge & Replay</span>
+                                    </div>
+                                </div>
+                                <div class="font-bold text-purple-700 text-sm mb-1 flex items-baseline gap-2">
+                                    <span title="Total Score = Aesthetic Score + (Novelty Score &times; 0.5)" class="cursor-help border-b border-dotted border-purple-400">Total Score: ${v.score}</span>
+                                    ${v.novelty > 0 ? `<span class="text-[10px] text-purple-500 font-normal">(Aesthetic: ${v.aesthetic}, Novelty: ${v.novelty})</span>` : `<span class="text-[10px] text-purple-500 font-normal">(Aesthetic: ${v.aesthetic})</span>`}
+                                </div>
+                                <div class="text-sm text-slate-600 italic mb-3">
+                                    <div class="line-clamp-3 transition-all duration-200" id="export_reason_${index}_${vIndex}">${stripHtmlAndEscape(v.reason)}</div>
+                                    <button type="button" onclick="const el = document.getElementById('export_reason_${index}_${vIndex}'); el.classList.toggle('line-clamp-3'); this.innerText = el.classList.contains('line-clamp-3') ? 'Read more' : 'Show less';" class="text-blue-600 hover:text-blue-800 text-[10px] font-semibold mt-1 focus:outline-none">Read more</button>
+                                </div>
+                                <div class="mt-auto bg-slate-800 text-slate-200 p-2 rounded text-[10px] font-mono overflow-y-auto custom-scroll max-h-32">
+                                    ${generateDiffHTML(entry.baseCode, v.code)}
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += `</div></div>`;
+                } else {
+                    html += `
+                    <div class="mb-8">
+                        <h3 class="font-bold text-slate-800 text-lg mb-4">Result</h3>
+                        <div class="relative group cursor-pointer bg-white border border-slate-200 rounded p-2 mb-3 inline-block" onclick="openModal(${index}, 'main')" title="${stripHtmlAndEscape(entry.feedback)}">
+                            <canvas class="lazy-canvas max-w-md w-full h-auto rounded shadow-sm" width="400" height="300" data-entry-index="${index}" data-var-index="main"></canvas>
+                            <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition rounded">
+                                <span class="text-white font-bold bg-blue-600 px-3 py-1 rounded-full text-sm shadow">🔍 Enlarge & Replay</span>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }
+                
+                html += `
+                    <div class="mb-6">
+                        <div class="flex justify-between items-end mb-2">
+                            <h3 class="font-bold text-slate-700 uppercase text-sm">Main Logo Code Applied</h3>
+                        </div>
+                        <div class="code-block custom-scroll">${generateDiffHTML(entry.baseCode, entry.code)}</div>
+                    </div>
+                `;
+
+                if (entry.feedback) {
+                    html += `
+                    <div class="bg-purple-50 border-l-4 border-purple-600 p-4 rounded mt-6">
+                        <h3 class="font-bold text-purple-800 text-sm uppercase tracking-wider mb-2">Selector/Critic Suggested Next Step</h3>
+                        <div class="text-purple-900">${parseMarkdown(entry.feedback)}</div>
+                    </div>`;
+                }
+                
+                html += `</div>`;
+            });
+            
+            container.innerHTML = html;
+
+            const finalEntry = historyData[historyData.length - 1];
+            if (finalEntry) {
+                const finalCodes = [...new Set([...winnersData, finalEntry.code])];
+                const titleText = finalCodes.length > 1 ? "Final Masterpieces" : "Final Masterpiece";
+                let masterPiecesHtml = `<h2 class="text-4xl font-bold text-green-700 mb-8">${titleText}</h2><div class="space-y-12 w-full flex flex-col items-center">`;
+                
+                finalCodes.forEach((code, idx) => {
+                    const finalId = 'canvas_final_masterpiece_' + idx;
+                    
+                    let analysisText = "Original Logo Code";
+                    for (let i = historyData.length - 1; i >= 0; i--) {
+                        if (historyData[i].variants) {
+                            const v = historyData[i].variants.find(v => v.code === code);
+                            if (v && v.reason) {
+                                analysisText = v.reason;
+                                break;
+                            }
+                        }
+                    }
+
+                    masterPiecesHtml += `
+                        <div class="inline-block border-4 border-green-500 rounded-xl p-4 bg-white shadow-2xl relative w-full max-w-4xl flex flex-col items-center gap-4">
+                            <canvas id="${finalId}" width="800" height="600" class="w-full rounded bg-white"></canvas>
+                            
+                            <div class="w-full text-left bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <h4 class="font-bold text-purple-800 text-sm uppercase tracking-wider mb-1">Selector/Critic's Analysis</h4>
+                                <div class="text-slate-700 italic text-sm mb-4">${stripHtmlAndEscape(analysisText)}</div>
+                                
+                                <h4 class="font-bold text-slate-700 text-sm uppercase tracking-wider mb-1">Logo Code</h4>
+                                <div class="bg-slate-800 text-slate-200 p-4 rounded-lg font-mono text-[10px] sm:text-xs overflow-y-auto max-h-40 custom-scroll whitespace-pre-wrap break-words">${code}</div>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row items-center justify-between w-full gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <div class="flex items-center gap-3 w-full sm:w-1/2">
+                                    <label class="text-sm font-semibold text-slate-700 whitespace-nowrap">Speed: <span id="masterpieceSpeedLabel_${idx}" class="text-blue-600">Medium</span></label>
+                                    <input type="range" id="masterpieceSpeed_${idx}" min="0" max="100" value="50" class="w-full accent-emerald-600">
+                                </div>
+                                <button onclick="executeMasterpiece(${idx})" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold shadow transition flex items-center gap-2 whitespace-nowrap">▶ Replay</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                masterPiecesHtml += `</div>`;
+                document.getElementById('finalMasterpiece').innerHTML = masterPiecesHtml;
+            }
+        }
+        
+        function updateMasterpieceSpeedLabel(idx, val) {
+            val = parseInt(val);
+            document.getElementById('masterpieceSpeedLabel_' + idx).innerText = val === 100 ? "Instant" : (val < 30 ? "Slow" : (val < 70 ? "Medium" : "Fast"));
+        }
+
+        function getMasterpieceSpeed(idx) {
+            let val = parseInt(document.getElementById('masterpieceSpeed_' + idx).value);
+            if (val === 100) return 0;
+            return Math.max(1, (val / 100) * 50); 
+        }
+
+        function executeMasterpiece(idx) {
+            const finalCodes = [...new Set([...winnersData, historyData[historyData.length - 1].code])];
+            executeLogo('canvas_final_masterpiece_' + idx, finalCodes[idx], () => getMasterpieceSpeed(idx));
+        }
+
+        // Modal Logic (Exported)
+        let currentModalCode = '';
+        
+        function updateModalSpeedLabel(val) {
+            val = parseInt(val);
+            document.getElementById('modalSpeedLabel').innerText = val === 100 ? "Instant" : (val < 30 ? "Slow" : (val < 70 ? "Medium" : "Fast"));
+        }
+
+        function getModalSpeed() {
+            let val = parseInt(document.getElementById('modalAnimSpeed').value);
+            if (val === 100) return 0;
+            return Math.max(1, (val / 100) * 50); 
+        }
+
+        function openModal(entryIndex, varIndex, nodeId = null) {
+            window.lastClickedExportTreeNodeId = nodeId;
+            const entry = historyData[entryIndex];
+            if (!entry) return;
+            let analysis = "";
+            let selLogHtml = entry.selectionLog ? `<div class="mb-3 text-indigo-700 font-semibold bg-indigo-50 p-2 rounded border border-indigo-200">${entry.selectionLog}</div>` : '';
+            
+            currentModalCode = varIndex === 'main' ? entry.code : (typeof varIndex === 'string' && varIndex.startsWith('pool_') ? entry.variants[parseInt(varIndex.split('_')[1])].code : entry.variants[varIndex].code);
+            
+            let title = "";
+            if (varIndex === 'main') {
+                title = entry.stage;
+                analysis = selLogHtml + entry.feedback;
+            } else if (typeof varIndex === 'string' && varIndex.startsWith('pool_')) {
+                const pIdx = parseInt(varIndex.split('_')[1]);
+                title = `${entry.stage} - ${entry.variants[pIdx].title}`;
+                analysis = selLogHtml + entry.variants[pIdx].reason;
+            } else {
+                title = `${entry.stage} - ${entry.variants[varIndex].title}`;
+                analysis = selLogHtml + entry.variants[varIndex].reason;
+            }
+            
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalCodeDisplay').textContent = currentModalCode;
+            
+            const analysisEl = document.getElementById('modalAnalysisDisplay');
+            if (analysis) {
+                analysisEl.innerHTML = `<strong>Selector/Critic's Analysis / Selection Rationale:</strong><br>` + stripHtmlAndEscape(analysis);
+                analysisEl.classList.remove('hidden');
+            } else {
+                analysisEl.classList.add('hidden');
+            }
+
+            document.getElementById('replayModal').classList.remove('hidden');
+            document.getElementById('replayModal').classList.add('block');
+            playModal();
+        }
+
+        function closeModal() {
+            document.getElementById('replayModal').classList.add('hidden');
+            document.getElementById('replayModal').classList.remove('block');
+            if (activeAnimations['modalCanvas']) cancelAnimationFrame(activeAnimations['modalCanvas']);
+            
+            if (window.lastClickedExportTreeNodeId) {
+                const node = document.getElementById(window.lastClickedExportTreeNodeId);
+                const wrapper = document.getElementById('treeWrapper');
+                if (node && wrapper && typeof isTreeFit !== 'undefined' && !isTreeFit) {
+                    setTimeout(() => {
+                        const nodeRect = node.getBoundingClientRect();
+                        const wrapperRect = wrapper.getBoundingClientRect();
+                        const scrollTarget = wrapper.scrollLeft + (nodeRect.left - wrapperRect.left) - (wrapper.clientWidth / 2) + (nodeRect.width / 2);
+                        wrapper.scrollTo({ left: scrollTarget, behavior: 'smooth' });
+                        if (wrapperRect.top < 0 || wrapperRect.bottom > window.innerHeight) {
+                            wrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
+                    }, 50);
+                }
+                window.lastClickedExportTreeNodeId = null;
+            }
+        }
+
+        function showParamModal(encodedContent) {
+            document.getElementById('paramModalContent').innerHTML = decodeURIComponent(encodedContent);
+            document.getElementById('paramModal').classList.remove('hidden');
+            document.getElementById('paramModal').classList.add('flex');
+        }
+
+        function closeParamModal() {
+            document.getElementById('paramModal').classList.add('hidden');
+            document.getElementById('paramModal').classList.remove('flex');
+        }
+
+        function playModal() {
+            executeLogo('modalCanvas', currentModalCode, getModalSpeed);
+        }
+
+        // --- TREE BUILDER ---
+        function buildAndRenderTree() {
+            if (historyData.length < 2) return;
+            document.getElementById('treeContainer').classList.remove('hidden');
+
+            const nodesMap = {};
+            const rootNode = {
+                id: 'root',
+                code: historyData[0].code,
+                title: 'Original',
+                score: null,
+                isWinner: true,
+                paramChanged: false,
+                paramChangeText: "",
+                reason: "Original Logo Code",
+                entryIndex: 0,
+                varIndex: 'main',
+                children: []
+            };
+            nodesMap[historyData[0].code] = rootNode;
+
+            for (let i = 1; i < historyData.length; i++) {
+                const entry = historyData[i];
+                const parentNode = nodesMap[entry.baseCode] || rootNode;
+                
+                let pChanged = false;
+                let paramChangeText = "";
+                if (i > 1) {
+                    const prev = historyData[i-1];
+                    let diffs = [];
+                    if (String(entry.taste) !== String(prev.taste)) {
+                        diffs.push(`<strong>Taste:</strong><br><span style="text-decoration:line-through; color:#64748b">${stripHtmlAndEscape(prev.taste)}</span><br><span style="color:#16a34a">${stripHtmlAndEscape(entry.taste)}</span>`);
+                    }
+                    if (String(entry.magnitude) !== String(prev.magnitude)) {
+                        diffs.push(`<strong>Magnitude:</strong><br><span style="text-decoration:line-through; color:#64748b">Level ${prev.magnitude} (${prev.magnitudeText})</span><br><span style="color:#16a34a">Level ${entry.magnitude} (${entry.magnitudeText})</span>`);
+                    }
+                    if (diffs.length > 0) {
+                        pChanged = true;
+                        paramChangeText = encodeURIComponent(diffs.join("<br><br>")).replace(/'/g, "%27");
+                    }
+                }
+
+                let mainReason = entry.feedback ? stripHtmlAndEscape(entry.feedback) : "";
+
+                if (entry.variants && entry.variants.length > 0) {
+                    entry.variants.forEach((v, vIdx) => {
+                        // Skip adding purely decayed backups to the tree visually to prevent exploding graphs, 
+                        // unless they actually won this round.
+                        if (v.title.includes('Backup') && !v.isWinner) return;
+                        if (v.title === 'Original/Base' && !v.isWinner) return; 
+
+                        const childNode = {
+                            id: `var_${i}_${vIdx}`,
+                            code: v.code,
+                            title: v.isWinner && v.title.includes('Backup') ? `Resurrected ${v.title}` : `Iter ${i}: ${v.title.replace('Variant ', 'V')}`,
+                            score: v.score,
+                            isWinner: v.code === entry.code,
+                            entryIndex: i,
+                            varIndex: `pool_${vIdx}`,
+                            paramChanged: pChanged,
+                            paramChangeText: paramChangeText,
+                            reason: v.reason,
+                            children: []
+                        };
+                        parentNode.children.push(childNode);
+                        if (!nodesMap[v.code]) {
+                            nodesMap[v.code] = childNode;
+                        }
+                    });
+                } else if (entry.code) {
+                    const childNode = {
+                        id: `iter_${i}`,
+                        code: entry.code,
+                        title: `Iter ${i}`,
+                        score: null,
+                        isWinner: true,
+                        entryIndex: i,
+                        varIndex: 'main',
+                        paramChanged: pChanged,
+                        paramChangeText: paramChangeText,
+                        reason: mainReason,
+                        children: []
+                    };
+                    parentNode.children.push(childNode);
+                    if (!nodesMap[entry.code]) {
+                        nodesMap[entry.code] = childNode;
+                    }
+                }
+            }
+
+            function renderNode(node) {
+                let html = '<li>';
+                let winnerClass = node.isWinner ? 'winner' : '';
+                let nodeId = `export-tree-node-${node.entryIndex}-${node.varIndex}`;
+                let clickHandler = node.id === 'root' 
+                    ? `openModal(0, 'main', '${nodeId}')` 
+                    : `openModal(${node.entryIndex}, '${node.varIndex}', '${nodeId}')`;
+                let nodeTooltip = node.reason ? stripHtmlAndEscape(node.reason) : '';
+                    
+                html += `
+                    <div id="${nodeId}" class="tree-node ${winnerClass}" onclick="${clickHandler}" title="${nodeTooltip}">
+                        <canvas class="lazy-canvas tree-canvas" width="140" height="105" data-entry-index="${node.entryIndex}" data-var-index="${node.varIndex}"></canvas>
+                        <div class="node-title" title="${node.title}">${node.title}</div>
+                        ${node.score ? `<div class="node-score">${node.score}/10</div>` : ''}
+                        ${node.paramChanged ? `<div class="mt-1 bg-amber-100 hover:bg-amber-200 text-amber-800 text-[10px] font-bold px-1 rounded flex items-center justify-center gap-1 mx-auto w-fit transition-colors" title="Click to view parameter changes" onclick="event.stopPropagation(); showParamModal('${node.paramChangeText}')">⚙️ Params changed</div>` : ''}
+                    </div>
+                `;
+                
+                if (node.children && node.children.length > 0) {
+                    html += '<ul>';
+                    node.children.forEach(c => { html += renderNode(c); });
+                    html += '</ul>';
+                }
+                html += '</li>';
+                return html;
+            }
+
+            document.getElementById('treeRoot').innerHTML = renderNode(rootNode);
+            
+            setTimeout(() => {
+                const tree = document.getElementById('cssTree');
+                const wrapper = document.getElementById('treeWrapper');
+                if(tree && wrapper && typeof isTreeFit !== 'undefined' && !isTreeFit) {
+                    const offset = Math.max(0, (wrapper.clientWidth - tree.scrollWidth) / 2);
+                    tree.style.transform = `translateX(${offset}px)`;
+                }
+            }, 50);
+        }
+
+        let isTreeFit = false;
+        function toggleFitTree() {
+            const tree = document.getElementById('cssTree');
+            const wrapper = document.getElementById('treeWrapper');
+            const btn = document.getElementById('fitTreeBtn');
+            
+            isTreeFit = !isTreeFit;
+            if (isTreeFit) {
+                tree.style.transform = 'none'; 
+                const scale = Math.max(0.35, Math.min(1, wrapper.clientWidth / tree.scrollWidth));
+                const scaledWidth = tree.scrollWidth * scale;
+                const offset = Math.max(0, (wrapper.clientWidth - scaledWidth) / 2);
+                tree.style.transformOrigin = 'top left';
+                tree.style.transform = `translateX(${offset}px) scale(${scale})`;
+                wrapper.style.height = (tree.scrollHeight * scale + 20) + 'px';
+                wrapper.style.maxHeight = 'none';
+                wrapper.style.overflow = 'hidden';
+                btn.innerText = 'Actual Size';
+            } else {
+                tree.style.transform = 'none';
+                const offset = Math.max(0, (wrapper.clientWidth - tree.scrollWidth) / 2);
+                tree.style.transform = `translateX(${offset}px)`;
+                wrapper.style.height = 'auto';
+                wrapper.style.maxHeight = '75vh';
+                wrapper.style.overflow = 'auto';
+                btn.innerText = 'Attempt to fit to screen';
+            }
+        }
+
+        window.onload = () => {
+            renderEntries();
+            buildAndRenderTree();
+            enableDragScroll('treeWrapper');
+            
+            document.querySelectorAll('.lazy-canvas').forEach(c => lazyObserver.observe(c));
+
+            // Attach slider handlers via delegation to catch dynamic masterpiece outputs
+            document.addEventListener('input', (e) => {
+                if (e.target.id === 'modalAnimSpeed') {
+                    updateModalSpeedLabel(e.target.value);
+                } else if (e.target.id && e.target.id.startsWith('masterpieceSpeed_')) {
+                    const idx = e.target.id.split('_')[1];
+                    updateMasterpieceSpeedLabel(idx, e.target.value);
+                }
+            });
+            
+            // Auto-play the final masterpieces on load
+            if (historyData.length > 0) {
+                const finalCodes = [...new Set([...winnersData, historyData[historyData.length - 1].code])];
+                finalCodes.forEach((code, idx) => {
+                    executeMasterpiece(idx);
+                });
+            }
+        };
+    </script>
+</body>
+</html>

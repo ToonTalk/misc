@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How The Run Index Was Built</title>
+  <style>
+    :root{
+      --bg:#f6f1e8;
+      --paper:#fffdf8;
+      --ink:#1f2937;
+      --muted:#6b7280;
+      --line:#ddd1c4;
+      --accent:#8b4513;
+      --accent-soft:#efe0cf;
+      --shadow:0 18px 40px rgba(63,42,24,.08);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Georgia, "Times New Roman", serif;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at top left, #fbecde 0, transparent 28%),
+        linear-gradient(180deg, #f5efe6 0%, #eee5d8 100%);
+      line-height:1.6;
+    }
+    main{
+      max-width:980px;
+      margin:0 auto;
+      padding:32px 20px 64px;
+    }
+    .panel{
+      background:rgba(255,253,248,.92);
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      padding:26px 28px;
+      margin-bottom:20px;
+    }
+    h1,h2,h3{margin:0 0 10px}
+    h1{font-size:2.2rem;line-height:1.1}
+    h2{
+      font-size:1.2rem;
+      margin-top:4px;
+      padding-bottom:8px;
+      border-bottom:2px solid var(--accent-soft);
+    }
+    p{margin:10px 0}
+    ol,ul{margin:10px 0 0 22px}
+    li{margin:8px 0}
+    code{
+      font-family:Consolas, "Courier New", monospace;
+      background:#f2ece3;
+      padding:1px 5px;
+      border-radius:4px;
+    }
+    .meta{
+      color:var(--muted);
+      font-size:.98rem;
+    }
+    .callout{
+      background:#fcf5ec;
+      border-left:4px solid var(--accent);
+      padding:12px 14px;
+      margin-top:14px;
+    }
+    a{
+      color:var(--accent);
+      text-decoration:none;
+      border-bottom:1px solid rgba(139,69,19,.3);
+    }
+    a:hover{border-bottom-color:var(--accent)}
+  </style>
+</head>
+<body>
+  <main>
+    <section class="panel">
+      <h1>How The Run Index Was Built</h1>
+      <p class="meta">Summary of the process used to create the dated run index, pair related pages, extract the best variants, render preview images, and publish the final summary page.</p>
+      <p>The final deliverable was a grouped index page for the HTML runs in <code>C:\Users\toont\Documents\GitHub\misc</code>, covering files from 03/04/2026 onward. Each entry links back to the original run pages and shows a rendered image of the highest-scoring turtle program.</p>
+    </section>
+
+    <section class="panel">
+      <h2>1. Finding The Source Files</h2>
+      <p>The first step was to scan the <code>misc</code> folder for HTML files created on or after 03 April 2026. The naming was not fully consistent, so the selection could not rely on one rigid pattern.</p>
+      <ul>
+        <li>Files were filtered by date and by timestamp-like filename fragments such as <code>2026-04-05T16-35-49</code>.</li>
+        <li>Both newer <code>history</code> pages and matching <code>dissolve</code> pages were included.</li>
+        <li>Older <code>logo-evolution</code> pages were treated as history pages when they used the earlier format.</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>2. Reading The Embedded Data</h2>
+      <p>The run pages were not all simple static documents. Most of the useful information was embedded inside JavaScript.</p>
+      <ul>
+        <li>History pages usually contained a base64-encoded <code>RAW</code> payload with iteration history, variant scores, critic comments, and turtle code.</li>
+        <li>Dissolve pages usually contained frame arrays instead of the full <code>RAW</code> object.</li>
+        <li>A Python build script was written to decode both formats and normalize them into one shared data structure.</li>
+      </ul>
+      <p>The script that performs this normalization is [build_index.py](C:/Users/toont/Documents/New%20project/output/misc-run-index/build_index.py).</p>
+    </section>
+
+    <section class="panel">
+      <h2>3. Pairing Related Pages</h2>
+      <p>Runs often had both a history page and a corresponding animation page. Those needed to appear as one entry.</p>
+      <ul>
+        <li>Filenames were reduced to a normalized stem, removing suffixes such as <code>history</code>, <code>logo-evolution</code>, and <code>dissolve</code>.</li>
+        <li>When more than one candidate existed, the nearest timestamp was used to pair a history page with its matching animation page.</li>
+        <li>Unpaired outliers were still preserved as standalone entries.</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>4. Choosing The Best Variant</h2>
+      <p>Each history page could contain many iterations and variants, so the page needed one representative image per entry.</p>
+      <ul>
+        <li>All scored variants in the embedded run history were collected.</li>
+        <li>The highest total score was used as the primary ranking.</li>
+        <li>Winner flags, aesthetic score, novelty score, and later-stage preference were used as tie-breakers.</li>
+        <li>The selected variant's turtle program became the image source for the entry.</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>5. Rendering The Images</h2>
+      <p>The request was to use the turtle graphics code from the most recent history page. Instead of rewriting the interpreter, the existing one was reused directly.</p>
+      <ul>
+        <li>The most recent history page's browser-side turtle renderer was loaded in Playwright.</li>
+        <li>Each chosen turtle program was injected into that page's existing <code>compileLogo</code>, <code>autoFitQueue</code>, and <code>renderQueue</code> pipeline.</li>
+        <li>A deterministic random seed was used during export so stochastic programs produced stable images.</li>
+        <li>Each entry was exported as a moderate-size PNG, and clicking the thumbnail opens the full-size image.</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>6. Building The Final Page</h2>
+      <p>After the data and images were ready, the summary page itself was generated as HTML.</p>
+      <ul>
+        <li>Entries were grouped by taste.</li>
+        <li>Each card included a cleaned-up title, date, concise run metadata, score details, critic comment, and links to the source pages.</li>
+        <li>Redundant phrasing was removed in a later refinement pass.</li>
+        <li>The label <code>dissolve</code> was renamed to <em>animation of winners</em>.</li>
+      </ul>
+      <p>The published index is [2026-04-03-run-index.html](C:/Users/toont/Documents/GitHub/misc/2026-04-03-run-index.html).</p>
+    </section>
+
+    <section class="panel">
+      <h2>7. Verifying The Result</h2>
+      <p>Before finishing, the output was checked in two ways.</p>
+      <ul>
+        <li>The generated JSON and image folder were checked to make sure every entry had a matching PNG.</li>
+        <li>The final deployed HTML in <code>misc</code> was loaded in the browser to confirm card count, image references, and link labels.</li>
+      </ul>
+      <div class="callout">
+        The final build produced 31 grouped entries from 56 dated source files, with 31 rendered images and matching links back to the original run pages.
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Deliverables</h2>
+      <ul>
+        <li>Main index: [2026-04-03-run-index.html](C:/Users/toont/Documents/GitHub/misc/2026-04-03-run-index.html)</li>
+        <li>Image assets: [2026-04-03-run-index-assets](C:/Users/toont/Documents/GitHub/misc/2026-04-03-run-index-assets)</li>
+        <li>Build workspace: [misc-run-index](C:/Users/toont/Documents/New%20project/output/misc-run-index)</li>
+        <li>Generator: [build_index.py](C:/Users/toont/Documents/New%20project/output/misc-run-index/build_index.py)</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

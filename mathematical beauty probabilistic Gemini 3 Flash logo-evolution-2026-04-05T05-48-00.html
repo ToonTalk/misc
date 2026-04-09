@@ -62,7 +62,7 @@ canvas:hover{opacity:.9}
     <canvas id="mc" width="700" height="700" style="margin-bottom:10px"></canvas>
     <div id="mcode" class="code"></div>
     <div style="display:flex;gap:10px;align-items:center;margin-top:10px">
-      <label style="font-size:.78rem">Speed: <span id="msl">Medium</span></label>
+      <label style="font-size:.78rem">Speed: <span id="msl">6</span></label>
       <input type="range" id="ms" min="0" max="100" value="60" style="flex:1;accent-color:#3b82f6">
       <button onclick="playM()" style="background:#3b82f6;color:#fff;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-weight:600">▶ Replay</button>
     </div>
@@ -513,8 +513,8 @@ const H=RAW.history;const OC=RAW.origCode;
 let MC='';
 document.addEventListener('click',function(ev){const cv=ev.target.closest('canvas[data-code]');if(!cv)return;MC=decodeURIComponent(cv.getAttribute('data-code'));document.getElementById('mtitle').textContent=cv.getAttribute('data-title')||'Canvas';document.getElementById('mcode').textContent=MC;document.getElementById('modal').classList.add('show');playM();});
 function openM(code,title){MC=code;document.getElementById('mtitle').textContent=title;document.getElementById('mcode').textContent=code;document.getElementById('modal').classList.add('show');playM();}
-function playM(){const v=parseInt(document.getElementById('ms').value);drawCode('mc',MC,v===100?0:()=>Math.max(1,(parseInt(document.getElementById('ms').value)/100)*80));}
-document.getElementById('ms').oninput=e=>{const v=parseInt(e.target.value);document.getElementById('msl').textContent=v===100?'Instant':v<30?'Slow':v<70?'Medium':'Fast';};
+function playM(){const v=parseInt(document.getElementById('ms').value);drawCode('mc',MC,()=>Math.max(1,Math.ceil(v/10)));}
+document.getElementById('ms').oninput=e=>{const v=parseInt(e.target.value);document.getElementById('msl').textContent=String(Math.max(1,Math.ceil(v/10)));};
 function render(){
   const root=document.getElementById('root');
   let html='<div class="card"><div class="card-hd">Original Program</div><div class="grid2">';

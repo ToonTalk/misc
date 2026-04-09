@@ -64,7 +64,7 @@
             <div id="modalCodeDisplay" class="w-full bg-slate-800 text-slate-200 p-4 rounded-lg font-mono text-[10px] sm:text-xs overflow-y-auto max-h-40 mb-4 custom-scroll whitespace-pre-wrap break-words"></div>
             <div class="flex flex-col sm:flex-row items-center justify-between w-full gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
                 <div class="flex items-center gap-3 w-full sm:w-1/2">
-                    <label class="text-sm font-semibold text-slate-700 whitespace-nowrap">Speed: <span id="modalSpeedLabel" class="text-blue-600">Medium</span></label>
+                    <label class="text-sm font-semibold text-slate-700 whitespace-nowrap">Speed: <span id="modalSpeedLabel" class="text-blue-600">5</span></label>
                     <input type="range" id="modalAnimSpeed" min="0" max="100" value="50" class="w-full accent-emerald-600">
                 </div>
                 <button onclick="playModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold shadow transition flex items-center gap-2 whitespace-nowrap">▶ Replay Animation</button>
@@ -602,7 +602,7 @@
 
                             <div class="flex flex-col sm:flex-row items-center justify-between w-full gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
                                 <div class="flex items-center gap-3 w-full sm:w-1/2">
-                                    <label class="text-sm font-semibold text-slate-700 whitespace-nowrap">Speed: <span id="masterpieceSpeedLabel_${idx}" class="text-blue-600">Medium</span></label>
+                                    <label class="text-sm font-semibold text-slate-700 whitespace-nowrap">Speed: <span id="masterpieceSpeedLabel_${idx}" class="text-blue-600">5</span></label>
                                     <input type="range" id="masterpieceSpeed_${idx}" min="0" max="100" value="50" class="w-full accent-emerald-600">
                                 </div>
                                 <button onclick="executeMasterpiece(${idx})" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold shadow transition flex items-center gap-2 whitespace-nowrap">▶ Replay</button>
@@ -618,13 +618,13 @@
         
         function updateMasterpieceSpeedLabel(idx, val) {
             val = parseInt(val);
-            document.getElementById('masterpieceSpeedLabel_' + idx).innerText = val === 100 ? "Instant" : (val < 30 ? "Slow" : (val < 70 ? "Medium" : "Fast"));
+            document.getElementById('masterpieceSpeedLabel_' + idx).innerText = String(Math.max(1,Math.ceil(val/10)));
         }
 
         function getMasterpieceSpeed(idx) {
             let val = parseInt(document.getElementById('masterpieceSpeed_' + idx).value);
-            if (val === 100) return 0;
-            return Math.max(1, (val / 100) * 50); 
+            
+            return Math.max(1, Math.ceil(val / 10)); 
         }
 
         function executeMasterpiece(idx) {
@@ -637,13 +637,13 @@
         
         function updateModalSpeedLabel(val) {
             val = parseInt(val);
-            document.getElementById('modalSpeedLabel').innerText = val === 100 ? "Instant" : (val < 30 ? "Slow" : (val < 70 ? "Medium" : "Fast"));
+            document.getElementById('modalSpeedLabel').innerText = String(Math.max(1,Math.ceil(val/10)));
         }
 
         function getModalSpeed() {
             let val = parseInt(document.getElementById('modalAnimSpeed').value);
-            if (val === 100) return 0;
-            return Math.max(1, (val / 100) * 50); 
+            
+            return Math.max(1, Math.ceil(val / 10)); 
         }
 
         function openModal(entryIndex, varIndex, nodeId = null) {

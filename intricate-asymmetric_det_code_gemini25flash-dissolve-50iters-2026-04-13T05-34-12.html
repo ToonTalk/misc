@@ -198,6 +198,31 @@ function compileLogo(code, W, H) {
       if (cmd==='MIN') { const[a,np1]=getValue(T,p,V);const[b,np2]=getValue(T,np1,V);return[Math.min(a,b),np2]; }
       if (cmd==='AND') { const[a,np1]=getValue(T,p,V);const[b,np2]=getValue(T,np1,V);return[(a&&a!==0&&b&&b!==0)?1:0,np2]; }
       if (cmd==='OR')  { const[a,np1]=getValue(T,p,V);const[b,np2]=getValue(T,np1,V);return[(a&&a!==0)||(b&&b!==0)?1:0,np2]; }
+      if (cmd==='ITEM') {
+        const [idx, np1] = evalExpr(T, p, V);
+        const [lst, np2] = getValue(T, np1, V);
+        let val = 0;
+        if (Array.isArray(lst)) {
+          const i = Math.max(1, Math.floor(idx)) - 1;
+          const item = lst[i];
+          if (item && Array.isArray(item) && typeof item[0]==='string' && ['NUM','WORD','CMD','VAR'].includes(item[0])) val = item[1];
+          else val = item;
+        } else if (typeof lst === 'string') val = lst[Math.max(1, Math.floor(idx)) - 1] || '';
+        return [val, np2];
+      }
+      if (cmd==='PICK') {
+        const [lst, np] = getValue(T, p, V);
+        let val = 0;
+        if (Array.isArray(lst) && lst.length > 0) {
+          const i = Math.floor(Math.random() * lst.length);
+          const item = lst[i];
+          if (item && Array.isArray(item) && typeof item[0]==='string' && ['NUM','WORD','CMD','VAR'].includes(item[0])) val = item[1];
+          else val = item;
+        } else if (typeof lst === 'string' && lst.length > 0) {
+          val = lst[Math.floor(Math.random() * lst.length)];
+        }
+        return [val, np];
+      }
       if (cmd==='HEADING') return [heading,p];
       if (cmd==='XCOR')    return [sx-W/2,p];
       if (cmd==='YCOR')    return [H/2-sy,p];

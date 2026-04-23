@@ -1,0 +1,691 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<title>In the style of Bridget Riley's color period — v · rep2 (C) — Dissolve</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0e1a;color:#b8cce4;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:16px 16px 32px;gap:10px}
+h1{font-size:1rem;color:#e8f2ff;letter-spacing:.05em;text-align:center}
+.stage{position:relative;width:min(560px,90vmin);aspect-ratio:1;background:#000;border-radius:8px;overflow:hidden;box-shadow:0 4px 32px rgba(0,0,0,.8)}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%}
+.controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+input[type=range]{accent-color:#3ff5c0;width:100px}
+button{background:#0f1530;border:1px solid #233060;color:#b8cce4;padding:4px 12px;border-radius:5px;cursor:pointer;font-size:.78rem}
+button:hover{border-color:#3ff5c0;color:#3ff5c0}
+.frame-lbl{font-size:.78rem;color:#3ff5c0;min-width:200px;text-align:center;font-family:monospace}
+.progress{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;max-width:560px}
+.pip{width:8px;height:8px;border-radius:50%;background:#233060;cursor:pointer;transition:background .15s}
+.pip.active{background:#3ff5c0}
+.infobar{background:#0d1425;border:1px solid #1e2d50;border-radius:6px;padding:8px 12px;width:min(700px,98vw);display:flex;flex-wrap:wrap;gap:8px 20px;font-size:.68rem;font-family:monospace}
+.ib-k{color:#6a88b0;text-transform:uppercase;letter-spacing:.07em;font-size:.58rem}
+.ib-v{color:#d4e4f7;font-weight:600}
+.ib-group{display:flex;flex-direction:column;gap:1px;min-width:70px}
+.mtbl{width:100%;border-collapse:collapse;font-size:.65rem}
+.mtbl td{padding:3px 8px;border-bottom:1px solid #1e2d50}
+.mk{color:#6a88b0;white-space:nowrap;width:40%}
+.mv{color:#d4e4f7;font-weight:600}
+details{width:min(700px,98vw);background:#0d1425;border:1px solid #1e2d50;border-radius:6px;padding:0}
+summary{padding:8px 12px;font-size:.7rem;color:#6a88b0;cursor:pointer;letter-spacing:.06em;text-transform:uppercase}
+summary:hover{color:#3ff5c0}
+.det-inner{padding:8px 12px 12px}
+</style></head><body>
+<h1>In the style of Bridget Riley's color period — v · rep2 (C)</h1>
+<div class="stage"><canvas id="cvA"></canvas><canvas id="cvB" style="opacity:0;transition:opacity 0ms linear"></canvas></div>
+<div class="frame-lbl" id="frameLbl">Seed</div>
+<div class="controls">
+<span style="font-size:.7rem;color:#6a88b0">Speed</span>
+<input type="range" id="spd" min="0.2" max="10" step="0.1" value="1">
+<span id="spdVal" style="font-size:.7rem;min-width:2.2em">1.0×</span>
+<button id="btnPlay" onclick="togglePlay()">⏸ Pause</button>
+<button onclick="step(-1)">◄</button>
+<button onclick="step(1)">►</button>
+</div>
+<div class="progress" id="prog"></div>
+<div class="infobar" id="infobar"></div>
+<div style="width:min(700px,98vw);background:#0d1425;border:1px solid #1e2d50;border-radius:6px;padding:0"><div style="padding:4px 12px 3px;font-size:.57rem;color:#6a88b0;text-transform:uppercase;letter-spacing:.08em;display:flex;justify-content:space-between;align-items:center"><span>Logo Code</span><button id="btnCopyCode" style="background:none;border:1px solid #233060;color:#6a88b0;padding:1px 8px;font-size:.6rem;border-radius:3px;cursor:pointer" onclick="navigator.clipboard.writeText(document.getElementById('codePanel').textContent).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1400)})">Copy</button></div><pre id="codePanel" style="font-family:monospace;font-size:.68rem;color:#3aaa6a;padding:8px 12px 10px;margin:0;white-space:pre-wrap;word-break:break-all;max-height:160px;overflow-y:auto"></pre></div>
+<details><summary>Experiment Parameters</summary><div class="det-inner"><table class="mtbl">
+    <tr><td class="mk">Seed</td><td class="mv">Line</td></tr> <tr><td class="mk">Taste</td><td class="mv">In the style of Bridget Riley's color period — vibrant parallel stripes and curves in saturated colors creating optical movement.</td></tr> <tr><td class="mk">Model</td><td class="mv">gpt-5.4-mini</td></tr>
+    <tr><td class="mk">Run type</td><td class="mv">Baseline C</td></tr> <tr><td class="mk">Repeat</td><td class="mv">2</td></tr>
+    <tr><td class="mk">Iterations</td><td class="mv">15</td></tr> <tr><td class="mk">Magnitude</td><td class="mv">5</td></tr>
+    <tr><td class="mk">Selection</td><td class="mv">roulette</td></tr> <tr><td class="mk">Variants/iter</td><td class="mv">2</td></tr>
+    <tr><td class="mk">Aesthetic weight</td><td class="mv">1</td></tr> <tr><td class="mk">Novelty weight</td><td class="mv">0.5</td></tr>
+    <tr><td class="mk">Parsimony weight</td><td class="mv">1</td></tr>
+    <tr><td class="mk">Final score</td><td class="mv">3.00</td></tr>
+    <tr><td class="mk">Final aes</td><td class="mv">3.00</td></tr>
+    <tr><td class="mk">Final nov</td><td class="mv">4.00</td></tr>
+    <tr><td class="mk">Cross-model aes</td><td class="mv">1.00 (gemini-3-flash-preview)</td></tr>
+  </table></div></details>
+<script>
+const activeAnims={};
+function compileLogo(code, W, H) {
+  const queue = [];
+  const procs = {};
+  let callDepth = 0;
+  const MAX_DEPTH = 200, MAX_OPS = 120000;
+  let opCount = 0;
+
+  let sx = W/2, sy = H/2, heading = 0;
+  let penDown = true, penColor = '#1e293b', penSize = 1.5;
+  const unknownCmds = new Set();
+
+  const toRad = h => (h - 90) * Math.PI / 180;
+
+  const NAMED_COLORS = {
+    BLACK:'#000',BLUE:'#0055ff',GREEN:'#00cc44',CYAN:'#00ffff',
+    RED:'#ff3333',MAGENTA:'#ff00ff',YELLOW:'#ffff00',WHITE:'#fff',
+    ORANGE:'#ff8800',PURPLE:'#8833cc',BROWN:'#aa6600',PINK:'#ffaacc',
+    GRAY:'#888',GREY:'#888',LIME:'#aaff00',TEAL:'#00aaaa',NAVY:'#000088',
+    GOLD:'#ffcc00',VIOLET:'#8800ff',INDIGO:'#4400aa',CRIMSON:'#cc1133',
+    CORAL:'#ff6644',SKYBLUE:'#66aaff',MINT:'#44ffbb',ROSE:'#ff4477',
+    AMBER:'#ffaa00',SILVER:'#c0c0c0',MAROON:'#800000',OLIVE:'#808000',
+  };
+  const LOGO_PALETTE = [
+    '#000','#0000ff','#00ff00','#00ffff','#ff0000','#ff00ff','#ffff00','#fff',
+    '#a52a2a','#d2b48c','#008000','#40e0d0','#ffa500','#800080','#ffd700','#c0c0c0',
+  ];
+
+  function resolveColor(v) {
+    if (Array.isArray(v)) {
+      // 3-element numeric array → RGB
+      if (v.length === 3 && v.every(x => typeof x === 'number' || !isNaN(Number(x)))) {
+        const r=Math.round(Number(v[0])||0),g=Math.round(Number(v[1])||0),b=Math.round(Number(v[2])||0);
+        return 'rgb('+r+','+g+','+b+')';
+      }
+      // Single-element array (e.g. from ITEM returning a list wrap) → unwrap
+      if (v.length === 1) return resolveColor(v[0]);
+      // Multi-element word array → try first element as a color name
+      return resolveColor(v[0]);
+    }
+    if (typeof v === 'number') return LOGO_PALETTE[Math.abs(Math.floor(v)) % LOGO_PALETTE.length];
+    const s = String(v).trim().toUpperCase();
+    if (NAMED_COLORS[s]) return NAMED_COLORS[s];
+    // Try as CSS hex or named
+    if (s.startsWith('#') || s.startsWith('RGB')) return v;
+    return v;
+  }
+
+  function drawTo(nx, ny) {
+    if (penDown) queue.push({type:'line',x1:sx,y1:sy,x2:nx,y2:ny,c:penColor,w:penSize});
+    sx = nx; sy = ny;
+  }
+
+  function arcLines(cx, cy, r, startA, endA, ccw) {
+    if (r <= 0) return;
+    const span = ccw
+      ? ((startA - endA + 2*Math.PI) % (2*Math.PI)) || 2*Math.PI
+      : ((endA - startA + 2*Math.PI) % (2*Math.PI)) || 2*Math.PI;
+    const n = Math.max(6, Math.round(32 * span / (2*Math.PI)));
+    const step = (ccw ? -1 : 1) * span / n;
+    let px = cx + r*Math.cos(startA), py = cy + r*Math.sin(startA);
+    for (let i = 1; i <= n; i++) {
+      const a = startA + step * i;
+      const nx2 = cx + r*Math.cos(a), ny2 = cy + r*Math.sin(a);
+      if (penDown) queue.push({type:'line',x1:px,y1:py,x2:nx2,y2:ny2,c:penColor,w:penSize});
+      px = nx2; py = ny2;
+    }
+    sx = px; sy = py;
+  }
+
+  function tokenize(src) {
+    src = src.replace(/;[^\n]*/g,' ');
+    const T = []; let i = 0;
+    while (i < src.length) {
+      const c = src[i];
+      if (/\s/.test(c)) { i++; continue; }
+      if (c==='[') { T.push(['[']); i++; }
+      else if (c===']') { T.push([']']); i++; }
+      else if (c==='(') { T.push(['(']); i++; }
+      else if (c===')') { T.push([')']); i++; }
+      else if (c==='+') { T.push(['+']); i++; }
+      else if (c==='*') { T.push(['*']); i++; }
+      else if (c==='/') { T.push(['/']); i++; }
+      else if (c==='<') { T.push([src[i+1]==='='?(i++,'<='):'<']); i++; }
+      else if (c==='>') { T.push([src[i+1]==='='?(i++,'>='):'>']); i++; }
+      else if (c==='=') { T.push(['=']); i++; }
+      else if (c==='-') {
+        const prev = T[T.length-1];
+        const isOp = !prev || ['[','(','+','-','*','/','<','>','<=','>=','='].includes(prev[0]);
+        const prevWasSpace = i>0 && /\s/.test(src[i-1]);
+        if ((isOp || prevWasSpace) && i+1<src.length && /[\d.]/.test(src[i+1])) {
+          let n='-'; i++;
+          while (i<src.length && /[\d.]/.test(src[i])) n+=src[i++];
+          T.push(['NUM',parseFloat(n)]);
+        } else { T.push(['-']); i++; }
+      }
+      else if (/[\d.]/.test(c)) {
+        let n=''; while (i<src.length && /[\d.]/.test(src[i])) n+=src[i++];
+        T.push(['NUM',parseFloat(n)]);
+      }
+      else if (c==='"') {
+        i++; let w='';
+        while (i<src.length && !/[\s\[\]()]/.test(src[i])) w+=src[i++];
+        T.push(['WORD',w]);
+      }
+      else if (c===':') {
+        i++; let n='';
+        while (i<src.length && /[\w]/.test(src[i])) n+=src[i++];
+        T.push(['VAR',n.toUpperCase()]);
+      }
+      else if (/[a-zA-Z_]/.test(c)) {
+        let w=''; while (i<src.length && /[\w?!]/.test(src[i])) w+=src[i++];
+        T.push(['CMD',w.toUpperCase()]);
+      }
+      else i++;
+    }
+    return T;
+  }
+
+  function collectList(T,p) {
+    let depth=1; p++;
+    const list=[];
+    while (p<T.length&&depth>0) {
+      if (T[p][0]==='[') depth++;
+      else if (T[p][0]===']') { if(--depth===0){p++;break;} }
+      list.push(T[p]); p++;
+    }
+    return [list,p];
+  }
+
+  function getValue(T,p,V) {
+    if (p>=T.length) return [0,p];
+    const t=T[p]; const k=t[0];
+    if (k==='NUM') return [t[1],p+1];
+    if (k==='WORD') return [t[1],p+1];
+    if (k==='VAR') return [V[t[1]]!==undefined?V[t[1]]:0,p+1];
+    if (k==='[') {
+      // Evaluate each element in the list as a value (for SETPC [r g b] etc.)
+      let np2=p+1; const items=[];
+      let depth=0;
+      // Check if it's a nested list (contains sub-lists)
+      let hasNested=false;
+      for(let qi=p+1;qi<T.length;qi++){if(T[qi][0]===']'&&depth===0)break;if(T[qi][0]==='['){hasNested=true;break;}if(T[qi][0]==='CMD'){}}
+      if(hasNested){
+        // Return as token array (code list for REPEAT, IF, etc.)
+        const [list,np3]=collectList(T,p); return [list,np3];
+      }
+      // Flat list: evaluate each element as a value
+      while(np2<T.length && T[np2][0]!==']'){
+        const [v,nnp]=getValue(T,np2,V); items.push(v); np2=nnp;
+      }
+      return [items, np2+1];
+    }
+    if (k==='(') {
+      if (T[p+1] && T[p+1][0]==='CMD' && T[p+1][1]==='LIST') {
+        const items=[]; let np2=p+2;
+        while(np2<T.length && T[np2][0]!==')'){
+          const [v,nnp]=getValue(T,np2,V); items.push(v); np2=nnp;
+        }
+        return [items, np2+1];
+      }
+      const [v,np2]=evalExpr(T,p+1,V);
+      return [v, T[np2]&&T[np2][0]===')'? np2+1 : np2];
+    }
+    if (k==='CMD') {
+      const cmd=t[1]; p++;
+      const FN={
+        SQRT:a=>Math.sqrt(Math.abs(a)),SIN:a=>Math.sin(a*Math.PI/180),
+        COS:a=>Math.cos(a*Math.PI/180),TAN:a=>Math.tan(a*Math.PI/180),
+        ABS:a=>Math.abs(a),INT:a=>Math.trunc(a),ROUND:a=>Math.round(a),
+        MINUS:a=>-a,NOT:a=>a?0:1,
+        RANDOM:a=>Math.floor(Math.random()*(Math.abs(Math.floor(a))||1)),
+      };
+      if(FN[cmd]){const [a,np2]=getValue(T,p,V);return [FN[cmd](parseFloat(a)||0),np2];}
+      if(procs[cmd]){
+        const proc=procs[cmd];
+        const args=[];let np2=p;
+        for(let i=0;i<proc.params.length;i++){const [a,nnp]=getValue(T,np2,V);args.push(a);np2=nnp;}
+        const lv={...V};proc.params.forEach((pr,i)=>lv[pr]=args[i]);
+        let result=0;
+        try{callDepth++;if(callDepth<MAX_DEPTH)exec(proc.body,lv);}catch(e){if(e&&e.returnValue!==undefined)result=e.returnValue;}
+        callDepth--;
+        return [result,np2];
+      }
+      if(cmd==='REPCOUNT') return [V['__REPCOUNT']||0,p];
+
+      // Two-argument math functions (prefix and infix both supported)
+      if(cmd==='MOD'||cmd==='REMAINDER'){
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        const rb=parseFloat(b)||1;
+        return [((parseFloat(a)||0)%rb+Math.abs(rb))%Math.abs(rb), np3];
+      }
+      if(cmd==='MAX'){
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        return [Math.max(parseFloat(a)||0, parseFloat(b)||0), np3];
+      }
+      if(cmd==='MIN'){
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        return [Math.min(parseFloat(a)||0, parseFloat(b)||0), np3];
+      }
+      if(cmd==='AND'){
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        return [(parseFloat(a)&&parseFloat(b))?1:0, np3];
+      }
+      if(cmd==='OR'){
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        return [(parseFloat(a)||parseFloat(b))?1:0, np3];
+      }
+      if(cmd==='POWER'){
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        return [Math.pow(parseFloat(a)||0, parseFloat(b)||0), np3];
+      }
+      if(cmd==='ATAN'){
+        // ATAN y x (two-arg arctangent, degrees)
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        return [Math.atan2(parseFloat(a)||0, parseFloat(b)||0)*180/Math.PI, np3];
+      }
+
+      // List/word operations
+      if(cmd==='ITEM'){
+        // ITEM n list — 1-based index into list or word
+        const [idx,np2]=getValue(T,p,V);
+        const [lst,np3]=getValue(T,np2,V);
+        const i=Math.round(parseFloat(idx)||1);
+        if(Array.isArray(lst)) return [lst[i-1]!==undefined?lst[i-1]:0, np3];
+        if(typeof lst==='string'){const ch=lst[i-1];return [ch!==undefined?ch:'',np3];}
+        return [0,np3];
+      }
+      if(cmd==='PICK'){
+        // PICK list — random element (1-based)
+        const [lst,np2]=getValue(T,p,V);
+        if(Array.isArray(lst)&&lst.length) return [lst[Math.floor(Math.random()*lst.length)],np2];
+        return [0,np2];
+      }
+      if(cmd==='COUNT'){
+        const [lst,np2]=getValue(T,p,V);
+        return [Array.isArray(lst)?lst.length:(typeof lst==='string'?lst.length:0),np2];
+      }
+      if(cmd==='FIRST'){
+        const [lst,np2]=getValue(T,p,V);
+        return [Array.isArray(lst)?lst[0]:(typeof lst==='string'?lst[0]||'':''),np2];
+      }
+      if(cmd==='LAST'){
+        const [lst,np2]=getValue(T,p,V);
+        return [Array.isArray(lst)?lst[lst.length-1]:(typeof lst==='string'?lst[lst.length-1]||'':''),np2];
+      }
+      if(cmd==='BUTFIRST'||cmd==='BF'){
+        const [lst,np2]=getValue(T,p,V);
+        return [Array.isArray(lst)?lst.slice(1):(typeof lst==='string'?lst.slice(1):''),np2];
+      }
+      if(cmd==='BUTLAST'||cmd==='BL'){
+        const [lst,np2]=getValue(T,p,V);
+        return [Array.isArray(lst)?lst.slice(0,-1):(typeof lst==='string'?lst.slice(0,-1):''),np2];
+      }
+      if(cmd==='EMPTY?'||cmd==='EMPTYP'){
+        const [lst,np2]=getValue(T,p,V);
+        return [(Array.isArray(lst)?lst.length===0:(String(lst).length===0))?1:0,np2];
+      }
+      if(cmd==='MEMBER?'||cmd==='MEMBERP'){
+        const [item,np2]=getValue(T,p,V);
+        const [lst,np3]=getValue(T,np2,V);
+        return [Array.isArray(lst)?lst.some(x=>String(x).toUpperCase()===String(item).toUpperCase())?1:0:0,np3];
+      }
+      if(cmd==='LIST'){
+        // LIST a b — makes a two-element list
+        const [a,np2]=getValue(T,p,V);
+        const [b,np3]=getValue(T,np2,V);
+        return [[a,b],np3];
+      }
+      if(cmd==='SENTENCE'||cmd==='SE'){
+        const [a,np2]=getValue(T,p,V);
+        const [b,np3]=getValue(T,np2,V);
+        const fa=Array.isArray(a)?a:[a]; const fb=Array.isArray(b)?b:[b];
+        return [[...fa,...fb],np3];
+      }
+      if(cmd==='WORD'){
+        const [a,np2]=getValue(T,p,V);
+        const [b,np3]=getValue(T,np2,V);
+        return [String(a)+String(b),np3];
+      }
+      if(cmd==='LPUT'){
+        const [item,np2]=getValue(T,p,V);
+        const [lst,np3]=getValue(T,np2,V);
+        return [Array.isArray(lst)?[...lst,item]:[item],np3];
+      }
+      if(cmd==='FPUT'){
+        const [item,np2]=getValue(T,p,V);
+        const [lst,np3]=getValue(T,np2,V);
+        return [Array.isArray(lst)?[item,...lst]:[item],np3];
+      }
+
+      // Unrecognized CMD — treat as a string value (e.g. color names like WHITE, GOLD, RED)
+      return [cmd,p];
+    }
+    return [0,p+1];
+  }
+
+  function evalExpr(T,p,V) {
+    let [left,np]=getValue(T,p,V);
+    while(np<T.length){
+      const op=T[np][0];
+      // Handle MOD, REMAINDER, AND, OR as infix CMD operators
+      const isCmdOp = op==='CMD' && ['MOD','REMAINDER','AND','OR','MAX','MIN','POWER'].includes(T[np][1]);
+      if(!['+','-','*','/','<','>','<=','>=','='].includes(op) && !isCmdOp)break;
+      const [right,nnp]=getValue(T, isCmdOp?np+1:np+1, V);
+      const l=parseFloat(left)||0,r=parseFloat(right)||0;
+      if(op==='+')left=l+r;
+      else if(op==='-')left=l-r;
+      else if(op==='*')left=l*r;
+      else if(op==='/')left=r!==0?l/r:0;
+      else if(op==='<')left=l<r?1:0;
+      else if(op==='>')left=l>r?1:0;
+      else if(op==='<=')left=l<=r?1:0;
+      else if(op==='>=')left=l>=r?1:0;
+      else if(op==='=')left=(String(left)===String(right)?1:0);
+      else if(isCmdOp){
+        const cn=T[np][1];
+        if(cn==='MOD'||cn==='REMAINDER'){const rb=r||1;left=((l%rb)+Math.abs(rb))%Math.abs(rb);}
+        else if(cn==='MAX')left=Math.max(l,r);
+        else if(cn==='MIN')left=Math.min(l,r);
+        else if(cn==='AND')left=(l&&r)?1:0;
+        else if(cn==='OR')left=(l||r)?1:0;
+        else if(cn==='POWER')left=Math.pow(l,r);
+      }
+      np=nnp;
+    }
+    return [left,np];
+  }
+
+  function exec(T,V) {
+    let p=0;
+    while(p<T.length) {
+      if(opCount++>MAX_OPS)return;
+      const t=T[p]; const k=t[0];
+      if(k!=='CMD'){p++;continue;}
+      const cmd=t[1]; p++;
+      if(cmd==='TO'){
+        let name=T[p]?T[p][1]:''; p++;
+        const params=[];
+        while(p<T.length&&T[p][0]==='VAR'){params.push(T[p][1]);p++;}
+        const body=[];
+        while(p<T.length){
+          if(T[p][0]==='CMD'&&T[p][1]==='END'){p++;break;}
+          body.push(T[p]);p++;
+        }
+        procs[name]={params,body};
+        continue;
+      }
+      if(cmd==='END')continue;
+      if(cmd==='OUTPUT'||cmd==='OP'){
+        const [v,np]=evalExpr(T,p,V);p=np;
+        throw {returnValue:v};
+      }
+      if(cmd==='STOP')return;
+      if(cmd==='MAKE'||cmd==='MAKEGLOBAL'){
+        const [nm,np]=getValue(T,p,V); p=np;
+        const [vl,np2]=evalExpr(T,p,V); p=np2;
+        V[String(nm).toUpperCase()]=vl;
+        continue;
+      }
+      if(cmd==='LOCAL'){const [nm,np]=getValue(T,p,V);p=np;V[String(nm).toUpperCase()]=0;continue;}
+      if(cmd==='FD'||cmd==='FORWARD'){
+        const [d,np]=evalExpr(T,p,V); p=np;
+        const dist=parseFloat(d)||0;
+        const a=toRad(heading);
+        drawTo(sx+Math.cos(a)*dist, sy+Math.sin(a)*dist);
+        continue;
+      }
+      if(cmd==='BK'||cmd==='BACK'||cmd==='BACKWARD'){
+        const [d,np]=evalExpr(T,p,V); p=np;
+        const dist=parseFloat(d)||0;
+        const a=toRad(heading+180);
+        drawTo(sx+Math.cos(a)*dist, sy+Math.sin(a)*dist);
+        continue;
+      }
+      if(cmd==='RT'||cmd==='RIGHT'){const [d,np]=evalExpr(T,p,V);p=np;heading=(heading+parseFloat(d)||0)%360;continue;}
+      if(cmd==='LT'||cmd==='LEFT'){const [d,np]=evalExpr(T,p,V);p=np;heading=((heading-parseFloat(d)||0)%360+360)%360;continue;}
+      if(cmd==='SETHEADING'||cmd==='SH'){const [d,np]=evalExpr(T,p,V);p=np;heading=((parseFloat(d)||0)%360+360)%360;continue;}
+      if(cmd==='PU'||cmd==='PENUP'){penDown=false;continue;}
+      if(cmd==='PD'||cmd==='PENDOWN'){penDown=true;continue;}
+      if(cmd==='HOME'){drawTo(W/2,H/2);heading=0;continue;}
+      if(cmd==='CS'||cmd==='CLEARSCREEN'){
+        queue.push({type:'bg',color:'#fff'});
+        sx=W/2;sy=H/2;heading=0;penDown=true;
+        continue;
+      }
+      if(cmd==='SETXY'||cmd==='SETPOS'){
+        const [xv,np]=evalExpr(T,p,V);p=np;
+        const [yv,np2]=evalExpr(T,p,V);p=np2;
+        drawTo(W/2+(parseFloat(xv)||0), H/2+(parseFloat(yv)||0));
+        continue;
+      }
+      if(cmd==='SETX'){const [xv,np]=evalExpr(T,p,V);p=np;drawTo(W/2+(parseFloat(xv)||0),sy);continue;}
+      if(cmd==='SETY'){const [yv,np]=evalExpr(T,p,V);p=np;drawTo(sx,H/2+(parseFloat(yv)||0));continue;}
+      if(cmd==='SETPC'||cmd==='SETPENCOLOR'||cmd==='PC'){
+        const [cv,np]=getValue(T,p,V);p=np;
+        penColor=resolveColor(cv);
+        continue;
+      }
+      if(cmd==='SETBG'||cmd==='SETBACKGROUND'){
+        const [cv,np]=getValue(T,p,V);p=np;
+        queue.push({type:'bg',color:resolveColor(cv)});
+        continue;
+      }
+      if(cmd==='SETPENSIZE'||cmd==='SETWIDTH'||cmd==='SETPW'||cmd==='PW'){
+        const [sv,np]=evalExpr(T,p,V);p=np;
+        penSize=Math.max(0.1,parseFloat(sv)||1);
+        continue;
+      }
+      if(cmd==='HT'||cmd==='HIDETURTLE'||cmd==='ST'||cmd==='SHOWTURTLE'){continue;}
+      if(cmd==='REPEAT'){
+        const [n,np]=evalExpr(T,p,V);p=np;
+        const [body,np2]=collectList(T,p);p=np2;
+        const count=Math.floor(parseFloat(n)||0);
+        for(let i=1;i<=count;i++){
+          if(opCount>MAX_OPS)break;
+          V['__REPCOUNT']=i;
+          exec(body,{...V});
+        }
+        continue;
+      }
+      if(cmd==='FOREVER'){
+        const [body,np]=collectList(T,p);p=np;
+        let i=0;
+        while(opCount<MAX_OPS&&i++<10000)exec(body,{...V});
+        continue;
+      }
+      if(cmd==='WHILE'){
+        const condStart=p;
+        const [cond,np]=collectList(T,p);p=np;
+        const [body,np2]=collectList(T,p);p=np2;
+        let guard=0;
+        while(guard++<10000&&opCount<MAX_OPS){
+          const [cv]=evalExpr(cond,0,V);
+          if(!parseFloat(cv))break;
+          exec(body,{...V});
+        }
+        continue;
+      }
+      if(cmd==='IF'){
+        const [cv,np]=evalExpr(T,p,V);p=np;
+        const [body,np2]=collectList(T,p);p=np2;
+        if(parseFloat(cv))exec(body,{...V});
+        continue;
+      }
+      if(cmd==='IFELSE'){
+        const [cv,np]=evalExpr(T,p,V);p=np;
+        const [tbody,np2]=collectList(T,p);p=np2;
+        const [fbody,np3]=collectList(T,p);p=np3;
+        exec(parseFloat(cv)?tbody:fbody,{...V});
+        continue;
+      }
+      if(cmd==='FOR'){
+        const [spec,np]=collectList(T,p);p=np;
+        const [body,np2]=collectList(T,p);p=np2;
+        if(spec.length>=4){
+          const varName=spec[0][1];
+          const [startV]=evalExpr(spec,1,V);
+          const [endV]=evalExpr(spec,2,V);
+          const [stepV]=evalExpr(spec,3,V);
+          const start=parseFloat(startV)||0,end=parseFloat(endV)||0,step=parseFloat(stepV)||1;
+          const lv={...V};
+          if(step>0)for(let i=start;i<=end&&opCount<MAX_OPS;i+=step){lv[varName]=i;exec(body,{...lv});}
+          else if(step<0)for(let i=start;i>=end&&opCount<MAX_OPS;i+=step){lv[varName]=i;exec(body,{...lv});}
+        }
+        continue;
+      }
+      if(cmd==='ARC'){
+        const [anglev,np]=evalExpr(T,p,V);p=np;
+        const [rv,np2]=evalExpr(T,p,V);p=np2;
+        const angle=parseFloat(anglev)||0;
+        const r=Math.abs(parseFloat(rv)||0);
+        if(r>0){
+          const startA=toRad(heading-90);
+          const ccw=angle<0;
+          const spanAngle=Math.abs(angle);
+          const endA=startA+(ccw?-1:1)*spanAngle*Math.PI/180;
+          const cx2=sx-r*Math.cos(startA), cy2=sy-r*Math.sin(startA);
+          arcLines(cx2,cy2,r,startA,endA,ccw);
+        }
+        continue;
+      }
+      if(cmd==='CIRCLE'){
+        const [rv,np]=evalExpr(T,p,V);p=np;
+        const r=Math.abs(parseFloat(rv)||0);
+        if(r>0){
+          const startA=toRad(heading-90);
+          const cx2=sx-r*Math.cos(startA), cy2=sy-r*Math.sin(startA);
+          arcLines(cx2,cy2,r,startA,startA+2*Math.PI,false);
+        }
+        continue;
+      }
+      if(cmd==='DOT'){
+        const [rv,np]=evalExpr(T,p,V);p=np;
+        const r2=parseFloat(rv)||5;
+        queue.push({type:'dot',cx:sx,cy:sy,r:Math.abs(r2),c:penColor});
+        continue;
+      }
+      if(cmd==='LABEL'||cmd==='PRINT'||cmd==='SHOW'||cmd==='TYPE'){
+        const [,np]=getValue(T,p,V);p=np;
+        continue;
+      }
+      if(cmd==='WAIT'||cmd==='CLEARTEXT'||cmd==='CT'){continue;}
+      if(procs[cmd]){
+        const proc=procs[cmd];
+        const args=[];let np=p;
+        for(let i=0;i<proc.params.length;i++){const [a,nnp]=getValue(T,np,V);args.push(a);np=nnp;}
+        p=np;
+        const lv={};proc.params.forEach((pr,i)=>lv[pr]=args[i]);
+        callDepth++;
+        if(callDepth<MAX_DEPTH){
+          try{exec(proc.body,lv);}
+          catch(e){if(!e||e.returnValue===undefined)throw e;}
+        }
+        callDepth--;
+        continue;
+      }
+      unknownCmds.add(cmd);
+    }
+  }
+
+  try { exec(tokenize(code),{}); } catch(e) { if(!e||e.returnValue===undefined) console.warn('compileLogo error:',e); }
+  return {queue, unknownCmds};
+}
+function autoFitQueue(queue, W, H) {
+  if (!queue.length) return queue;
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  for (const op of queue) {
+    if (op.type==='line') {
+      minX=Math.min(minX,op.x1,op.x2);maxX=Math.max(maxX,op.x1,op.x2);
+      minY=Math.min(minY,op.y1,op.y2);maxY=Math.max(maxY,op.y1,op.y2);
+    } else if (op.type==='dot') {
+      minX=Math.min(minX,op.cx-op.r);maxX=Math.max(maxX,op.cx+op.r);
+      minY=Math.min(minY,op.cy-op.r);maxY=Math.max(maxY,op.cy+op.r);
+    }
+  }
+  if (!isFinite(minX)) return queue;
+  const dw=maxX-minX, dh=maxY-minY;
+  if (dw===0&&dh===0) return queue;
+  const pad=0.06;
+  const scaleFit=Math.min((W*(1-2*pad))/Math.max(dw,1),(H*(1-2*pad))/Math.max(dh,1));
+  const fillRatio=Math.max(dw/W, dh/H);
+  const scale = fillRatio > 0.4 ? Math.min(scaleFit, 1/fillRatio*(1-2*pad)) : scaleFit;
+  if (!isFinite(scale)||scale<=0) return queue;
+  const cx=(minX+maxX)/2, cy=(minY+maxY)/2;
+  const ox=W/2-cx*scale, oy=H/2-cy*scale;
+  return queue.map(op => {
+    if (op.type==='line') return {...op,x1:op.x1*scale+ox,y1:op.y1*scale+oy,x2:op.x2*scale+ox,y2:op.y2*scale+oy,w:Math.max(0.3,op.w*Math.sqrt(scale))};
+    if (op.type==='dot') return {...op,cx:op.cx*scale+ox,cy:op.cy*scale+oy,r:Math.max(1,op.r*scale)};
+    return op;
+  });
+}
+function renderQueue(canvas, queue, getSpeedFn) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d', {willReadFrequently:true});
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.lineCap='round';ctx.lineJoin='round';
+  if (activeAnims[canvas.id]) { cancelAnimationFrame(activeAnims[canvas.id]); delete activeAnims[canvas.id]; }
+  const getSpd = () => typeof getSpeedFn==='function' ? getSpeedFn() : (getSpeedFn||0);
+  function drawOp(op) {
+    if (op.type==='bg') { ctx.fillStyle=op.color;ctx.fillRect(0,0,canvas.width,canvas.height); }
+    else if (op.type==='line') {
+      ctx.beginPath();ctx.moveTo(op.x1,op.y1);ctx.lineTo(op.x2,op.y2);
+      ctx.strokeStyle=op.c;ctx.lineWidth=op.w;ctx.stroke();
+    } else if (op.type==='dot') {
+      ctx.beginPath();ctx.arc(op.cx,op.cy,op.r,0,2*Math.PI);ctx.fillStyle=op.c;ctx.fill();
+    }
+  }
+  if (getSpd()===0||queue.length===0) { queue.forEach(drawOp); return; }
+  let i = 0;
+  function frame() {
+    const spd=getSpd();
+    if (spd===0) { while(i<queue.length) drawOp(queue[i++]); return; }
+    const n = Math.max(1,Math.floor(spd));
+    const end = Math.min(i+n, queue.length);
+    while (i<end) drawOp(queue[i++]);
+    if (i<queue.length) activeAnims[canvas.id]=requestAnimationFrame(frame);
+  }
+  activeAnims[canvas.id]=requestAnimationFrame(frame);
+}
+function drawCode(el,code,spd){var c=typeof el==="string"?document.getElementById(el):el;if(!c)return;var res=compileLogo(code,c.width,c.height);var rawQ=res.queue||res;var q=autoFitQueue(rawQ,c.width,c.height);renderQueue(c,q,spd);}
+var F=["FD 100","CS\nSETBG [12 0 28]\nSETPC [255 245 235]\nPU\nSETXY -180 -140\nPD\nSETPENSIZE 6\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 6) [MAGENTA CYAN YELLOW LIME ORANGE SKYBLUE])\n  FD 360\n  RT 2\n  BK 360\n  LT 10\n]\nPU\nSETXY -180 -110\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 6) [SKYBLUE MINT ROSE GOLD VIOLET CORAL])\n  FD 360\n  LT 2\n  BK 360\n  RT 10\n]\nPU\nSETXY -180 -80\nPD\nSETPENSIZE 3\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 6) [RED YELLOW GREEN CYAN BLUE MAGENTA])\n  FD 360\n  RT 1\n  BK 360\n  LT 10\n]\nPU\nSETXY -180 -20\nPD\nSETPENSIZE 5\nREPEAT 24 [\n  SETPC (ITEM (REPCOUNT MOD 6) [GOLD ORANGE CORAL SKYBLUE MINT VIOLET])\n  FD 260\n  RT 3\n  BK 260\n  LT 9\n]\nPU\nSETXY -160 40\nPD\nSETPENSIZE 4\nREPEAT 30 [\n  SETPC (ITEM (REPCOUNT MOD 6) [LIME CYAN AMBER ROSE INDIGO WHITE])\n  FD 220\n  RT 2\n  BK 220\n  LT 8\n]\nPU\nSETXY -120 110\nPD\nSETPENSIZE 3\nREPEAT 36 [\n  SETPC (ITEM (REPCOUNT MOD 6) [MAGENTA TEAL YELLOW PURPLE CORAL SKYBLUE])\n  FD 160\n  RT 1\n  BK 160\n  LT 7\n]\nPU\nSETXY 0 -140\nPD\nSETPENSIZE 8\nSETPC WHITE\nFD 280","CS\nSETBG [10 0 24]\nPU\nSETXY -180 -140\nPD\nSETPENSIZE 5\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA CYAN YELLOW WHITE])\n  FD 360\n  RT 3\n  BK 360\n  LT 9\n]\nPU\nSETXY -178 -114\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN WHITE MAGENTA YELLOW])\n  FD 360\n  RT 3\n  BK 360\n  LT 9\n]\nPU\nSETXY -176 -88\nPD\nSETPENSIZE 3\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [YELLOW MAGENTA WHITE CYAN])\n  FD 360\n  RT 3\n  BK 360\n  LT 9\n]\nPU\nSETXY -178 -54\nPD\nSETPENSIZE 5\nREPEAT 24 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA CYAN YELLOW WHITE])\n  FD 260\n  RT 2\n  BK 260\n  LT 8\n]\nPU\nSETXY -160 2\nPD\nSETPENSIZE 4\nREPEAT 30 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN YELLOW WHITE MAGENTA])\n  FD 220\n  RT 2\n  BK 220\n  LT 8\n]\nPU\nSETXY -120 72\nPD\nSETPENSIZE 3\nREPEAT 36 [\n  SETPC (ITEM (REPCOUNT MOD 4) [WHITE MAGENTA CYAN YELLOW])\n  FD 160\n  RT 1\n  BK 160\n  LT 7\n]\nPU\nSETXY 0 -140\nPD\nSETPENSIZE 8\nSETPC WHITE\nFD 280","CS\nSETBG [12 0 28]\nPU\nSETXY -180 -140\nPD\nSETPENSIZE 5\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 5) [RED ORANGE YELLOW CYAN MAGENTA])\n  FD 360\n  RT 3\n  BK 360\n  LT 9\n]\nPU\nSETXY -178 -114\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 5) [ORANGE YELLOW CYAN MAGENTA RED])\n  FD 360\n  RT 3\n  BK 360\n  LT 9\n]\nPU\nSETXY -176 -88\nPD\nSETPENSIZE 3\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 5) [YELLOW CYAN MAGENTA RED ORANGE])\n  FD 360\n  RT 3\n  BK 360\n  LT 9\n]\nPU\nSETXY -178 -54\nPD\nSETPENSIZE 5\nREPEAT 24 [\n  SETPC (ITEM (REPCOUNT MOD 5) [MAGENTA RED ORANGE YELLOW CYAN])\n  FD 260\n  RT 2\n  BK 260\n  LT 8\n]\nPU\nSETXY -160 2\nPD\nSETPENSIZE 4\nREPEAT 30 [\n  SETPC (ITEM (REPCOUNT MOD 5) [CYAN MAGENTA RED ORANGE YELLOW])\n  FD 220\n  RT 2\n  BK 220\n  LT 8\n]\nPU\nSETXY -120 72\nPD\nSETPENSIZE 3\nREPEAT 36 [\n  SETPC (ITEM (REPCOUNT MOD 5) [WHITE CYAN MAGENTA RED YELLOW])\n  FD 160\n  RT 1\n  BK 160\n  LT 7\n]\nPU\nSETXY -160 -124\nPD\nSETPENSIZE 2\nREPEAT 22 [\n  SETPC (ITEM (REPCOUNT MOD 5) [RED ORANGE YELLOW CYAN MAGENTA])\n  REPEAT 2 [\n    FD 14\n    RT 4\n  ]\n  BK 28\n  LT 8\n]\nPU\nSETXY -132 -28\nPD\nSETPENSIZE 2\nREPEAT 26 [\n  SETPC (ITEM (REPCOUNT MOD 5) [MAGENTA CYAN YELLOW RED ORANGE])\n  REPEAT 2 [\n    FD 10\n    LT 3\n  ]\n  BK 20\n  RT 7\n]\nPU\nSETXY 0 -140\nPD\nSETPENSIZE 8\nSETPC WHITE\nFD 280","CS\nSETBG [14 0 32]\nPU\nSETXY -180 -140\nPD\nSETPENSIZE 5\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 5) [RED ORANGE YELLOW CYAN MAGENTA])\n  FD 360\n  RT 3\n  BK 360\n  LT 9\n]\nPU\nSETXY -178 -114\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 5) [ORANGE YELLOW CYAN MAGENTA RED])\n  FD 360\n  RT 3\n  BK 360\n  LT 9\n]\nPU\nSETXY -176 -88\nPD\nSETPENSIZE 3\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 5) [YELLOW CYAN MAGENTA RED ORANGE])\n  FD 360\n  RT 3\n  BK 360\n  LT 9\n]\nPU\nSETXY -178 -54\nPD\nSETPENSIZE 5\nREPEAT 24 [\n  SETPC (ITEM (REPCOUNT MOD 5) [MAGENTA RED ORANGE YELLOW CYAN])\n  FD 260\n  RT 2\n  BK 260\n  LT 8\n]\nPU\nSETXY -160 2\nPD\nSETPENSIZE 4\nREPEAT 30 [\n  SETPC (ITEM (REPCOUNT MOD 5) [CYAN MAGENTA RED ORANGE YELLOW])\n  FD 220\n  RT 2\n  BK 220\n  LT 8\n]\nPU\nSETXY -120 72\nPD\nSETPENSIZE 3\nREPEAT 36 [\n  SETPC (ITEM (REPCOUNT MOD 5) [WHITE CYAN MAGENTA RED YELLOW])\n  FD 160\n  RT 1\n  BK 160\n  LT 7\n]\nPU\nSETXY -160 -124\nPD\nSETPENSIZE 2\nREPEAT 22 [\n  SETPC (ITEM (REPCOUNT MOD 5) [RED ORANGE YELLOW CYAN MAGENTA])\n  REPEAT 2 [\n    FD 14\n    RT 4\n  ]\n  BK 28\n  LT 8\n]\nPU\nSETXY -132 -28\nPD\nSETPENSIZE 2\nREPEAT 26 [\n  SETPC (ITEM (REPCOUNT MOD 5) [MAGENTA CYAN YELLOW RED ORANGE])\n  REPEAT 2 [\n    FD 10\n    LT 3\n  ]\n  BK 20\n  RT 7\n]\nPU\nSETXY 0 -140\nPD\nSETPENSIZE 8\nSETPC WHITE\nFD 280\nPU\nSETXY -190 -150\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 6) [RED ORANGE YELLOW CYAN MAGENTA WHITE])\n  REPEAT 26 [\n    FD 18\n    RT 2\n  ]\n  BK 468\n  LT 6\n]\nPU\nSETXY -190 -118\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 6) [ORANGE YELLOW CYAN MAGENTA WHITE RED])\n  REPEAT 26 [\n    FD 18\n    RT 2\n  ]\n  BK 468\n  LT 6\n]\nPU\nSETXY -190 -86\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 6) [YELLOW CYAN MAGENTA WHITE RED ORANGE])\n  REPEAT 26 [\n    FD 18\n    RT 2\n  ]\n  BK 468\n  LT 6\n]\nPU\nSETXY -190 -54\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 6) [CYAN MAGENTA WHITE RED ORANGE YELLOW])\n  REPEAT 26 [\n    FD 18\n    RT 2\n  ]\n  BK 468\n  LT 6\n]\nPU\nSETXY -190 -22\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 6) [MAGENTA WHITE RED ORANGE YELLOW CYAN])\n  REPEAT 26 [\n    FD 18\n    RT 2\n  ]\n  BK 468\n  LT 6\n]\nPU\nSETXY -190 10\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 6) [WHITE RED ORANGE YELLOW CYAN MAGENTA])\n  REPEAT 26 [\n    FD 18\n    RT 2\n  ]\n  BK 468\n  LT 6\n]\nPU\nSETXY -190 42\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 6) [RED ORANGE YELLOW CYAN MAGENTA WHITE])\n  REPEAT 26 [\n    FD 18\n    RT 2\n  ]\n  BK 468\n  LT 6\n]\nPU\nSETXY -190 74\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 6) [ORANGE YELLOW CYAN MAGENTA WHITE RED])\n  REPEAT 26 [\n    FD 18\n    RT 2\n  ]\n  BK 468\n  LT 6\n]\nPU\nSETXY -190 106\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 6) [YELLOW CYAN MAGENTA WHITE RED ORANGE])\n  REPEAT 26 [\n    FD 18\n    RT 2\n  ]\n  BK 468\n  LT 6\n]","CS\nSETBG [14 0 32]\nPU\nSETXY -180 -138\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [RED ORANGE CYAN MAGENTA])\n  FD 350\n  RT 2\n  BK 350\n  LT 8\n]\nPU\nSETXY -178 -112\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [ORANGE CYAN MAGENTA RED])\n  FD 350\n  RT 2\n  BK 350\n  LT 8\n]\nPU\nSETXY -176 -86\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN MAGENTA RED ORANGE])\n  FD 350\n  RT 2\n  BK 350\n  LT 8\n]\nPU\nSETXY -178 -56\nPD\nSETPENSIZE 5\nREPEAT 24 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA RED ORANGE CYAN])\n  FD 250\n  RT 2\n  BK 250\n  LT 7\n]\nPU\nSETXY -160 -2\nPD\nSETPENSIZE 4\nREPEAT 30 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN MAGENTA RED ORANGE])\n  FD 210\n  RT 1\n  BK 210\n  LT 7\n]\nPU\nSETXY -124 70\nPD\nSETPENSIZE 3\nREPEAT 36 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA CYAN ORANGE RED])\n  FD 160\n  RT 1\n  BK 160\n  LT 6\n]\nPU\nSETXY -158 -122\nPD\nSETPENSIZE 2\nREPEAT 22 [\n  SETPC (ITEM (REPCOUNT MOD 4) [RED ORANGE CYAN MAGENTA])\n  REPEAT 2 [\n    FD 14\n    RT 4\n  ]\n  BK 28\n  LT 7\n]\nPU\nSETXY -130 -26\nPD\nSETPENSIZE 2\nREPEAT 26 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA CYAN ORANGE RED])\n  REPEAT 2 [\n    FD 10\n    LT 3\n  ]\n  BK 20\n  RT 6\n]\nPU\nSETXY -190 -150\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [RED ORANGE CYAN MAGENTA])\n  REPEAT 26 [\n    FD 18\n    RT 1\n  ]\n  BK 468\n  LT 5\n]\nPU\nSETXY -190 -118\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [ORANGE CYAN MAGENTA RED])\n  REPEAT 26 [\n    FD 18\n    RT 1\n  ]\n  BK 468\n  LT 5\n]\nPU\nSETXY -190 -86\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN MAGENTA RED ORANGE])\n  REPEAT 26 [\n    FD 18\n    RT 1\n  ]\n  BK 468\n  LT 5\n]\nPU\nSETXY -190 -54\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA RED ORANGE CYAN])\n  REPEAT 26 [\n    FD 18\n    RT 1\n  ]\n  BK 468\n  LT 5\n]\nPU\nSETXY -190 -22\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN MAGENTA RED ORANGE])\n  REPEAT 26 [\n    FD 18\n    RT 1\n  ]\n  BK 468\n  LT 5\n]\nPU\nSETXY -190 10\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [RED ORANGE CYAN MAGENTA])\n  REPEAT 26 [\n    FD 18\n    RT 1\n  ]\n  BK 468\n  LT 5\n]\nPU\nSETXY -190 42\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [ORANGE CYAN MAGENTA RED])\n  REPEAT 26 [\n    FD 18\n    RT 1\n  ]\n  BK 468\n  LT 5\n]\nPU\nSETXY -190 74\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN MAGENTA RED ORANGE])\n  REPEAT 26 [\n    FD 18\n    RT 1\n  ]\n  BK 468\n  LT 5\n]\nPU\nSETXY -190 106\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA RED ORANGE CYAN])\n  REPEAT 26 [\n    FD 18\n    RT 1\n  ]\n  BK 468\n  LT 5\n]","CS\nSETBG [14 0 32]\nPU\nSETXY -180 -138\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [RED ORANGE CYAN MAGENTA])\n  FD 330\n  RT 2\n  BK 330\n  LT 8\n]\nPU\nSETXY -178 -112\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [ORANGE CYAN MAGENTA RED])\n  FD 330\n  RT 2\n  BK 330\n  LT 8\n]\nPU\nSETXY -176 -86\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN MAGENTA RED ORANGE])\n  FD 330\n  RT 2\n  BK 330\n  LT 8\n]\nPU\nSETXY -178 -56\nPD\nSETPENSIZE 5\nREPEAT 24 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA RED ORANGE CYAN])\n  FD 240\n  RT 2\n  BK 240\n  LT 7\n]\nPU\nSETXY -160 -2\nPD\nSETPENSIZE 4\nREPEAT 30 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN MAGENTA RED ORANGE])\n  FD 200\n  RT 1\n  BK 200\n  LT 7\n]\nPU\nSETXY -124 70\nPD\nSETPENSIZE 3\nREPEAT 36 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA CYAN ORANGE RED])\n  FD 150\n  RT 1\n  BK 150\n  LT 6\n]\nPU\nSETXY -170 -132\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [RED ORANGE CYAN MAGENTA])\n  REPEAT 22 [\n    FD 16\n    RT 2\n  ]\n  BK 352\n  LT 5\n]\nPU\nSETXY -170 -94\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [ORANGE CYAN MAGENTA RED])\n  REPEAT 22 [\n    FD 16\n    RT 2\n  ]\n  BK 352\n  LT 5\n]\nPU\nSETXY -170 -56\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN MAGENTA RED ORANGE])\n  REPEAT 22 [\n    FD 16\n    RT 2\n  ]\n  BK 352\n  LT 5\n]\nPU\nSETXY -170 -18\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA RED ORANGE CYAN])\n  REPEAT 22 [\n    FD 16\n    RT 2\n  ]\n  BK 352\n  LT 5\n]\nPU\nSETXY -170 20\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN MAGENTA RED ORANGE])\n  REPEAT 22 [\n    FD 16\n    RT 2\n  ]\n  BK 352\n  LT 5\n]\nPU\nSETXY -170 58\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [RED ORANGE CYAN MAGENTA])\n  REPEAT 22 [\n    FD 16\n    RT 2\n  ]\n  BK 352\n  LT 5\n]\nPU\nSETXY -170 96\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [ORANGE CYAN MAGENTA RED])\n  REPEAT 22 [\n    FD 16\n    RT 2\n  ]\n  BK 352\n  LT 5\n]\nPU\nSETXY -170 134\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN MAGENTA RED ORANGE])\n  REPEAT 22 [\n    FD 16\n    RT 2\n  ]\n  BK 352\n  LT 5\n]","CS\nSETBG [18 0 40]\nPU\nSETXY -185 -138\nPD\nSETPENSIZE 5\nREPEAT 16 [\n  SETPC (ITEM (REPCOUNT MOD 3) [RED ORANGE MAGENTA])\n  FD 320\n  RT 3\n  BK 320\n  LT 9\n]\nPU\nSETXY -182 -112\nPD\nSETPENSIZE 5\nREPEAT 16 [\n  SETPC (ITEM (REPCOUNT MOD 3) [ORANGE MAGENTA RED])\n  FD 320\n  RT 3\n  BK 320\n  LT 9\n]\nPU\nSETXY -179 -86\nPD\nSETPENSIZE 5\nREPEAT 16 [\n  SETPC (ITEM (REPCOUNT MOD 3) [MAGENTA RED ORANGE])\n  FD 320\n  RT 3\n  BK 320\n  LT 9\n]\nPU\nSETXY -176 -60\nPD\nSETPENSIZE 4\nREPEAT 20 [\n  SETPC (ITEM (REPCOUNT MOD 3) [RED ORANGE MAGENTA])\n  FD 255\n  RT 2\n  BK 255\n  LT 7\n]\nPU\nSETXY -170 -18\nPD\nSETPENSIZE 4\nREPEAT 24 [\n  SETPC (ITEM (REPCOUNT MOD 3) [ORANGE MAGENTA RED])\n  FD 215\n  RT 2\n  BK 215\n  LT 7\n]\nPU\nSETXY -160 32\nPD\nSETPENSIZE 3\nREPEAT 28 [\n  SETPC (ITEM (REPCOUNT MOD 3) [MAGENTA RED ORANGE])\n  FD 175\n  RT 1\n  BK 175\n  LT 6\n]\nPU\nSETXY -150 88\nPD\nSETPENSIZE 3\nREPEAT 32 [\n  SETPC (ITEM (REPCOUNT MOD 3) [RED ORANGE MAGENTA])\n  FD 135\n  RT 1\n  BK 135\n  LT 5\n]\nPU\nSETXY -170 -132\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [RED ORANGE MAGENTA])\n  REPEAT 24 [\n    FD 14\n    RT 2\n  ]\n  BK 336\n  LT 6\n]\nPU\nSETXY -170 -92\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [ORANGE MAGENTA RED])\n  REPEAT 24 [\n    FD 14\n    RT 2\n  ]\n  BK 336\n  LT 6\n]\nPU\nSETXY -170 -52\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [MAGENTA RED ORANGE])\n  REPEAT 24 [\n    FD 14\n    RT 2\n  ]\n  BK 336\n  LT 6\n]\nPU\nSETXY -170 -12\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [RED ORANGE MAGENTA])\n  REPEAT 24 [\n    FD 14\n    RT 2\n  ]\n  BK 336\n  LT 6\n]\nPU\nSETXY -170 28\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [ORANGE MAGENTA RED])\n  REPEAT 24 [\n    FD 14\n    RT 2\n  ]\n  BK 336\n  LT 6\n]\nPU\nSETXY -170 68\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [MAGENTA RED ORANGE])\n  REPEAT 24 [\n    FD 14\n    RT 2\n  ]\n  BK 336\n  LT 6\n]\nPU\nSETXY -170 108\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [RED ORANGE MAGENTA])\n  REPEAT 24 [\n    FD 14\n    RT 2\n  ]\n  BK 336\n  LT 6\n]","CS\nSETBG [18 0 40]\nPU\nSETXY -190 -138\nPD\nSETPENSIZE 5\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 3) [RED ORANGE MAGENTA])\n  FD 310\n  RT 3\n  BK 310\n  LT 8\n]\nPU\nSETXY -186 -112\nPD\nSETPENSIZE 5\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 3) [ORANGE MAGENTA RED])\n  FD 310\n  RT 4\n  BK 310\n  LT 7\n]\nPU\nSETXY -182 -86\nPD\nSETPENSIZE 5\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 3) [MAGENTA RED ORANGE])\n  FD 310\n  RT 5\n  BK 310\n  LT 6\n]\nPU\nSETXY -176 -60\nPD\nSETPENSIZE 4\nREPEAT 22 [\n  SETPC (ITEM (REPCOUNT MOD 3) [RED ORANGE MAGENTA])\n  FD 270\n  RT 2\n  BK 270\n  LT 7\n]\nPU\nSETXY -170 -18\nPD\nSETPENSIZE 4\nREPEAT 24 [\n  SETPC (ITEM (REPCOUNT MOD 3) [ORANGE MAGENTA RED])\n  FD 235\n  RT 2\n  BK 235\n  LT 6\n]\nPU\nSETXY -160 32\nPD\nSETPENSIZE 3\nREPEAT 28 [\n  SETPC (ITEM (REPCOUNT MOD 3) [MAGENTA RED ORANGE])\n  FD 190\n  RT 1\n  BK 190\n  LT 5\n]\nPU\nSETXY -150 88\nPD\nSETPENSIZE 3\nREPEAT 32 [\n  SETPC (ITEM (REPCOUNT MOD 3) [RED ORANGE MAGENTA])\n  FD 145\n  RT 1\n  BK 145\n  LT 4\n]\nPU\nSETXY -178 -132\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [RED ORANGE MAGENTA])\n  REPEAT 28 [\n    FD 12\n    RT 3\n  ]\n  BK 336\n  LT 6\n]\nPU\nSETXY -178 -96\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [ORANGE MAGENTA RED])\n  REPEAT 28 [\n    FD 12\n    RT 3\n  ]\n  BK 336\n  LT 6\n]\nPU\nSETXY -178 -60\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [MAGENTA RED ORANGE])\n  REPEAT 28 [\n    FD 12\n    RT 3\n  ]\n  BK 336\n  LT 6\n]\nPU\nSETXY -178 -24\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [RED ORANGE MAGENTA])\n  REPEAT 28 [\n    FD 12\n    RT 3\n  ]\n  BK 336\n  LT 6\n]\nPU\nSETXY -178 12\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [ORANGE MAGENTA RED])\n  REPEAT 28 [\n    FD 12\n    RT 3\n  ]\n  BK 336\n  LT 6\n]\nPU\nSETXY -178 48\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [MAGENTA RED ORANGE])\n  REPEAT 28 [\n    FD 12\n    RT 3\n  ]\n  BK 336\n  LT 6\n]\nPU\nSETXY -178 84\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [RED ORANGE MAGENTA])\n  REPEAT 28 [\n    FD 12\n    RT 3\n  ]\n  BK 336\n  LT 6\n]\nPU\nSETXY -178 120\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [ORANGE MAGENTA RED])\n  REPEAT 28 [\n    FD 12\n    RT 3\n  ]\n  BK 336\n  LT 6\n]","CS\nSETBG [18 0 40]\nPU\nSETXY -190 -138\nPD\nSETPENSIZE 5\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 3) [RED ORANGE BLUE])\n  FD 310\n  RT 4\n  BK 310\n  LT 7\n]\nPU\nSETXY -186 -112\nPD\nSETPENSIZE 5\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 3) [ORANGE BLUE RED])\n  FD 310\n  RT 5\n  BK 310\n  LT 6\n]\nPU\nSETXY -182 -86\nPD\nSETPENSIZE 5\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 3) [BLUE RED ORANGE])\n  FD 310\n  RT 6\n  BK 310\n  LT 5\n]\nPU\nSETXY -176 -60\nPD\nSETPENSIZE 4\nREPEAT 22 [\n  SETPC (ITEM (REPCOUNT MOD 3) [RED ORANGE BLUE])\n  FD 270\n  RT 3\n  BK 270\n  LT 6\n]\nPU\nSETXY -170 -18\nPD\nSETPENSIZE 4\nREPEAT 24 [\n  SETPC (ITEM (REPCOUNT MOD 3) [ORANGE BLUE RED])\n  FD 235\n  RT 3\n  BK 235\n  LT 5\n]\nPU\nSETXY -160 32\nPD\nSETPENSIZE 3\nREPEAT 28 [\n  SETPC (ITEM (REPCOUNT MOD 3) [BLUE RED ORANGE])\n  FD 190\n  RT 2\n  BK 190\n  LT 4\n]\nPU\nSETXY -150 88\nPD\nSETPENSIZE 3\nREPEAT 32 [\n  SETPC (ITEM (REPCOUNT MOD 3) [RED ORANGE BLUE])\n  FD 145\n  RT 2\n  BK 145\n  LT 3\n]\nPU\nSETXY -178 -132\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [RED ORANGE BLUE])\n  REPEAT 28 [\n    FD 12\n    RT 4\n  ]\n  BK 336\n  LT 5\n]\nPU\nSETXY -178 -96\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [ORANGE BLUE RED])\n  REPEAT 28 [\n    FD 12\n    RT 4\n  ]\n  BK 336\n  LT 5\n]\nPU\nSETXY -178 -60\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [BLUE RED ORANGE])\n  REPEAT 28 [\n    FD 12\n    RT 4\n  ]\n  BK 336\n  LT 5\n]\nPU\nSETXY -178 -24\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [RED ORANGE BLUE])\n  REPEAT 28 [\n    FD 12\n    RT 4\n  ]\n  BK 336\n  LT 5\n]\nPU\nSETXY -178 12\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [ORANGE BLUE RED])\n  REPEAT 28 [\n    FD 12\n    RT 4\n  ]\n  BK 336\n  LT 5\n]\nPU\nSETXY -178 48\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [BLUE RED ORANGE])\n  REPEAT 28 [\n    FD 12\n    RT 4\n  ]\n  BK 336\n  LT 5\n]\nPU\nSETXY -178 84\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [RED ORANGE BLUE])\n  REPEAT 28 [\n    FD 12\n    RT 4\n  ]\n  BK 336\n  LT 5\n]\nPU\nSETXY -178 120\nPD\nSETPENSIZE 3\nREPEAT 7 [\n  SETPC (ITEM (REPCOUNT MOD 3) [ORANGE BLUE RED])\n  REPEAT 28 [\n    FD 12\n    RT 4\n  ]\n  BK 336\n  LT 5\n]","CS\nSETBG [18 0 40]\nPU\nSETXY -190 -140\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [RED ORANGE GOLD BLUE])\n  FD 300\n  RT 4\n  BK 300\n  LT 6\n]\nPU\nSETXY -188 -112\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [ORANGE GOLD BLUE RED])\n  FD 300\n  RT 5\n  BK 300\n  LT 5\n]\nPU\nSETXY -186 -84\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [GOLD BLUE RED ORANGE])\n  FD 300\n  RT 4\n  BK 300\n  LT 7\n]\nPU\nSETXY -184 -56\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [BLUE RED ORANGE GOLD])\n  FD 300\n  RT 5\n  BK 300\n  LT 6\n]\nPU\nSETXY -182 -28\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [RED ORANGE GOLD BLUE])\n  FD 300\n  RT 4\n  BK 300\n  LT 5\n]\nPU\nSETXY -180 0\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [ORANGE GOLD BLUE RED])\n  FD 300\n  RT 5\n  BK 300\n  LT 4\n]\nPU\nSETXY -178 28\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [GOLD BLUE RED ORANGE])\n  FD 300\n  RT 4\n  BK 300\n  LT 6\n]\nPU\nSETXY -176 56\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [BLUE RED ORANGE GOLD])\n  FD 300\n  RT 5\n  BK 300\n  LT 5\n]\nPU\nSETXY -174 84\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [RED ORANGE GOLD BLUE])\n  FD 300\n  RT 4\n  BK 300\n  LT 7\n]\nPU\nSETXY -172 112\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [ORANGE GOLD BLUE RED])\n  FD 300\n  RT 5\n  BK 300\n  LT 6\n]\nPU\nSETXY -170 140\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [GOLD BLUE RED ORANGE])\n  FD 300\n  RT 4\n  BK 300\n  LT 5\n]\nPU\nSETXY -150 -122\nPD\nSETPENSIZE 3\nREPEAT 9 [\n  SETPC (ITEM (REPCOUNT MOD 4) [BLUE RED ORANGE GOLD])\n  REPEAT 24 [\n    FD 10\n    RT 5\n  ]\n  BK 240\n  LT 6\n]\nPU\nSETXY -150 -86\nPD\nSETPENSIZE 3\nREPEAT 9 [\n  SETPC (ITEM (REPCOUNT MOD 4) [RED ORANGE GOLD BLUE])\n  REPEAT 24 [\n    FD 10\n    RT 5\n  ]\n  BK 240\n  LT 6\n]\nPU\nSETXY -150 -50\nPD\nSETPENSIZE 3\nREPEAT 9 [\n  SETPC (ITEM (REPCOUNT MOD 4) [ORANGE GOLD BLUE RED])\n  REPEAT 24 [\n    FD 10\n    RT 5\n  ]\n  BK 240\n  LT 6\n]\nPU\nSETXY -150 -14\nPD\nSETPENSIZE 3\nREPEAT 9 [\n  SETPC (ITEM (REPCOUNT MOD 4) [GOLD BLUE RED ORANGE])\n  REPEAT 24 [\n    FD 10\n    RT 5\n  ]\n  BK 240\n  LT 6\n]\nPU\nSETXY -150 22\nPD\nSETPENSIZE 3\nREPEAT 9 [\n  SETPC (ITEM (REPCOUNT MOD 4) [BLUE RED ORANGE GOLD])\n  REPEAT 24 [\n    FD 10\n    RT 5\n  ]\n  BK 240\n  LT 6\n]\nPU\nSETXY -150 58\nPD\nSETPENSIZE 3\nREPEAT 9 [\n  SETPC (ITEM (REPCOUNT MOD 4) [RED ORANGE GOLD BLUE])\n  REPEAT 24 [\n    FD 10\n    RT 5\n  ]\n  BK 240\n  LT 6\n]\nPU\nSETXY -150 94\nPD\nSETPENSIZE 3\nREPEAT 9 [\n  SETPC (ITEM (REPCOUNT MOD 4) [ORANGE GOLD BLUE RED])\n  REPEAT 24 [\n    FD 10\n    RT 5\n  ]\n  BK 240\n  LT 6\n]\nPU\nSETXY -150 130\nPD\nSETPENSIZE 3\nREPEAT 9 [\n  SETPC (ITEM (REPCOUNT MOD 4) [GOLD BLUE RED ORANGE])\n  REPEAT 24 [\n    FD 10\n    RT 5\n  ]\n  BK 240\n  LT 6\n]","CS\nSETBG [18 0 40]\nPU\nSETXY -190 -138\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 6) [RED ORANGE GOLD BLUE CYAN MAGENTA])\n  FD 300\n  RT 3\n  BK 300\n  LT 5\n]\nPU\nSETXY -188 -110\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 6) [ORANGE GOLD BLUE CYAN MAGENTA RED])\n  FD 300\n  RT 4\n  BK 300\n  LT 4\n]\nPU\nSETXY -186 -82\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 6) [GOLD BLUE CYAN MAGENTA RED ORANGE])\n  FD 300\n  RT 3\n  BK 300\n  LT 6\n]\nPU\nSETXY -184 -54\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 6) [BLUE CYAN MAGENTA RED ORANGE GOLD])\n  FD 300\n  RT 4\n  BK 300\n  LT 5\n]\nPU\nSETXY -182 -26\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 6) [CYAN MAGENTA RED ORANGE GOLD BLUE])\n  FD 300\n  RT 3\n  BK 300\n  LT 4\n]\nPU\nSETXY -180 2\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 6) [MAGENTA RED ORANGE GOLD BLUE CYAN])\n  FD 300\n  RT 4\n  BK 300\n  LT 6\n]\nPU\nSETXY -178 30\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 6) [RED ORANGE GOLD BLUE CYAN MAGENTA])\n  FD 300\n  RT 3\n  BK 300\n  LT 5\n]\nPU\nSETXY -176 58\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 6) [ORANGE GOLD BLUE CYAN MAGENTA RED])\n  FD 300\n  RT 4\n  BK 300\n  LT 4\n]\nPU\nSETXY -174 86\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 6) [GOLD BLUE CYAN MAGENTA RED ORANGE])\n  FD 300\n  RT 3\n  BK 300\n  LT 6\n]\nPU\nSETXY -172 114\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 6) [BLUE CYAN MAGENTA RED ORANGE GOLD])\n  FD 300\n  RT 4\n  BK 300\n  LT 5\n]\nPU\nSETXY -170 142\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 6) [CYAN MAGENTA RED ORANGE GOLD BLUE])\n  FD 300\n  RT 3\n  BK 300\n  LT 4\n]\nPU\nSETXY -150 -124\nPD\nSETPENSIZE 3\nREPEAT 9 [\n  SETPC (ITEM (REPCOUNT MOD 6) [BLUE CYAN MAGENTA RED ORANGE GOLD])\n  REPEAT 24 [\n    FD 10\n    RT 4\n  ]\n  BK 240\n  LT 5\n]\nPU\nSETXY -150 -88\nPD\nSETPENSIZE 3\nREPEAT 9 [\n  SETPC (ITEM (REPCOUNT MOD 6) [CYAN MAGENTA RED ORANGE GOLD BLUE])\n  REPEAT 24 [\n    FD 10\n    RT 4\n  ]\n  BK 240\n  LT 5\n]\nPU\nSETXY -150 -52\nPD\nSETPENSIZE 3\nREPEAT 9 [\n  SETPC (ITEM (REPCOUNT MOD 6) [MAGENTA RED ORANGE GOLD BLUE CYAN])\n  REPEAT 24 [\n    FD 10\n    RT 4\n  ]\n  BK 240\n  LT 5\n]\nPU\nSETXY -150 -16\nPD\nSETPENSIZE 3\nREPEAT 9 [\n  SETPC (ITEM (REPCOUNT MOD 6) [RED ORANGE GOLD BLUE CYAN MAGENTA])\n  REPEAT 24 [\n    FD 10\n    RT 4\n  ]\n  BK 240\n  LT 5\n]\nPU\nSETXY -150 20\nPD\nSETPENSIZE 3\nREPEAT 9 [\n  SETPC (ITEM (REPCOUNT MOD 6) [ORANGE GOLD BLUE CYAN MAGENTA RED])\n  REPEAT 24 [\n    FD 10\n    RT 4\n  ]\n  BK 240\n  LT 5\n]\nPU\nSETXY -150 56\nPD\nSETPENSIZE 3\nREPEAT 9 [\n  SETPC (ITEM (REPCOUNT MOD 6) [GOLD BLUE CYAN MAGENTA RED ORANGE])\n  REPEAT 24 [\n    FD 10\n    RT 4\n  ]\n  BK 240\n  LT 5\n]\nPU\nSETXY -150 92\nPD\nSETPENSIZE 3\nREPEAT 9 [\n  SETPC (ITEM (REPCOUNT MOD 6) [BLUE CYAN MAGENTA RED ORANGE GOLD])\n  REPEAT 24 [\n    FD 10\n    RT 4\n  ]\n  BK 240\n  LT 5\n]\nPU\nSETXY -150 128\nPD\nSETPENSIZE 3\nREPEAT 9 [\n  SETPC (ITEM (REPCOUNT MOD 6) [CYAN MAGENTA RED ORANGE GOLD BLUE])\n  REPEAT 24 [\n    FD 10\n    RT 4\n  ]\n  BK 240\n  LT 5\n]","CS\nSETBG [16 0 34]\nPU\nSETXY -190 -140\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [RED ORANGE BLUE GREEN])\n  FD 300\n  RT 4\n  BK 300\n  LT 6\n]\nPU\nSETXY -186 -106\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [ORANGE BLUE GREEN RED])\n  FD 300\n  RT 5\n  BK 300\n  LT 5\n]\nPU\nSETXY -182 -72\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [BLUE GREEN RED ORANGE])\n  FD 300\n  RT 4\n  BK 300\n  LT 7\n]\nPU\nSETXY -178 -38\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [GREEN RED ORANGE BLUE])\n  FD 300\n  RT 5\n  BK 300\n  LT 6\n]\nPU\nSETXY -174 -4\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [RED ORANGE BLUE GREEN])\n  FD 300\n  RT 4\n  BK 300\n  LT 5\n]\nPU\nSETXY -170 30\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [ORANGE BLUE GREEN RED])\n  FD 300\n  RT 6\n  BK 300\n  LT 4\n]\nPU\nSETXY -166 64\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [BLUE GREEN RED ORANGE])\n  FD 300\n  RT 4\n  BK 300\n  LT 7\n]\nPU\nSETXY -162 98\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [GREEN RED ORANGE BLUE])\n  FD 300\n  RT 5\n  BK 300\n  LT 6\n]\nPU\nSETXY -158 132\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [RED ORANGE BLUE GREEN])\n  FD 300\n  RT 4\n  BK 300\n  LT 5\n]\nPU\nSETXY -146 -126\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [BLUE GREEN RED ORANGE])\n  REPEAT 26 [\n    FD 9\n    RT 4\n  ]\n  BK 234\n  LT 6\n]\nPU\nSETXY -138 -86\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [GREEN RED ORANGE BLUE])\n  REPEAT 26 [\n    FD 9\n    RT 4\n  ]\n  BK 234\n  LT 6\n]\nPU\nSETXY -130 -46\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [RED ORANGE BLUE GREEN])\n  REPEAT 26 [\n    FD 9\n    RT 4\n  ]\n  BK 234\n  LT 6\n]\nPU\nSETXY -122 -6\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [ORANGE BLUE GREEN RED])\n  REPEAT 26 [\n    FD 9\n    RT 4\n  ]\n  BK 234\n  LT 6\n]\nPU\nSETXY -114 34\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [BLUE GREEN RED ORANGE])\n  REPEAT 26 [\n    FD 9\n    RT 4\n  ]\n  BK 234\n  LT 6\n]\nPU\nSETXY -106 74\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [GREEN RED ORANGE BLUE])\n  REPEAT 26 [\n    FD 9\n    RT 4\n  ]\n  BK 234\n  LT 6\n]\nPU\nSETXY -98 114\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [RED ORANGE BLUE GREEN])\n  REPEAT 26 [\n    FD 9\n    RT 4\n  ]\n  BK 234\n  LT 6\n]\nPU\nSETXY -20 -150\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [GREEN RED ORANGE BLUE])\n  REPEAT 30 [\n    FD 8\n    RT 3\n  ]\n  BK 240\n  LT 7\n]\nPU\nSETXY 24 -150\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [RED ORANGE BLUE GREEN])\n  REPEAT 30 [\n    FD 8\n    RT 3\n  ]\n  BK 240\n  LT 7\n]\nPU\nSETXY 68 -150\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [ORANGE BLUE GREEN RED])\n  REPEAT 30 [\n    FD 8\n    RT 3\n  ]\n  BK 240\n  LT 7\n]\nPU\nSETXY 112 -150\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [BLUE GREEN RED ORANGE])\n  REPEAT 30 [\n    FD 8\n    RT 3\n  ]\n  BK 240\n  LT 7\n]","CS\nSETBG [18 0 38]\nPU\nSETXY -190 -140\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA GOLD CYAN LIME])\n  FD 300\n  RT 3\n  BK 300\n  LT 7\n]\nPU\nSETXY -186 -106\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [GOLD CYAN LIME MAGENTA])\n  FD 300\n  RT 4\n  BK 300\n  LT 6\n]\nPU\nSETXY -182 -72\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN LIME MAGENTA GOLD])\n  FD 300\n  RT 3\n  BK 300\n  LT 7\n]\nPU\nSETXY -178 -38\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [LIME MAGENTA GOLD CYAN])\n  FD 300\n  RT 4\n  BK 300\n  LT 6\n]\nPU\nSETXY -174 -4\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA GOLD CYAN LIME])\n  FD 300\n  RT 3\n  BK 300\n  LT 7\n]\nPU\nSETXY -170 30\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [GOLD CYAN LIME MAGENTA])\n  FD 300\n  RT 4\n  BK 300\n  LT 6\n]\nPU\nSETXY -166 64\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN LIME MAGENTA GOLD])\n  FD 300\n  RT 3\n  BK 300\n  LT 7\n]\nPU\nSETXY -162 98\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [LIME MAGENTA GOLD CYAN])\n  FD 300\n  RT 4\n  BK 300\n  LT 6\n]\nPU\nSETXY -158 132\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA GOLD CYAN LIME])\n  FD 300\n  RT 3\n  BK 300\n  LT 7\n]\nPU\nSETXY -146 -126\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN LIME MAGENTA GOLD])\n  REPEAT 24 [\n    FD 10\n    RT 3\n  ]\n  BK 240\n  LT 7\n]\nPU\nSETXY -138 -86\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [LIME MAGENTA GOLD CYAN])\n  REPEAT 24 [\n    FD 10\n    RT 3\n  ]\n  BK 240\n  LT 7\n]\nPU\nSETXY -130 -46\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA GOLD CYAN LIME])\n  REPEAT 24 [\n    FD 10\n    RT 3\n  ]\n  BK 240\n  LT 7\n]\nPU\nSETXY -122 -6\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [GOLD CYAN LIME MAGENTA])\n  REPEAT 24 [\n    FD 10\n    RT 3\n  ]\n  BK 240\n  LT 7\n]\nPU\nSETXY -114 34\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN LIME MAGENTA GOLD])\n  REPEAT 24 [\n    FD 10\n    RT 3\n  ]\n  BK 240\n  LT 7\n]\nPU\nSETXY -106 74\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [LIME MAGENTA GOLD CYAN])\n  REPEAT 24 [\n    FD 10\n    RT 3\n  ]\n  BK 240\n  LT 7\n]\nPU\nSETXY -98 114\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA GOLD CYAN LIME])\n  REPEAT 24 [\n    FD 10\n    RT 3\n  ]\n  BK 240\n  LT 7\n]\nPU\nSETXY -20 -150\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [GOLD CYAN LIME MAGENTA])\n  REPEAT 28 [\n    FD 8\n    RT 2\n  ]\n  BK 224\n  LT 6\n]\nPU\nSETXY 24 -150\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN LIME MAGENTA GOLD])\n  REPEAT 28 [\n    FD 8\n    RT 2\n  ]\n  BK 224\n  LT 6\n]\nPU\nSETXY 68 -150\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [LIME MAGENTA GOLD CYAN])\n  REPEAT 28 [\n    FD 8\n    RT 2\n  ]\n  BK 224\n  LT 6\n]\nPU\nSETXY 112 -150\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA GOLD CYAN LIME])\n  REPEAT 28 [\n    FD 8\n    RT 2\n  ]\n  BK 224\n  LT 6\n]","CS\nSETBG [18 0 38]\nPU\nSETXY -190 -140\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 5) [MAGENTA GOLD CYAN LIME ORANGE])\n  FD 300\n  RT 2\n  BK 300\n  LT 8\n]\nPU\nSETXY -186 -106\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 5) [GOLD CYAN LIME ORANGE MAGENTA])\n  FD 300\n  RT 2\n  BK 300\n  LT 8\n]\nPU\nSETXY -182 -72\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 5) [CYAN LIME ORANGE MAGENTA GOLD])\n  FD 300\n  RT 2\n  BK 300\n  LT 8\n]\nPU\nSETXY -178 -38\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 5) [LIME ORANGE MAGENTA GOLD CYAN])\n  FD 300\n  RT 2\n  BK 300\n  LT 8\n]\nPU\nSETXY -174 -4\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 5) [ORANGE MAGENTA GOLD CYAN LIME])\n  FD 300\n  RT 2\n  BK 300\n  LT 8\n]\nPU\nSETXY -170 30\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 5) [MAGENTA GOLD CYAN LIME ORANGE])\n  FD 300\n  RT 2\n  BK 300\n  LT 8\n]\nPU\nSETXY -166 64\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 5) [GOLD CYAN LIME ORANGE MAGENTA])\n  FD 300\n  RT 2\n  BK 300\n  LT 8\n]\nPU\nSETXY -162 98\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 5) [CYAN LIME ORANGE MAGENTA GOLD])\n  FD 300\n  RT 2\n  BK 300\n  LT 8\n]\nPU\nSETXY -158 132\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 5) [LIME ORANGE MAGENTA GOLD CYAN])\n  FD 300\n  RT 2\n  BK 300\n  LT 8\n]\nPU\nSETXY -146 -126\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 5) [CYAN LIME ORANGE MAGENTA GOLD])\n  REPEAT 24 [\n    FD 10\n    RT 2\n  ]\n  BK 240\n  LT 8\n]\nPU\nSETXY -138 -86\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 5) [LIME ORANGE MAGENTA GOLD CYAN])\n  REPEAT 24 [\n    FD 10\n    RT 2\n  ]\n  BK 240\n  LT 8\n]\nPU\nSETXY -130 -46\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 5) [ORANGE MAGENTA GOLD CYAN LIME])\n  REPEAT 24 [\n    FD 10\n    RT 2\n  ]\n  BK 240\n  LT 8\n]\nPU\nSETXY -122 -6\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 5) [MAGENTA GOLD CYAN LIME ORANGE])\n  REPEAT 24 [\n    FD 10\n    RT 2\n  ]\n  BK 240\n  LT 8\n]\nPU\nSETXY -114 34\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 5) [GOLD CYAN LIME ORANGE MAGENTA])\n  REPEAT 24 [\n    FD 10\n    RT 2\n  ]\n  BK 240\n  LT 8\n]\nPU\nSETXY -106 74\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 5) [CYAN LIME ORANGE MAGENTA GOLD])\n  REPEAT 24 [\n    FD 10\n    RT 2\n  ]\n  BK 240\n  LT 8\n]\nPU\nSETXY -98 114\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 5) [LIME ORANGE MAGENTA GOLD CYAN])\n  REPEAT 24 [\n    FD 10\n    RT 2\n  ]\n  BK 240\n  LT 8\n]\nPU\nSETXY -20 -150\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 5) [GOLD CYAN LIME ORANGE MAGENTA])\n  REPEAT 28 [\n    FD 8\n    RT 1\n  ]\n  BK 224\n  LT 7\n]\nPU\nSETXY 24 -150\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 5) [CYAN LIME ORANGE MAGENTA GOLD])\n  REPEAT 28 [\n    FD 8\n    RT 1\n  ]\n  BK 224\n  LT 7\n]\nPU\nSETXY 68 -150\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 5) [LIME ORANGE MAGENTA GOLD CYAN])\n  REPEAT 28 [\n    FD 8\n    RT 1\n  ]\n  BK 224\n  LT 7\n]\nPU\nSETXY 112 -150\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 5) [ORANGE MAGENTA GOLD CYAN LIME])\n  REPEAT 28 [\n    FD 8\n    RT 1\n  ]\n  BK 224\n  LT 7\n]","CS\nSETBG [18 0 38]\nPU\nSETXY -188 -138\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN MAGENTA YELLOW ORANGE])\n  FD 300\n  RT 2\n  BK 300\n  LT 8\n]\nPU\nSETXY -184 -104\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA YELLOW ORANGE CYAN])\n  FD 300\n  RT 2\n  BK 300\n  LT 8\n]\nPU\nSETXY -180 -70\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [YELLOW ORANGE CYAN MAGENTA])\n  FD 300\n  RT 2\n  BK 300\n  LT 8\n]\nPU\nSETXY -176 -36\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [ORANGE CYAN MAGENTA YELLOW])\n  FD 300\n  RT 2\n  BK 300\n  LT 8\n]\nPU\nSETXY -172 -2\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN MAGENTA YELLOW ORANGE])\n  FD 300\n  RT 2\n  BK 300\n  LT 8\n]\nPU\nSETXY -168 32\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA YELLOW ORANGE CYAN])\n  FD 300\n  RT 2\n  BK 300\n  LT 8\n]\nPU\nSETXY -164 66\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [YELLOW ORANGE CYAN MAGENTA])\n  FD 300\n  RT 2\n  BK 300\n  LT 8\n]\nPU\nSETXY -160 100\nPD\nSETPENSIZE 4\nREPEAT 18 [\n  SETPC (ITEM (REPCOUNT MOD 4) [ORANGE CYAN MAGENTA YELLOW])\n  FD 300\n  RT 2\n  BK 300\n  LT 8\n]\nPU\nSETXY -152 -126\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN YELLOW MAGENTA ORANGE])\n  REPEAT 24 [\n    FD 10\n    RT 2\n  ]\n  BK 240\n  LT 8\n]\nPU\nSETXY -144 -86\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA ORANGE CYAN YELLOW])\n  REPEAT 24 [\n    FD 10\n    RT 2\n  ]\n  BK 240\n  LT 8\n]\nPU\nSETXY -136 -46\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [YELLOW CYAN ORANGE MAGENTA])\n  REPEAT 24 [\n    FD 10\n    RT 2\n  ]\n  BK 240\n  LT 8\n]\nPU\nSETXY -128 -6\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [ORANGE MAGENTA YELLOW CYAN])\n  REPEAT 24 [\n    FD 10\n    RT 2\n  ]\n  BK 240\n  LT 8\n]\nPU\nSETXY -120 34\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN YELLOW MAGENTA ORANGE])\n  REPEAT 24 [\n    FD 10\n    RT 2\n  ]\n  BK 240\n  LT 8\n]\nPU\nSETXY -112 74\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA ORANGE CYAN YELLOW])\n  REPEAT 24 [\n    FD 10\n    RT 2\n  ]\n  BK 240\n  LT 8\n]\nPU\nSETXY -104 114\nPD\nSETPENSIZE 3\nREPEAT 10 [\n  SETPC (ITEM (REPCOUNT MOD 4) [YELLOW CYAN ORANGE MAGENTA])\n  REPEAT 24 [\n    FD 10\n    RT 2\n  ]\n  BK 240\n  LT 8\n]\nPU\nSETXY -16 -150\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [ORANGE CYAN MAGENTA YELLOW])\n  REPEAT 28 [\n    FD 8\n    RT 1\n  ]\n  BK 224\n  LT 7\n]\nPU\nSETXY 28 -150\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [CYAN MAGENTA YELLOW ORANGE])\n  REPEAT 28 [\n    FD 8\n    RT 1\n  ]\n  BK 224\n  LT 7\n]\nPU\nSETXY 72 -150\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [MAGENTA YELLOW ORANGE CYAN])\n  REPEAT 28 [\n    FD 8\n    RT 1\n  ]\n  BK 224\n  LT 7\n]\nPU\nSETXY 116 -150\nPD\nSETPENSIZE 3\nREPEAT 8 [\n  SETPC (ITEM (REPCOUNT MOD 4) [YELLOW ORANGE CYAN MAGENTA])\n  REPEAT 28 [\n    FD 8\n    RT 1\n  ]\n  BK 224\n  LT 7\n]"];
+var L=["Seed","Iteration 1","Iteration 2","Iteration 3","Iteration 4","Iteration 5","Iteration 6","Iteration 7","Iteration 8","Iteration 9","Iteration 10","Iteration 11","Iteration 12","Iteration 13","Iteration 14","Iteration 15"];
+var FD=[{},{"score":4,"aes":4,"nov":8,"par":0,"sm":{"totalCommands":69,"distinctCommands":12,"nestingDepth":2,"colorChanges":9,"proceduresDefined":0,"repeatCount":6,"codeLength":1001,"tokenCount":222},"im":{"distinctPixelColors":29,"spatialEntropy":1.8112,"fillRatio":0.2776,"symmetryScore":0.9637,"edgeDensity":0.1117}},{"score":6,"aes":6,"nov":7,"par":0,"sm":{"totalCommands":68,"distinctCommands":12,"nestingDepth":2,"colorChanges":8,"proceduresDefined":0,"repeatCount":6,"codeLength":908,"tokenCount":204},"im":{"distinctPixelColors":24,"spatialEntropy":2.3254,"fillRatio":0.2914,"symmetryScore":0.7867,"edgeDensity":0.2175}},{"score":3,"aes":3,"nov":2,"par":0,"sm":{"totalCommands":90,"distinctCommands":12,"nestingDepth":2,"colorChanges":10,"proceduresDefined":0,"repeatCount":10,"codeLength":1266,"tokenCount":282},"im":{"distinctPixelColors":24,"spatialEntropy":2.325,"fillRatio":0.2916,"symmetryScore":0.7878,"edgeDensity":0.2161}},{"score":4,"aes":4,"nov":5,"par":0,"sm":{"totalCommands":189,"distinctCommands":12,"nestingDepth":2,"colorChanges":19,"proceduresDefined":0,"repeatCount":28,"codeLength":2804,"tokenCount":615},"im":{"distinctPixelColors":24,"spatialEntropy":2.3535,"fillRatio":0.3304,"symmetryScore":0.7805,"edgeDensity":0.21}},{"score":4,"aes":4,"nov":5,"par":0,"sm":{"totalCommands":183,"distinctCommands":12,"nestingDepth":2,"colorChanges":18,"proceduresDefined":0,"repeatCount":28,"codeLength":2582,"tokenCount":578},"im":{"distinctPixelColors":24,"spatialEntropy":2.1034,"fillRatio":0.2858,"symmetryScore":0.8365,"edgeDensity":0.2025}},{"score":3,"aes":3,"nov":4,"par":0,"sm":{"totalCommands":150,"distinctCommands":12,"nestingDepth":2,"colorChanges":15,"proceduresDefined":0,"repeatCount":22,"codeLength":2108,"tokenCount":473},"im":{"distinctPixelColors":24,"spatialEntropy":2.3627,"fillRatio":0.341,"symmetryScore":0.8123,"edgeDensity":0.1897}},{"score":3,"aes":3,"nov":4,"par":0,"sm":{"totalCommands":149,"distinctCommands":12,"nestingDepth":2,"colorChanges":15,"proceduresDefined":0,"repeatCount":21,"codeLength":2019,"tokenCount":455},"im":{"distinctPixelColors":24,"spatialEntropy":2.1768,"fillRatio":0.2977,"symmetryScore":0.8369,"edgeDensity":0.1663}},{"score":3,"aes":3,"nov":5,"par":0,"sm":{"totalCommands":160,"distinctCommands":12,"nestingDepth":2,"colorChanges":16,"proceduresDefined":0,"repeatCount":23,"codeLength":2171,"tokenCount":489},"im":{"distinctPixelColors":23,"spatialEntropy":2.3544,"fillRatio":0.3418,"symmetryScore":0.7921,"edgeDensity":0.1962}},{"score":4,"aes":4,"nov":6,"par":0,"sm":{"totalCommands":160,"distinctCommands":12,"nestingDepth":2,"colorChanges":16,"proceduresDefined":0,"repeatCount":23,"codeLength":2126,"tokenCount":489},"im":{"distinctPixelColors":24,"spatialEntropy":2.3449,"fillRatio":0.3613,"symmetryScore":0.7927,"edgeDensity":0.2056}},{"score":5,"aes":5,"nov":4,"par":0,"sm":{"totalCommands":200,"distinctCommands":12,"nestingDepth":2,"colorChanges":20,"proceduresDefined":0,"repeatCount":27,"codeLength":2738,"tokenCount":628},"im":{"distinctPixelColors":24,"spatialEntropy":2.1669,"fillRatio":0.3401,"symmetryScore":0.7881,"edgeDensity":0.2238}},{"score":4,"aes":4,"nov":5,"par":0,"sm":{"totalCommands":200,"distinctCommands":12,"nestingDepth":2,"colorChanges":20,"proceduresDefined":0,"repeatCount":27,"codeLength":2985,"tokenCount":666},"im":{"distinctPixelColors":23,"spatialEntropy":2.2446,"fillRatio":0.3921,"symmetryScore":0.8036,"edgeDensity":0.203}},{"score":4,"aes":4,"nov":6,"par":0,"sm":{"totalCommands":213,"distinctCommands":12,"nestingDepth":2,"colorChanges":21,"proceduresDefined":0,"repeatCount":31,"codeLength":2947,"tokenCount":671},"im":{"distinctPixelColors":24,"spatialEntropy":2.3688,"fillRatio":0.3739,"symmetryScore":0.7579,"edgeDensity":0.2561}},{"score":4,"aes":4,"nov":5,"par":0,"sm":{"totalCommands":213,"distinctCommands":12,"nestingDepth":2,"colorChanges":21,"proceduresDefined":0,"repeatCount":31,"codeLength":2974,"tokenCount":671},"im":{"distinctPixelColors":23,"spatialEntropy":2.1076,"fillRatio":0.3199,"symmetryScore":0.8404,"edgeDensity":0.2012}},{"score":4,"aes":4,"nov":5,"par":0,"sm":{"totalCommands":213,"distinctCommands":12,"nestingDepth":2,"colorChanges":21,"proceduresDefined":0,"repeatCount":31,"codeLength":3114,"tokenCount":691},"im":{"distinctPixelColors":23,"spatialEntropy":2.4913,"fillRatio":0.3735,"symmetryScore":0.8093,"edgeDensity":0.2079}},{"score":3,"aes":3,"nov":4,"par":0,"sm":{"totalCommands":203,"distinctCommands":12,"nestingDepth":2,"colorChanges":20,"proceduresDefined":0,"repeatCount":30,"codeLength":2915,"tokenCount":640},"im":{"distinctPixelColors":23,"spatialEntropy":2.2389,"fillRatio":0.3242,"symmetryScore":0.8231,"edgeDensity":0.175}}];
+var cur=0,nxt=1,alpha=0,playing=true,lastT=null,phase="dwell",phaseT=0;
+var cvA=document.getElementById("cvA");
+var cvB=document.getElementById("cvB");
+var prg=document.getElementById("prog");
+function ib(k,v){return v!=null?'<div class="ib-group"><span class="ib-k">'+k+'</span><span class="ib-v">'+v+'</span></div>':'';}
+function updateInfobar(i){
+  var d=FD[i]||{};
+  var sm=d.sm||{}; var im=d.im||{};
+  document.getElementById("infobar").innerHTML=
+    ib("Score",d.score!=null?parseFloat(d.score).toFixed(2):null)+
+    ib("Aesthetic",d.aes!=null?parseFloat(d.aes).toFixed(2):null)+
+    ib("Novelty",d.nov!=null?parseFloat(d.nov).toFixed(2):null)+
+    ib("Parsimony",d.par!=null?parseFloat(d.par).toFixed(2):null)+
+    ib("Commands",sm.totalCommands)+
+    ib("Nesting",sm.nestingDepth)+
+    ib("Distinct cmds",sm.distinctCommands)+
+    ib("Color changes",sm.colorChanges)+
+    ib("Repeats",sm.repeatCount)+
+    ib("Procedures",sm.proceduresDefined)+
+    ib("Code length",sm.codeLength!=null?sm.codeLength+" ch":null)+
+    ib("Entropy",im.spatialEntropy!=null?parseFloat(im.spatialEntropy).toFixed(3):null)+
+    ib("Fill ratio",im.fillRatio!=null?(parseFloat(im.fillRatio)*100).toFixed(1)+"%":null)+
+    ib("Symmetry",im.symmetryScore!=null?parseFloat(im.symmetryScore).toFixed(3):null);
+}
+function resize(){var s=cvA.parentElement;var w=s.offsetWidth,h=s.offsetHeight;[cvA,cvB].forEach(function(cv){cv.width=w;cv.height=h;});redrawA();redrawB();}
+function redrawA(){drawCode(cvA,F[cur],0);}
+function redrawB(){drawCode(cvB,F[nxt],0);}
+new ResizeObserver(resize).observe(cvA.parentElement);
+L.forEach(function(_,i){var d=document.createElement("div");d.className="pip"+(i===0?" active":"");d.title=L[i];d.onclick=function(){go(i);};prg.appendChild(d);});
+function pips(){prg.querySelectorAll(".pip").forEach(function(p,i){p.classList.toggle("active",i===cur);});}
+function go(i){cur=i;nxt=(i+1)%F.length;alpha=0;phase="dwell";phaseT=0;cvB.style.opacity=0;cvB.style.transition="opacity 0ms";redrawA();redrawB();pips();document.getElementById("frameLbl").textContent=L[cur];updateInfobar(i);var cp=document.getElementById("codePanel");if(cp)cp.textContent=F[i]||"";}
+resize();go(0);
+function tick(ts){if(!playing){lastT=null;return;}if(!lastT)lastT=ts;var spd=parseFloat(document.getElementById("spd").value);var dt=(ts-lastT)*spd;lastT=ts;var DWELL=1400,FADE=900;if(phase==="dwell"){phaseT+=dt;if(phaseT>=DWELL){phaseT=0;phase="fade";cvB.style.transition="opacity 0ms";}}else{phaseT+=dt;alpha=Math.min(1,phaseT/FADE);cvB.style.transition="opacity 0ms";cvB.style.opacity=alpha;if(alpha>=1){cur=nxt;nxt=(cur+1)%F.length;alpha=0;phase="dwell";phaseT=0;cvB.style.opacity=0;redrawA();redrawB();pips();document.getElementById("frameLbl").textContent=L[cur];updateInfobar(cur);var cp=document.getElementById("codePanel");if(cp)cp.textContent=F[cur]||"";}}requestAnimationFrame(tick);}
+requestAnimationFrame(tick);
+// Restore speed from parent index.html if available
+(function(){
+  try{
+    var saved = window.parent && window.parent._dissolveSpeed;
+    if(saved && saved>0){document.getElementById('spd').value=saved;document.getElementById('spdVal').textContent=parseFloat(saved).toFixed(1)+'×';}
+  }catch(e){}
+})();
+document.getElementById("spd").oninput=function(){
+  var v=parseFloat(this.value);
+  document.getElementById("spdVal").textContent=v.toFixed(1)+"×";
+  // Persist to parent so next dissolve file opens at same speed
+  try{if(window.parent)window.parent._dissolveSpeed=v;}catch(e){}
+};
+function togglePlay(){playing=!playing;document.getElementById("btnPlay").textContent=playing?"⏸ Pause":"▶ Play";if(playing)requestAnimationFrame(tick);}
+function step(d){playing=false;document.getElementById("btnPlay").textContent="▶ Play";go((cur+d+F.length)%F.length);}
+</script></body></html>

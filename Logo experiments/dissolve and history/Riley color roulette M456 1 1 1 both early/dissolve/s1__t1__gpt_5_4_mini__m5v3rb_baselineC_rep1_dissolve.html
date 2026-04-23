@@ -1,0 +1,691 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<title>In the style of Bridget Riley's colour period —  · rep1 (C) — Dissolve</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0e1a;color:#b8cce4;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:16px 16px 32px;gap:10px}
+h1{font-size:1rem;color:#e8f2ff;letter-spacing:.05em;text-align:center}
+.stage{position:relative;width:min(560px,90vmin);aspect-ratio:1;background:#000;border-radius:8px;overflow:hidden;box-shadow:0 4px 32px rgba(0,0,0,.8)}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%}
+.controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+input[type=range]{accent-color:#3ff5c0;width:100px}
+button{background:#0f1530;border:1px solid #233060;color:#b8cce4;padding:4px 12px;border-radius:5px;cursor:pointer;font-size:.78rem}
+button:hover{border-color:#3ff5c0;color:#3ff5c0}
+.frame-lbl{font-size:.78rem;color:#3ff5c0;min-width:200px;text-align:center;font-family:monospace}
+.progress{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;max-width:560px}
+.pip{width:8px;height:8px;border-radius:50%;background:#233060;cursor:pointer;transition:background .15s}
+.pip.active{background:#3ff5c0}
+.infobar{background:#0d1425;border:1px solid #1e2d50;border-radius:6px;padding:8px 12px;width:min(700px,98vw);display:flex;flex-wrap:wrap;gap:8px 20px;font-size:.68rem;font-family:monospace}
+.ib-k{color:#6a88b0;text-transform:uppercase;letter-spacing:.07em;font-size:.58rem}
+.ib-v{color:#d4e4f7;font-weight:600}
+.ib-group{display:flex;flex-direction:column;gap:1px;min-width:70px}
+.mtbl{width:100%;border-collapse:collapse;font-size:.65rem}
+.mtbl td{padding:3px 8px;border-bottom:1px solid #1e2d50}
+.mk{color:#6a88b0;white-space:nowrap;width:40%}
+.mv{color:#d4e4f7;font-weight:600}
+details{width:min(700px,98vw);background:#0d1425;border:1px solid #1e2d50;border-radius:6px;padding:0}
+summary{padding:8px 12px;font-size:.7rem;color:#6a88b0;cursor:pointer;letter-spacing:.06em;text-transform:uppercase}
+summary:hover{color:#3ff5c0}
+.det-inner{padding:8px 12px 12px}
+</style></head><body>
+<h1>In the style of Bridget Riley's colour period —  · rep1 (C)</h1>
+<div class="stage"><canvas id="cvA"></canvas><canvas id="cvB" style="opacity:0;transition:opacity 0ms linear"></canvas></div>
+<div class="frame-lbl" id="frameLbl">Seed</div>
+<div class="controls">
+<span style="font-size:.7rem;color:#6a88b0">Speed</span>
+<input type="range" id="spd" min="0.2" max="10" step="0.1" value="1">
+<span id="spdVal" style="font-size:.7rem;min-width:2.2em">1.0×</span>
+<button id="btnPlay" onclick="togglePlay()">⏸ Pause</button>
+<button onclick="step(-1)">◄</button>
+<button onclick="step(1)">►</button>
+</div>
+<div class="progress" id="prog"></div>
+<div class="infobar" id="infobar"></div>
+<div style="width:min(700px,98vw);background:#0d1425;border:1px solid #1e2d50;border-radius:6px;padding:0"><div style="padding:4px 12px 3px;font-size:.57rem;color:#6a88b0;text-transform:uppercase;letter-spacing:.08em;display:flex;justify-content:space-between;align-items:center"><span>Logo Code</span><button id="btnCopyCode" style="background:none;border:1px solid #233060;color:#6a88b0;padding:1px 8px;font-size:.6rem;border-radius:3px;cursor:pointer" onclick="navigator.clipboard.writeText(document.getElementById('codePanel').textContent).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1400)})">Copy</button></div><pre id="codePanel" style="font-family:monospace;font-size:.68rem;color:#3aaa6a;padding:8px 12px 10px;margin:0;white-space:pre-wrap;word-break:break-all;max-height:160px;overflow-y:auto"></pre></div>
+<details><summary>Experiment Parameters</summary><div class="det-inner"><table class="mtbl">
+    <tr><td class="mk">Seed</td><td class="mv">Line</td></tr> <tr><td class="mk">Taste</td><td class="mv">In the style of Bridget Riley's colour period — vibrant parallel stripes and curves in saturated colours creating optical movement. Ignore her earlier black and white works.</td></tr> <tr><td class="mk">Model</td><td class="mv">gpt-5.4-mini</td></tr>
+    <tr><td class="mk">Run type</td><td class="mv">Baseline C</td></tr> <tr><td class="mk">Repeat</td><td class="mv">1</td></tr>
+    <tr><td class="mk">Iterations</td><td class="mv">28</td></tr> <tr><td class="mk">Magnitude</td><td class="mv">5</td></tr>
+    <tr><td class="mk">Selection</td><td class="mv">roulette</td></tr> <tr><td class="mk">Variants/iter</td><td class="mv">3</td></tr>
+    <tr><td class="mk">Aesthetic weight</td><td class="mv">1</td></tr> <tr><td class="mk">Novelty weight</td><td class="mv">1</td></tr>
+    <tr><td class="mk">Parsimony weight</td><td class="mv">1</td></tr>
+    <tr><td class="mk">Final score</td><td class="mv">17.20</td></tr>
+    <tr><td class="mk">Final aes</td><td class="mv">8.00</td></tr>
+    <tr><td class="mk">Final nov</td><td class="mv">6.00</td></tr>
+    <tr><td class="mk">Cross-model aes</td><td class="mv">8.00 (gemini-3-flash-preview)</td></tr>
+  </table></div></details>
+<script>
+const activeAnims={};
+function compileLogo(code, W, H) {
+  const queue = [];
+  const procs = {};
+  let callDepth = 0;
+  const MAX_DEPTH = 200, MAX_OPS = 120000;
+  let opCount = 0;
+
+  let sx = W/2, sy = H/2, heading = 0;
+  let penDown = true, penColor = '#1e293b', penSize = 1.5;
+  const unknownCmds = new Set();
+
+  const toRad = h => (h - 90) * Math.PI / 180;
+
+  const NAMED_COLORS = {
+    BLACK:'#000',BLUE:'#0055ff',GREEN:'#00cc44',CYAN:'#00ffff',
+    RED:'#ff3333',MAGENTA:'#ff00ff',YELLOW:'#ffff00',WHITE:'#fff',
+    ORANGE:'#ff8800',PURPLE:'#8833cc',BROWN:'#aa6600',PINK:'#ffaacc',
+    GRAY:'#888',GREY:'#888',LIME:'#aaff00',TEAL:'#00aaaa',NAVY:'#000088',
+    GOLD:'#ffcc00',VIOLET:'#8800ff',INDIGO:'#4400aa',CRIMSON:'#cc1133',
+    CORAL:'#ff6644',SKYBLUE:'#66aaff',MINT:'#44ffbb',ROSE:'#ff4477',
+    AMBER:'#ffaa00',SILVER:'#c0c0c0',MAROON:'#800000',OLIVE:'#808000',
+  };
+  const LOGO_PALETTE = [
+    '#000','#0000ff','#00ff00','#00ffff','#ff0000','#ff00ff','#ffff00','#fff',
+    '#a52a2a','#d2b48c','#008000','#40e0d0','#ffa500','#800080','#ffd700','#c0c0c0',
+  ];
+
+  function resolveColor(v) {
+    if (Array.isArray(v)) {
+      // 3-element numeric array → RGB
+      if (v.length === 3 && v.every(x => typeof x === 'number' || !isNaN(Number(x)))) {
+        const r=Math.round(Number(v[0])||0),g=Math.round(Number(v[1])||0),b=Math.round(Number(v[2])||0);
+        return 'rgb('+r+','+g+','+b+')';
+      }
+      // Single-element array (e.g. from ITEM returning a list wrap) → unwrap
+      if (v.length === 1) return resolveColor(v[0]);
+      // Multi-element word array → try first element as a color name
+      return resolveColor(v[0]);
+    }
+    if (typeof v === 'number') return LOGO_PALETTE[Math.abs(Math.floor(v)) % LOGO_PALETTE.length];
+    const s = String(v).trim().toUpperCase();
+    if (NAMED_COLORS[s]) return NAMED_COLORS[s];
+    // Try as CSS hex or named
+    if (s.startsWith('#') || s.startsWith('RGB')) return v;
+    return v;
+  }
+
+  function drawTo(nx, ny) {
+    if (penDown) queue.push({type:'line',x1:sx,y1:sy,x2:nx,y2:ny,c:penColor,w:penSize});
+    sx = nx; sy = ny;
+  }
+
+  function arcLines(cx, cy, r, startA, endA, ccw) {
+    if (r <= 0) return;
+    const span = ccw
+      ? ((startA - endA + 2*Math.PI) % (2*Math.PI)) || 2*Math.PI
+      : ((endA - startA + 2*Math.PI) % (2*Math.PI)) || 2*Math.PI;
+    const n = Math.max(6, Math.round(32 * span / (2*Math.PI)));
+    const step = (ccw ? -1 : 1) * span / n;
+    let px = cx + r*Math.cos(startA), py = cy + r*Math.sin(startA);
+    for (let i = 1; i <= n; i++) {
+      const a = startA + step * i;
+      const nx2 = cx + r*Math.cos(a), ny2 = cy + r*Math.sin(a);
+      if (penDown) queue.push({type:'line',x1:px,y1:py,x2:nx2,y2:ny2,c:penColor,w:penSize});
+      px = nx2; py = ny2;
+    }
+    sx = px; sy = py;
+  }
+
+  function tokenize(src) {
+    src = src.replace(/;[^\n]*/g,' ');
+    const T = []; let i = 0;
+    while (i < src.length) {
+      const c = src[i];
+      if (/\s/.test(c)) { i++; continue; }
+      if (c==='[') { T.push(['[']); i++; }
+      else if (c===']') { T.push([']']); i++; }
+      else if (c==='(') { T.push(['(']); i++; }
+      else if (c===')') { T.push([')']); i++; }
+      else if (c==='+') { T.push(['+']); i++; }
+      else if (c==='*') { T.push(['*']); i++; }
+      else if (c==='/') { T.push(['/']); i++; }
+      else if (c==='<') { T.push([src[i+1]==='='?(i++,'<='):'<']); i++; }
+      else if (c==='>') { T.push([src[i+1]==='='?(i++,'>='):'>']); i++; }
+      else if (c==='=') { T.push(['=']); i++; }
+      else if (c==='-') {
+        const prev = T[T.length-1];
+        const isOp = !prev || ['[','(','+','-','*','/','<','>','<=','>=','='].includes(prev[0]);
+        const prevWasSpace = i>0 && /\s/.test(src[i-1]);
+        if ((isOp || prevWasSpace) && i+1<src.length && /[\d.]/.test(src[i+1])) {
+          let n='-'; i++;
+          while (i<src.length && /[\d.]/.test(src[i])) n+=src[i++];
+          T.push(['NUM',parseFloat(n)]);
+        } else { T.push(['-']); i++; }
+      }
+      else if (/[\d.]/.test(c)) {
+        let n=''; while (i<src.length && /[\d.]/.test(src[i])) n+=src[i++];
+        T.push(['NUM',parseFloat(n)]);
+      }
+      else if (c==='"') {
+        i++; let w='';
+        while (i<src.length && !/[\s\[\]()]/.test(src[i])) w+=src[i++];
+        T.push(['WORD',w]);
+      }
+      else if (c===':') {
+        i++; let n='';
+        while (i<src.length && /[\w]/.test(src[i])) n+=src[i++];
+        T.push(['VAR',n.toUpperCase()]);
+      }
+      else if (/[a-zA-Z_]/.test(c)) {
+        let w=''; while (i<src.length && /[\w?!]/.test(src[i])) w+=src[i++];
+        T.push(['CMD',w.toUpperCase()]);
+      }
+      else i++;
+    }
+    return T;
+  }
+
+  function collectList(T,p) {
+    let depth=1; p++;
+    const list=[];
+    while (p<T.length&&depth>0) {
+      if (T[p][0]==='[') depth++;
+      else if (T[p][0]===']') { if(--depth===0){p++;break;} }
+      list.push(T[p]); p++;
+    }
+    return [list,p];
+  }
+
+  function getValue(T,p,V) {
+    if (p>=T.length) return [0,p];
+    const t=T[p]; const k=t[0];
+    if (k==='NUM') return [t[1],p+1];
+    if (k==='WORD') return [t[1],p+1];
+    if (k==='VAR') return [V[t[1]]!==undefined?V[t[1]]:0,p+1];
+    if (k==='[') {
+      // Evaluate each element in the list as a value (for SETPC [r g b] etc.)
+      let np2=p+1; const items=[];
+      let depth=0;
+      // Check if it's a nested list (contains sub-lists)
+      let hasNested=false;
+      for(let qi=p+1;qi<T.length;qi++){if(T[qi][0]===']'&&depth===0)break;if(T[qi][0]==='['){hasNested=true;break;}if(T[qi][0]==='CMD'){}}
+      if(hasNested){
+        // Return as token array (code list for REPEAT, IF, etc.)
+        const [list,np3]=collectList(T,p); return [list,np3];
+      }
+      // Flat list: evaluate each element as a value
+      while(np2<T.length && T[np2][0]!==']'){
+        const [v,nnp]=getValue(T,np2,V); items.push(v); np2=nnp;
+      }
+      return [items, np2+1];
+    }
+    if (k==='(') {
+      if (T[p+1] && T[p+1][0]==='CMD' && T[p+1][1]==='LIST') {
+        const items=[]; let np2=p+2;
+        while(np2<T.length && T[np2][0]!==')'){
+          const [v,nnp]=getValue(T,np2,V); items.push(v); np2=nnp;
+        }
+        return [items, np2+1];
+      }
+      const [v,np2]=evalExpr(T,p+1,V);
+      return [v, T[np2]&&T[np2][0]===')'? np2+1 : np2];
+    }
+    if (k==='CMD') {
+      const cmd=t[1]; p++;
+      const FN={
+        SQRT:a=>Math.sqrt(Math.abs(a)),SIN:a=>Math.sin(a*Math.PI/180),
+        COS:a=>Math.cos(a*Math.PI/180),TAN:a=>Math.tan(a*Math.PI/180),
+        ABS:a=>Math.abs(a),INT:a=>Math.trunc(a),ROUND:a=>Math.round(a),
+        MINUS:a=>-a,NOT:a=>a?0:1,
+        RANDOM:a=>Math.floor(Math.random()*(Math.abs(Math.floor(a))||1)),
+      };
+      if(FN[cmd]){const [a,np2]=getValue(T,p,V);return [FN[cmd](parseFloat(a)||0),np2];}
+      if(procs[cmd]){
+        const proc=procs[cmd];
+        const args=[];let np2=p;
+        for(let i=0;i<proc.params.length;i++){const [a,nnp]=getValue(T,np2,V);args.push(a);np2=nnp;}
+        const lv={...V};proc.params.forEach((pr,i)=>lv[pr]=args[i]);
+        let result=0;
+        try{callDepth++;if(callDepth<MAX_DEPTH)exec(proc.body,lv);}catch(e){if(e&&e.returnValue!==undefined)result=e.returnValue;}
+        callDepth--;
+        return [result,np2];
+      }
+      if(cmd==='REPCOUNT') return [V['__REPCOUNT']||0,p];
+
+      // Two-argument math functions (prefix and infix both supported)
+      if(cmd==='MOD'||cmd==='REMAINDER'){
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        const rb=parseFloat(b)||1;
+        return [((parseFloat(a)||0)%rb+Math.abs(rb))%Math.abs(rb), np3];
+      }
+      if(cmd==='MAX'){
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        return [Math.max(parseFloat(a)||0, parseFloat(b)||0), np3];
+      }
+      if(cmd==='MIN'){
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        return [Math.min(parseFloat(a)||0, parseFloat(b)||0), np3];
+      }
+      if(cmd==='AND'){
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        return [(parseFloat(a)&&parseFloat(b))?1:0, np3];
+      }
+      if(cmd==='OR'){
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        return [(parseFloat(a)||parseFloat(b))?1:0, np3];
+      }
+      if(cmd==='POWER'){
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        return [Math.pow(parseFloat(a)||0, parseFloat(b)||0), np3];
+      }
+      if(cmd==='ATAN'){
+        // ATAN y x (two-arg arctangent, degrees)
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        return [Math.atan2(parseFloat(a)||0, parseFloat(b)||0)*180/Math.PI, np3];
+      }
+
+      // List/word operations
+      if(cmd==='ITEM'){
+        // ITEM n list — 1-based index into list or word
+        const [idx,np2]=getValue(T,p,V);
+        const [lst,np3]=getValue(T,np2,V);
+        const i=Math.round(parseFloat(idx)||1);
+        if(Array.isArray(lst)) return [lst[i-1]!==undefined?lst[i-1]:0, np3];
+        if(typeof lst==='string'){const ch=lst[i-1];return [ch!==undefined?ch:'',np3];}
+        return [0,np3];
+      }
+      if(cmd==='PICK'){
+        // PICK list — random element (1-based)
+        const [lst,np2]=getValue(T,p,V);
+        if(Array.isArray(lst)&&lst.length) return [lst[Math.floor(Math.random()*lst.length)],np2];
+        return [0,np2];
+      }
+      if(cmd==='COUNT'){
+        const [lst,np2]=getValue(T,p,V);
+        return [Array.isArray(lst)?lst.length:(typeof lst==='string'?lst.length:0),np2];
+      }
+      if(cmd==='FIRST'){
+        const [lst,np2]=getValue(T,p,V);
+        return [Array.isArray(lst)?lst[0]:(typeof lst==='string'?lst[0]||'':''),np2];
+      }
+      if(cmd==='LAST'){
+        const [lst,np2]=getValue(T,p,V);
+        return [Array.isArray(lst)?lst[lst.length-1]:(typeof lst==='string'?lst[lst.length-1]||'':''),np2];
+      }
+      if(cmd==='BUTFIRST'||cmd==='BF'){
+        const [lst,np2]=getValue(T,p,V);
+        return [Array.isArray(lst)?lst.slice(1):(typeof lst==='string'?lst.slice(1):''),np2];
+      }
+      if(cmd==='BUTLAST'||cmd==='BL'){
+        const [lst,np2]=getValue(T,p,V);
+        return [Array.isArray(lst)?lst.slice(0,-1):(typeof lst==='string'?lst.slice(0,-1):''),np2];
+      }
+      if(cmd==='EMPTY?'||cmd==='EMPTYP'){
+        const [lst,np2]=getValue(T,p,V);
+        return [(Array.isArray(lst)?lst.length===0:(String(lst).length===0))?1:0,np2];
+      }
+      if(cmd==='MEMBER?'||cmd==='MEMBERP'){
+        const [item,np2]=getValue(T,p,V);
+        const [lst,np3]=getValue(T,np2,V);
+        return [Array.isArray(lst)?lst.some(x=>String(x).toUpperCase()===String(item).toUpperCase())?1:0:0,np3];
+      }
+      if(cmd==='LIST'){
+        // LIST a b — makes a two-element list
+        const [a,np2]=getValue(T,p,V);
+        const [b,np3]=getValue(T,np2,V);
+        return [[a,b],np3];
+      }
+      if(cmd==='SENTENCE'||cmd==='SE'){
+        const [a,np2]=getValue(T,p,V);
+        const [b,np3]=getValue(T,np2,V);
+        const fa=Array.isArray(a)?a:[a]; const fb=Array.isArray(b)?b:[b];
+        return [[...fa,...fb],np3];
+      }
+      if(cmd==='WORD'){
+        const [a,np2]=getValue(T,p,V);
+        const [b,np3]=getValue(T,np2,V);
+        return [String(a)+String(b),np3];
+      }
+      if(cmd==='LPUT'){
+        const [item,np2]=getValue(T,p,V);
+        const [lst,np3]=getValue(T,np2,V);
+        return [Array.isArray(lst)?[...lst,item]:[item],np3];
+      }
+      if(cmd==='FPUT'){
+        const [item,np2]=getValue(T,p,V);
+        const [lst,np3]=getValue(T,np2,V);
+        return [Array.isArray(lst)?[item,...lst]:[item],np3];
+      }
+
+      // Unrecognized CMD — treat as a string value (e.g. color names like WHITE, GOLD, RED)
+      return [cmd,p];
+    }
+    return [0,p+1];
+  }
+
+  function evalExpr(T,p,V) {
+    let [left,np]=getValue(T,p,V);
+    while(np<T.length){
+      const op=T[np][0];
+      // Handle MOD, REMAINDER, AND, OR as infix CMD operators
+      const isCmdOp = op==='CMD' && ['MOD','REMAINDER','AND','OR','MAX','MIN','POWER'].includes(T[np][1]);
+      if(!['+','-','*','/','<','>','<=','>=','='].includes(op) && !isCmdOp)break;
+      const [right,nnp]=getValue(T, isCmdOp?np+1:np+1, V);
+      const l=parseFloat(left)||0,r=parseFloat(right)||0;
+      if(op==='+')left=l+r;
+      else if(op==='-')left=l-r;
+      else if(op==='*')left=l*r;
+      else if(op==='/')left=r!==0?l/r:0;
+      else if(op==='<')left=l<r?1:0;
+      else if(op==='>')left=l>r?1:0;
+      else if(op==='<=')left=l<=r?1:0;
+      else if(op==='>=')left=l>=r?1:0;
+      else if(op==='=')left=(String(left)===String(right)?1:0);
+      else if(isCmdOp){
+        const cn=T[np][1];
+        if(cn==='MOD'||cn==='REMAINDER'){const rb=r||1;left=((l%rb)+Math.abs(rb))%Math.abs(rb);}
+        else if(cn==='MAX')left=Math.max(l,r);
+        else if(cn==='MIN')left=Math.min(l,r);
+        else if(cn==='AND')left=(l&&r)?1:0;
+        else if(cn==='OR')left=(l||r)?1:0;
+        else if(cn==='POWER')left=Math.pow(l,r);
+      }
+      np=nnp;
+    }
+    return [left,np];
+  }
+
+  function exec(T,V) {
+    let p=0;
+    while(p<T.length) {
+      if(opCount++>MAX_OPS)return;
+      const t=T[p]; const k=t[0];
+      if(k!=='CMD'){p++;continue;}
+      const cmd=t[1]; p++;
+      if(cmd==='TO'){
+        let name=T[p]?T[p][1]:''; p++;
+        const params=[];
+        while(p<T.length&&T[p][0]==='VAR'){params.push(T[p][1]);p++;}
+        const body=[];
+        while(p<T.length){
+          if(T[p][0]==='CMD'&&T[p][1]==='END'){p++;break;}
+          body.push(T[p]);p++;
+        }
+        procs[name]={params,body};
+        continue;
+      }
+      if(cmd==='END')continue;
+      if(cmd==='OUTPUT'||cmd==='OP'){
+        const [v,np]=evalExpr(T,p,V);p=np;
+        throw {returnValue:v};
+      }
+      if(cmd==='STOP')return;
+      if(cmd==='MAKE'||cmd==='MAKEGLOBAL'){
+        const [nm,np]=getValue(T,p,V); p=np;
+        const [vl,np2]=evalExpr(T,p,V); p=np2;
+        V[String(nm).toUpperCase()]=vl;
+        continue;
+      }
+      if(cmd==='LOCAL'){const [nm,np]=getValue(T,p,V);p=np;V[String(nm).toUpperCase()]=0;continue;}
+      if(cmd==='FD'||cmd==='FORWARD'){
+        const [d,np]=evalExpr(T,p,V); p=np;
+        const dist=parseFloat(d)||0;
+        const a=toRad(heading);
+        drawTo(sx+Math.cos(a)*dist, sy+Math.sin(a)*dist);
+        continue;
+      }
+      if(cmd==='BK'||cmd==='BACK'||cmd==='BACKWARD'){
+        const [d,np]=evalExpr(T,p,V); p=np;
+        const dist=parseFloat(d)||0;
+        const a=toRad(heading+180);
+        drawTo(sx+Math.cos(a)*dist, sy+Math.sin(a)*dist);
+        continue;
+      }
+      if(cmd==='RT'||cmd==='RIGHT'){const [d,np]=evalExpr(T,p,V);p=np;heading=(heading+parseFloat(d)||0)%360;continue;}
+      if(cmd==='LT'||cmd==='LEFT'){const [d,np]=evalExpr(T,p,V);p=np;heading=((heading-parseFloat(d)||0)%360+360)%360;continue;}
+      if(cmd==='SETHEADING'||cmd==='SH'){const [d,np]=evalExpr(T,p,V);p=np;heading=((parseFloat(d)||0)%360+360)%360;continue;}
+      if(cmd==='PU'||cmd==='PENUP'){penDown=false;continue;}
+      if(cmd==='PD'||cmd==='PENDOWN'){penDown=true;continue;}
+      if(cmd==='HOME'){drawTo(W/2,H/2);heading=0;continue;}
+      if(cmd==='CS'||cmd==='CLEARSCREEN'){
+        queue.push({type:'bg',color:'#fff'});
+        sx=W/2;sy=H/2;heading=0;penDown=true;
+        continue;
+      }
+      if(cmd==='SETXY'||cmd==='SETPOS'){
+        const [xv,np]=evalExpr(T,p,V);p=np;
+        const [yv,np2]=evalExpr(T,p,V);p=np2;
+        drawTo(W/2+(parseFloat(xv)||0), H/2+(parseFloat(yv)||0));
+        continue;
+      }
+      if(cmd==='SETX'){const [xv,np]=evalExpr(T,p,V);p=np;drawTo(W/2+(parseFloat(xv)||0),sy);continue;}
+      if(cmd==='SETY'){const [yv,np]=evalExpr(T,p,V);p=np;drawTo(sx,H/2+(parseFloat(yv)||0));continue;}
+      if(cmd==='SETPC'||cmd==='SETPENCOLOR'||cmd==='PC'){
+        const [cv,np]=getValue(T,p,V);p=np;
+        penColor=resolveColor(cv);
+        continue;
+      }
+      if(cmd==='SETBG'||cmd==='SETBACKGROUND'){
+        const [cv,np]=getValue(T,p,V);p=np;
+        queue.push({type:'bg',color:resolveColor(cv)});
+        continue;
+      }
+      if(cmd==='SETPENSIZE'||cmd==='SETWIDTH'||cmd==='SETPW'||cmd==='PW'){
+        const [sv,np]=evalExpr(T,p,V);p=np;
+        penSize=Math.max(0.1,parseFloat(sv)||1);
+        continue;
+      }
+      if(cmd==='HT'||cmd==='HIDETURTLE'||cmd==='ST'||cmd==='SHOWTURTLE'){continue;}
+      if(cmd==='REPEAT'){
+        const [n,np]=evalExpr(T,p,V);p=np;
+        const [body,np2]=collectList(T,p);p=np2;
+        const count=Math.floor(parseFloat(n)||0);
+        for(let i=1;i<=count;i++){
+          if(opCount>MAX_OPS)break;
+          V['__REPCOUNT']=i;
+          exec(body,{...V});
+        }
+        continue;
+      }
+      if(cmd==='FOREVER'){
+        const [body,np]=collectList(T,p);p=np;
+        let i=0;
+        while(opCount<MAX_OPS&&i++<10000)exec(body,{...V});
+        continue;
+      }
+      if(cmd==='WHILE'){
+        const condStart=p;
+        const [cond,np]=collectList(T,p);p=np;
+        const [body,np2]=collectList(T,p);p=np2;
+        let guard=0;
+        while(guard++<10000&&opCount<MAX_OPS){
+          const [cv]=evalExpr(cond,0,V);
+          if(!parseFloat(cv))break;
+          exec(body,{...V});
+        }
+        continue;
+      }
+      if(cmd==='IF'){
+        const [cv,np]=evalExpr(T,p,V);p=np;
+        const [body,np2]=collectList(T,p);p=np2;
+        if(parseFloat(cv))exec(body,{...V});
+        continue;
+      }
+      if(cmd==='IFELSE'){
+        const [cv,np]=evalExpr(T,p,V);p=np;
+        const [tbody,np2]=collectList(T,p);p=np2;
+        const [fbody,np3]=collectList(T,p);p=np3;
+        exec(parseFloat(cv)?tbody:fbody,{...V});
+        continue;
+      }
+      if(cmd==='FOR'){
+        const [spec,np]=collectList(T,p);p=np;
+        const [body,np2]=collectList(T,p);p=np2;
+        if(spec.length>=4){
+          const varName=spec[0][1];
+          const [startV]=evalExpr(spec,1,V);
+          const [endV]=evalExpr(spec,2,V);
+          const [stepV]=evalExpr(spec,3,V);
+          const start=parseFloat(startV)||0,end=parseFloat(endV)||0,step=parseFloat(stepV)||1;
+          const lv={...V};
+          if(step>0)for(let i=start;i<=end&&opCount<MAX_OPS;i+=step){lv[varName]=i;exec(body,{...lv});}
+          else if(step<0)for(let i=start;i>=end&&opCount<MAX_OPS;i+=step){lv[varName]=i;exec(body,{...lv});}
+        }
+        continue;
+      }
+      if(cmd==='ARC'){
+        const [anglev,np]=evalExpr(T,p,V);p=np;
+        const [rv,np2]=evalExpr(T,p,V);p=np2;
+        const angle=parseFloat(anglev)||0;
+        const r=Math.abs(parseFloat(rv)||0);
+        if(r>0){
+          const startA=toRad(heading-90);
+          const ccw=angle<0;
+          const spanAngle=Math.abs(angle);
+          const endA=startA+(ccw?-1:1)*spanAngle*Math.PI/180;
+          const cx2=sx-r*Math.cos(startA), cy2=sy-r*Math.sin(startA);
+          arcLines(cx2,cy2,r,startA,endA,ccw);
+        }
+        continue;
+      }
+      if(cmd==='CIRCLE'){
+        const [rv,np]=evalExpr(T,p,V);p=np;
+        const r=Math.abs(parseFloat(rv)||0);
+        if(r>0){
+          const startA=toRad(heading-90);
+          const cx2=sx-r*Math.cos(startA), cy2=sy-r*Math.sin(startA);
+          arcLines(cx2,cy2,r,startA,startA+2*Math.PI,false);
+        }
+        continue;
+      }
+      if(cmd==='DOT'){
+        const [rv,np]=evalExpr(T,p,V);p=np;
+        const r2=parseFloat(rv)||5;
+        queue.push({type:'dot',cx:sx,cy:sy,r:Math.abs(r2),c:penColor});
+        continue;
+      }
+      if(cmd==='LABEL'||cmd==='PRINT'||cmd==='SHOW'||cmd==='TYPE'){
+        const [,np]=getValue(T,p,V);p=np;
+        continue;
+      }
+      if(cmd==='WAIT'||cmd==='CLEARTEXT'||cmd==='CT'){continue;}
+      if(procs[cmd]){
+        const proc=procs[cmd];
+        const args=[];let np=p;
+        for(let i=0;i<proc.params.length;i++){const [a,nnp]=getValue(T,np,V);args.push(a);np=nnp;}
+        p=np;
+        const lv={};proc.params.forEach((pr,i)=>lv[pr]=args[i]);
+        callDepth++;
+        if(callDepth<MAX_DEPTH){
+          try{exec(proc.body,lv);}
+          catch(e){if(!e||e.returnValue===undefined)throw e;}
+        }
+        callDepth--;
+        continue;
+      }
+      unknownCmds.add(cmd);
+    }
+  }
+
+  try { exec(tokenize(code),{}); } catch(e) { if(!e||e.returnValue===undefined) console.warn('compileLogo error:',e); }
+  return {queue, unknownCmds};
+}
+function autoFitQueue(queue, W, H) {
+  if (!queue.length) return queue;
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  for (const op of queue) {
+    if (op.type==='line') {
+      minX=Math.min(minX,op.x1,op.x2);maxX=Math.max(maxX,op.x1,op.x2);
+      minY=Math.min(minY,op.y1,op.y2);maxY=Math.max(maxY,op.y1,op.y2);
+    } else if (op.type==='dot') {
+      minX=Math.min(minX,op.cx-op.r);maxX=Math.max(maxX,op.cx+op.r);
+      minY=Math.min(minY,op.cy-op.r);maxY=Math.max(maxY,op.cy+op.r);
+    }
+  }
+  if (!isFinite(minX)) return queue;
+  const dw=maxX-minX, dh=maxY-minY;
+  if (dw===0&&dh===0) return queue;
+  const pad=0.06;
+  const scaleFit=Math.min((W*(1-2*pad))/Math.max(dw,1),(H*(1-2*pad))/Math.max(dh,1));
+  const fillRatio=Math.max(dw/W, dh/H);
+  const scale = fillRatio > 0.4 ? Math.min(scaleFit, 1/fillRatio*(1-2*pad)) : scaleFit;
+  if (!isFinite(scale)||scale<=0) return queue;
+  const cx=(minX+maxX)/2, cy=(minY+maxY)/2;
+  const ox=W/2-cx*scale, oy=H/2-cy*scale;
+  return queue.map(op => {
+    if (op.type==='line') return {...op,x1:op.x1*scale+ox,y1:op.y1*scale+oy,x2:op.x2*scale+ox,y2:op.y2*scale+oy,w:Math.max(0.3,op.w*Math.sqrt(scale))};
+    if (op.type==='dot') return {...op,cx:op.cx*scale+ox,cy:op.cy*scale+oy,r:Math.max(1,op.r*scale)};
+    return op;
+  });
+}
+function renderQueue(canvas, queue, getSpeedFn) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d', {willReadFrequently:true});
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.lineCap='round';ctx.lineJoin='round';
+  if (activeAnims[canvas.id]) { cancelAnimationFrame(activeAnims[canvas.id]); delete activeAnims[canvas.id]; }
+  const getSpd = () => typeof getSpeedFn==='function' ? getSpeedFn() : (getSpeedFn||0);
+  function drawOp(op) {
+    if (op.type==='bg') { ctx.fillStyle=op.color;ctx.fillRect(0,0,canvas.width,canvas.height); }
+    else if (op.type==='line') {
+      ctx.beginPath();ctx.moveTo(op.x1,op.y1);ctx.lineTo(op.x2,op.y2);
+      ctx.strokeStyle=op.c;ctx.lineWidth=op.w;ctx.stroke();
+    } else if (op.type==='dot') {
+      ctx.beginPath();ctx.arc(op.cx,op.cy,op.r,0,2*Math.PI);ctx.fillStyle=op.c;ctx.fill();
+    }
+  }
+  if (getSpd()===0||queue.length===0) { queue.forEach(drawOp); return; }
+  let i = 0;
+  function frame() {
+    const spd=getSpd();
+    if (spd===0) { while(i<queue.length) drawOp(queue[i++]); return; }
+    const n = Math.max(1,Math.floor(spd));
+    const end = Math.min(i+n, queue.length);
+    while (i<end) drawOp(queue[i++]);
+    if (i<queue.length) activeAnims[canvas.id]=requestAnimationFrame(frame);
+  }
+  activeAnims[canvas.id]=requestAnimationFrame(frame);
+}
+function drawCode(el,code,spd){var c=typeof el==="string"?document.getElementById(el):el;if(!c)return;var res=compileLogo(code,c.width,c.height);var rawQ=res.queue||res;var q=autoFitQueue(rawQ,c.width,c.height);renderQueue(c,q,spd);}
+var F=["FD 100","CS\nSETBG [14 18 32]\nSETPC [255 120 40]\nSETWIDTH 6\nPU\nSETXY -210 -180\nPD\nREPEAT 18 [\n  FD 420\n  PU\n  BK 420\n  RT 10\n  FD 14\n  LT 10\n  PD\n]\n\nSETPC [80 220 255]\nSETWIDTH 4\nPU\nSETXY -210 -150\nPD\nREPEAT 18 [\n  FD 420\n  PU\n  BK 420\n  RT 10\n  FD 14\n  LT 10\n  PD\n]\n\nSETPC [255 70 180]\nSETWIDTH 5\nPU\nSETXY -210 -120\nPD\nREPEAT 18 [\n  FD 420\n  PU\n  BK 420\n  RT 10\n  FD 14\n  LT 10\n  PD\n]\n\nSETPC [255 220 80]\nSETWIDTH 3\nPU\nSETXY -210 -90\nPD\nREPEAT 18 [\n  FD 420\n  PU\n  BK 420\n  RT 10\n  FD 14\n  LT 10\n  PD\n]\n\nSETPC [120 255 120]\nSETWIDTH 4\nPU\nSETXY -210 -60\nPD\nREPEAT 18 [\n  FD 420\n  PU\n  BK 420\n  RT 10\n  FD 14\n  LT 10\n  PD\n]\n\nSETPC [255 160 0]\nSETWIDTH 6\nPU\nSETXY -210 -30\nPD\nREPEAT 18 [\n  FD 420\n  PU\n  BK 420\n  RT 10\n  FD 14\n  LT 10\n  PD\n]","CS\nSETBG [14 18 32]\nTO STRIPE :C :W :Y :B\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -220 :Y\nPD\nREPEAT 20 [\n  FD 430\n  PU\n  BK 430\n  RT 8\n  FD :B\n  LT 8\n  PD\n]\nEND\n\nSTRIPE [255 120 40] 6 -180 16\nSTRIPE [80 220 255] 4 -152 14\nSTRIPE [255 70 180] 5 -124 15\nSTRIPE [255 220 80] 3 -96 13\nSTRIPE [120 255 120] 4 -68 14\nSTRIPE [255 160 0] 6 -40 16\nSTRIPE [0 200 170] 4 -12 14\nSTRIPE [255 90 220] 5 16 15","CS\nSETBG [14 18 32]\nTO STRIPE :C :W :Y :B :H\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -220 :Y\nPD\nREPEAT 20 [\n  FD 430\n  PU\n  BK 430\n  RT :H\n  FD :B\n  LT :H\n  PD\n]\nEND\n\nSTRIPE [255 80 210] 8 -186 18 7\nSTRIPE [70 230 255] 7 -156 16 6\nSTRIPE [255 170 40] 8 -126 18 7\nSTRIPE [255 235 90] 7 -96 16 6\nSTRIPE [120 255 150] 8 -66 18 7\nSTRIPE [255 105 190] 7 -36 16 6\nSTRIPE [40 210 255] 8 -6 18 7\nSTRIPE [255 140 70] 7 24 16 6","CS\nSETBG [10 14 28]\nTO STRIPE :C :W :Y :B :H\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -220 :Y\nPD\nREPEAT 20 [\n  FD 430\n  PU\n  BK 430\n  RT :H\n  FD :B\n  LT :H\n  PD\n]\nEND\n\nSTRIPE [255 60 220] 11 -190 24 8\nSTRIPE [0 235 255] 10 -162 22 7\nSTRIPE [255 220 70] 11 -134 24 8\nSTRIPE [255 145 40] 10 -106 22 7\nSTRIPE [255 80 180] 11 -78 24 8\nSTRIPE [60 255 150] 10 -50 22 7\nSTRIPE [255 95 240] 11 -22 24 8\nSTRIPE [255 185 60] 10 6 22 7\nSTRIPE [80 200 255] 11 34 24 8\nSTRIPE [255 245 110] 10 62 22 7","CS\nSETBG [10 14 28]\nTO STRIPE :C :W :Y :B :H\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -220 :Y\nPD\nREPEAT 20 [\n  FD 430\n  PU\n  BK 430\n  RT :H\n  FD :B\n  LT :H\n  PD\n]\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C3 :W1 :Y :B :H\nEND\n\nBAND [255 60 220] [0 235 255] [255 220 70] 11 9 -190 26 9\nBAND [255 145 40] [255 80 180] [60 255 150] 10 8 -158 25 8\nBAND [255 95 240] [255 185 60] [80 200 255] 11 9 -126 26 9\nBAND [255 245 110] [255 120 200] [90 255 220] 10 8 -94 25 8\nBAND [255 70 150] [80 220 255] [255 210 80] 11 9 -62 26 9\nBAND [70 255 170] [255 110 235] [255 180 60] 10 8 -30 25 8\nBAND [255 90 255] [40 230 255] [255 240 120] 11 9 2 26 9\nBAND [255 160 70] [180 255 90] [255 80 200] 10 8 34 25 8\nBAND [90 210 255] [255 230 90] [255 100 170] 11 9 66 26 9\nBAND [255 120 60] [70 255 220] [220 120 255] 10 8 98 25 8","CS\nSETBG [12 16 34]\nTO STRIPE :C :W :Y :B :H\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -230 :Y\nPD\nREPEAT 28 [\n  FD 460\n  PU\n  BK 460\n  RT :H\n  FD :B\n  LT :H\n  PD\n]\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C3 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nEND\n\nBAND [255 70 225] [0 240 255] [255 225 90] 12 10 -200 28 11\nBAND [255 150 55] [255 90 190] [70 255 160] 11 9 -172 27 10\nBAND [255 105 245] [255 190 70] [80 205 255] 12 10 -144 28 11\nBAND [255 250 120] [255 125 205] [95 255 225] 11 9 -116 27 10\nBAND [255 80 160] [80 225 255] [255 215 80] 12 10 -88 28 11\nBAND [80 255 175] [255 120 240] [255 190 65] 11 9 -60 27 10\nBAND [255 95 255] [40 235 255] [255 245 130] 12 10 -32 28 11\nBAND [255 170 75] [190 255 95] [255 90 210] 11 9 -4 27 10\nBAND [95 215 255] [255 235 100] [255 110 180] 12 10 24 28 11\nBAND [255 130 65] [75 255 225] [225 130 255] 11 9 52 27 10","CS\nSETBG [12 16 34]\nTO STRIPE :C :W :Y :B :H\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -230 :Y\nPD\nREPEAT 28 [\n  FD 460\n  PU\n  BK 460\n  RT :H\n  FD :B\n  LT :H\n  PD\n]\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C3 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 10 :B :H + 1\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 20 :B :H + 2\nEND\n\nWAVE [255 70 225] [0 240 255] [255 225 90] 12 10 -220 30 11\nWAVE [255 150 55] [255 90 190] [70 255 160] 11 9 -194 29 10\nWAVE [255 105 245] [255 190 70] [80 205 255] 12 10 -168 30 11\nWAVE [255 250 120] [255 125 205] [95 255 225] 11 9 -142 29 10\nWAVE [255 80 160] [80 225 255] [255 215 80] 12 10 -116 30 11\nWAVE [80 255 175] [255 120 240] [255 190 65] 11 9 -90 29 10\nWAVE [255 95 255] [40 235 255] [255 245 130] 12 10 -64 30 11\nWAVE [255 170 75] [190 255 95] [255 90 210] 11 9 -38 29 10\nWAVE [95 215 255] [255 235 100] [255 110 180] 12 10 -12 30 11\nWAVE [255 130 65] [75 255 225] [225 130 255] 11 9 14 29 10\nWAVE [255 60 140] [90 255 245] [255 205 80] 12 10 40 30 11","CS\nSETBG [12 16 34]\nTO STRIPE :C :W :Y :B :H :S\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -230 :Y\nPD\nREPEAT 28 [\n  FD 460\n  PU\n  BK 460\n  RT :H\n  FD :B\n  LT :H\n  PD\n]\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y :B :H :S\nSTRIPE :C2 :W2 :Y :B :H :S\nSTRIPE :C3 :W1 :Y :B :H :S\nSTRIPE :C2 :W2 :Y :B :H :S\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 10 :B :H + 1\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 20 :B :H + 2\nEND\n\nWAVE [255 70 225] [0 240 255] [255 225 90] 12 10 -220 30 11\nWAVE [255 150 55] [255 90 190] [70 255 160] 11 9 -194 29 10\nWAVE [255 105 245] [255 190 70] [80 205 255] 12 10 -168 30 11\nWAVE [255 250 120] [255 125 205] [95 255 225] 11 9 -142 29 10\nWAVE [255 80 160] [80 225 255] [255 215 80] 12 10 -116 30 11\nWAVE [80 255 175] [255 120 240] [255 190 65] 11 9 -90 29 10\nWAVE [255 95 255] [40 235 255] [255 245 130] 12 10 -64 30 11\nWAVE [255 170 75] [190 255 95] [255 90 210] 11 9 -38 29 10\nWAVE [95 215 255] [255 235 100] [255 110 180] 12 10 -12 30 11\nWAVE [255 130 65] [75 255 225] [225 130 255] 11 9 14 29 10\nWAVE [255 60 140] [90 255 245] [255 205 80] 12 10 40 30 11","CS\nSETBG [10 14 28]\nTO STRIPE :C :W :Y :B :H :S\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -260 :Y\nPD\nREPEAT 34 [\n  FD 520\n  PU\n  BK 520\n  RT :H\n  FD :B\n  LT :H\n  PD\n]\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y :B :H :S\nSTRIPE :C2 :W2 :Y :B :H :S\nSTRIPE :C3 :W1 :Y :B :H :S\nSTRIPE :C2 :W2 :Y :B :H :S\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 8 :B :H + 1\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 16 :B :H + 2\nEND\n\nWAVE [255 70 225] [0 240 255] [255 225 90] 13 10 -220 32 11\nWAVE [255 150 55] [255 90 190] [70 255 160] 12 9 -192 31 10\nWAVE [255 105 245] [255 190 70] [80 205 255] 13 10 -164 32 11\nWAVE [255 250 120] [255 125 205] [95 255 225] 12 9 -136 31 10\nWAVE [255 80 160] [80 225 255] [255 215 80] 13 10 -108 32 11\nWAVE [80 255 175] [255 120 240] [255 190 65] 12 9 -80 31 10\nWAVE [255 95 255] [40 235 255] [255 245 130] 13 10 -52 32 11\nWAVE [255 170 75] [190 255 95] [255 90 210] 12 9 -24 31 10\nWAVE [95 215 255] [255 235 100] [255 110 180] 13 10 4 32 11\nWAVE [255 130 65] [75 255 225] [225 130 255] 12 9 32 31 10\nWAVE [255 60 140] [90 255 245] [255 205 80] 13 10 60 32 11","CS\nSETBG [12 16 34]\nTO STRIPE :C :W :Y :B :H\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -260 :Y\nPD\nREPEAT 40 [\n  FD 14\n  RT :H\n  FD 6\n  LT :H\n]\nPU\nBK 520\nPD\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C3 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 7 :B :H + 1\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 14 :B :H + 2\nEND\n\nWAVE [255 68 210] [0 235 255] [255 220 80] 12 9 -224 28 9\nWAVE [255 155 60] [255 90 195] [70 255 170] 11 8 -200 27 10\nWAVE [255 100 245] [255 200 70] [80 205 255] 12 9 -176 28 9\nWAVE [255 245 125] [255 120 205] [95 255 225] 11 8 -152 27 10\nWAVE [255 82 155] [80 225 255] [255 210 85] 12 9 -128 28 9\nWAVE [80 255 175] [255 120 240] [255 190 65] 11 8 -104 27 10\nWAVE [255 95 255] [40 235 255] [255 245 130] 12 9 -80 28 9\nWAVE [255 175 75] [190 255 95] [255 90 210] 11 8 -56 27 10\nWAVE [95 215 255] [255 235 100] [255 110 180] 12 9 -32 28 9\nWAVE [255 130 65] [75 255 225] [225 130 255] 11 8 -8 27 10\nWAVE [255 60 140] [90 255 245] [255 205 80] 12 9 16 28 9","CS\nSETBG [10 14 32]\nTO STRIPE :C :W :Y :B :H\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -260 :Y\nPD\nREPEAT 40 [\n  FD 12\n  RT :H\n  FD 6\n  LT :H\n  FD 8\n  RT :B\n]\nPU\nBK 520\nPD\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C3 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 6 :B + 1 :H + 1\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 12 :B + 2 :H + 2\nEND\n\nWAVE [255 72 214] [0 238 255] [255 224 84] 12 9 -226 24 8\nWAVE [255 160 64] [255 94 198] [72 255 174] 11 8 -204 25 9\nWAVE [255 104 248] [255 205 74] [84 208 255] 12 9 -182 26 8\nWAVE [255 248 132] [255 124 208] [98 255 228] 11 8 -160 27 9\nWAVE [255 86 160] [84 228 255] [255 214 88] 12 9 -138 28 8\nWAVE [84 255 180] [255 124 242] [255 194 68] 11 8 -116 29 9\nWAVE [255 98 255] [44 238 255] [255 248 136] 12 9 -94 30 8\nWAVE [255 178 80] [194 255 98] [255 94 214] 11 8 -72 29 9\nWAVE [98 220 255] [255 238 104] [255 114 184] 12 9 -50 28 8\nWAVE [255 136 70] [78 255 228] [228 136 255] 11 8 -28 27 9\nWAVE [255 64 146] [94 255 248] [255 210 84] 12 9 -6 26 8","CS\nSETBG [8 12 28]\nTO STRIPE :C :W :Y :B :H\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -260 :Y\nPD\nREPEAT 42 [\n  FD 11\n  RT :H\n  FD 5\n  LT :H\n  FD 9\n  RT :B\n]\nPU\nBK 520\nPD\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C3 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 5 :B + 1 :H + 1\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 10 :B + 2 :H + 2\nBAND :C1 :C3 :C2 :W2 :W1 :Y - 15 :B + 3 :H + 1\nEND\n\nWAVE [255 72 214] [0 238 255] [255 224 84] 12 9 -226 24 8\nWAVE [255 160 64] [255 94 198] [72 255 174] 11 8 -208 25 9\nWAVE [255 104 248] [255 205 74] [84 208 255] 12 9 -190 26 8\nWAVE [255 248 132] [255 124 208] [98 255 228] 11 8 -172 27 9\nWAVE [255 86 160] [84 228 255] [255 214 88] 12 9 -154 28 8\nWAVE [84 255 180] [255 124 242] [255 194 68] 11 8 -136 29 9\nWAVE [255 98 255] [44 238 255] [255 248 136] 12 9 -118 30 8\nWAVE [255 178 80] [194 255 98] [255 94 214] 11 8 -100 29 9\nWAVE [98 220 255] [255 238 104] [255 114 184] 12 9 -82 28 8\nWAVE [255 136 70] [78 255 228] [228 136 255] 11 8 -64 27 9\nWAVE [255 64 146] [94 255 248] [255 210 84] 12 9 -46 26 8","CS\nSETBG [10 14 34]\nTO STRIPE :C :W :Y :B :H\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -260 :Y\nPD\nREPEAT 40 [\n  FD 10\n  RT :H\n  FD 4\n  LT :H\n  FD 10\n  RT :B\n]\nPU\nBK 520\nPD\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C3 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 4 :B + 1 :H + 1\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 8 :B + 2 :H + 2\nBAND :C1 :C3 :C2 :W2 :W1 :Y - 12 :B + 3 :H + 1\nEND\n\nWAVE [255 64 178] [0 232 255] [255 218 82] 12 9 -220 18 6\nWAVE [255 112 64] [255 74 208] [64 255 184] 11 8 -202 20 7\nWAVE [255 84 240] [255 210 78] [82 214 255] 12 9 -184 22 6\nWAVE [255 238 124] [255 118 198] [94 255 224] 11 8 -166 24 7\nWAVE [255 92 154] [88 232 255] [255 194 70] 12 9 -148 26 6\nWAVE [92 255 176] [255 132 238] [255 182 64] 11 8 -130 28 7\nWAVE [255 88 250] [52 242 255] [255 244 132] 12 9 -112 30 6\nWAVE [255 174 72] [188 255 94] [255 96 208] 11 8 -94 28 7\nWAVE [92 216 255] [255 236 96] [255 122 178] 12 9 -76 26 6\nWAVE [255 138 64] [76 255 220] [224 142 255] 11 8 -58 24 7\nWAVE [255 70 140] [98 255 246] [255 206 80] 12 9 -40 22 6","CS\nSETBG [10 14 34]\nTO STRIPE :C :W :Y :B :H\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -260 :Y\nPD\nREPEAT 40 [\n  FD 10\n  RT :H\n  FD 4\n  LT :H\n  FD 10\n  RT :B\n]\nPU\nBK 520\nPD\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C3 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 3 :B + 1 :H + 1\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 6 :B + 2 :H + 2\nBAND :C1 :C3 :C2 :W2 :W1 :Y - 9 :B + 3 :H + 1\nBAND :C2 :C1 :C3 :W1 :W2 :Y - 12 :B + 4 :H + 2\nEND\n\nWAVE [255 64 178] [0 232 255] [255 218 82] 12 9 -232 18 6\nWAVE [255 112 64] [255 74 208] [64 255 184] 11 8 -216 20 7\nWAVE [255 84 240] [255 210 78] [82 214 255] 12 9 -200 22 6\nWAVE [255 238 124] [255 118 198] [94 255 224] 11 8 -184 24 7\nWAVE [255 92 154] [88 232 255] [255 194 70] 12 9 -168 26 6\nWAVE [92 255 176] [255 132 238] [255 182 64] 11 8 -152 28 7\nWAVE [255 88 250] [52 242 255] [255 244 132] 12 9 -136 30 6\nWAVE [255 174 72] [188 255 94] [255 96 208] 11 8 -120 28 7\nWAVE [92 216 255] [255 236 96] [255 122 178] 12 9 -104 26 6\nWAVE [255 138 64] [76 255 220] [224 142 255] 11 8 -88 24 7\nWAVE [255 70 140] [98 255 246] [255 206 80] 12 9 -72 22 6","CS\nSETBG [10 14 34]\nTO STRIPE :C :W :Y :B :H\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -260 :Y\nPD\nREPEAT 48 [\n  FD 8\n  RT :H\n  FD 3\n  LT :H\n  FD 8\n  RT :B\n]\nPU\nBK 520\nPD\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C3 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y + 4 :B :H\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 3 :B + 1 :H + 1\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 6 :B + 2 :H + 2\nBAND :C1 :C3 :C2 :W2 :W1 :Y - 9 :B + 3 :H + 1\nBAND :C2 :C1 :C3 :W1 :W2 :Y - 12 :B + 4 :H + 2\nBAND :C3 :C2 :C1 :W2 :W1 :Y - 15 :B + 5 :H + 1\nEND\n\nWAVE [255 64 178] [0 232 255] [255 218 82] 12 9 -232 18 6\nWAVE [255 112 64] [255 74 208] [64 255 184] 11 8 -216 20 7\nWAVE [255 84 240] [255 210 78] [82 214 255] 12 9 -200 22 6\nWAVE [255 238 124] [255 118 198] [94 255 224] 11 8 -184 24 7\nWAVE [255 92 154] [88 232 255] [255 194 70] 12 9 -168 26 6\nWAVE [92 255 176] [255 132 238] [255 182 64] 11 8 -152 28 7\nWAVE [255 88 250] [52 242 255] [255 244 132] 12 9 -136 30 6\nWAVE [255 174 72] [188 255 94] [255 96 208] 11 8 -120 28 7\nWAVE [92 216 255] [255 236 96] [255 122 178] 12 9 -104 26 6\nWAVE [255 138 64] [76 255 220] [224 142 255] 11 8 -88 24 7\nWAVE [255 70 140] [98 255 246] [255 206 80] 12 9 -72 22 6","CS\nSETBG [8 12 30]\nTO STRIPE :C :W :Y :B :H\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -260 :Y\nPD\nREPEAT 48 [\n  FD 8\n  RT :H\n  FD 3\n  LT :H\n  FD 8\n  RT :B\n]\nPU\nBK 520\nPD\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C3 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y + 4 :B :H\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 3 :B + 1 :H + 1\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 6 :B + 2 :H + 2\nBAND :C1 :C3 :C2 :W2 :W1 :Y - 9 :B + 3 :H + 1\nBAND :C2 :C1 :C3 :W1 :W2 :Y - 12 :B + 4 :H + 2\nBAND :C3 :C2 :C1 :W2 :W1 :Y - 15 :B + 5 :H + 1\nEND\n\nWAVE [255 64 178] [0 232 255] [255 218 82] 12 9 -232 18 6\nWAVE [255 112 64] [255 74 208] [64 255 184] 11 8 -216 20 7\nWAVE [255 84 240] [255 210 78] [82 214 255] 12 9 -200 22 6\nWAVE [255 238 124] [255 118 198] [94 255 224] 11 8 -184 24 7\nWAVE [255 92 154] [88 232 255] [255 194 70] 12 9 -168 26 6\nWAVE [92 255 176] [255 132 238] [255 182 64] 11 8 -152 28 7\nWAVE [255 88 250] [52 242 255] [255 244 132] 12 9 -136 30 6\nWAVE [255 174 72] [188 255 94] [255 96 208] 11 8 -120 28 7\nWAVE [92 216 255] [255 236 96] [255 122 178] 12 9 -104 26 6\nWAVE [255 138 64] [76 255 220] [224 142 255] 11 8 -88 24 7\nWAVE [255 70 140] [98 255 246] [255 206 80] 12 9 -72 22 6\nTO ARCSTRIPE :C :W :Y :B :H :L\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -220 :Y\nPD\nREPEAT :L [\n  FD 6\n  RT :H\n  FD 2\n  LT :H + 1\n  FD 6\n  RT :B\n]\nPU\nBK 440\nPD\nEND\n\nTO ARCBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :L\nARCSTRIPE :C1 :W1 :Y :B :H :L\nARCSTRIPE :C2 :W2 :Y :B :H :L\nARCSTRIPE :C3 :W1 :Y :B :H :L\nARCSTRIPE :C2 :W2 :Y :B :H :L\nARCSTRIPE :C1 :W1 :Y + 4 :B :H :L\nEND\n\nTO RILEY :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nARCBAND :C2 :C3 :C1 :W2 :W1 :Y - 3 :B + 1 :H + 1 28\nARCBAND :C3 :C1 :C2 :W1 :W2 :Y - 6 :B + 2 :H + 2 30\nARCBAND :C1 :C3 :C2 :W2 :W1 :Y - 9 :B + 3 :H + 1 32\nARCBAND :C2 :C1 :C3 :W1 :W2 :Y - 12 :B + 4 :H + 2 34\nARCBAND :C3 :C2 :C1 :W2 :W1 :Y - 15 :B + 5 :H + 1 36\nEND\n\nRILEY [255 68 176] [0 228 255] [255 214 86] 12 9 -232 18 6\nRILEY [255 122 72] [255 78 212] [72 255 188] 11 8 -216 20 7\nRILEY [255 88 242] [255 214 84] [88 220 255] 12 9 -200 22 6\nRILEY [255 242 130] [255 126 202] [100 255 226] 11 8 -184 24 7\nRILEY [255 96 160] [92 236 255] [255 198 74] 12 9 -168 26 6\nRILEY [96 255 182] [255 138 242] [255 188 68] 11 8 -152 28 7\nRILEY [255 92 252] [56 246 255] [255 246 136] 12 9 -136 30 6\nRILEY [255 178 78] [192 255 100] [255 100 212] 11 8 -120 28 7\nRILEY [96 220 255] [255 240 102] [255 126 184] 12 9 -104 26 6\nRILEY [255 144 70] [80 255 224] [228 146 255] 11 8 -88 24 7\nRILEY [255 76 146] [102 255 250] [255 210 86] 12 9 -72 22 6","CS\nSETBG [10 16 36]\nTO STRIPE :C :W :Y :B :H\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -260 :Y\nPD\nREPEAT 48 [\n  FD 8\n  RT :H\n  FD 3\n  LT :H\n  FD 8\n  RT :B\n]\nPU\nBK 520\nPD\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C3 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y + 4 :B :H\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 3 :B + 1 :H + 1\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 6 :B + 2 :H + 2\nBAND :C1 :C3 :C2 :W2 :W1 :Y - 9 :B + 3 :H + 1\nBAND :C2 :C1 :C3 :W1 :W2 :Y - 12 :B + 4 :H + 2\nBAND :C3 :C2 :C1 :W2 :W1 :Y - 15 :B + 5 :H + 1\nEND\n\nWAVE [255 76 196] [0 232 255] [255 220 92] 12 9 -230 18 6\nWAVE [255 128 64] [255 72 220] [72 255 184] 11 8 -214 20 7\nWAVE [255 96 244] [255 214 84] [92 220 255] 12 9 -198 22 6\nWAVE [255 246 134] [255 130 208] [104 255 228] 11 8 -182 24 7\nWAVE [255 104 164] [92 238 255] [255 202 74] 12 9 -166 26 6\nWAVE [96 255 186] [255 140 244] [255 190 68] 11 8 -150 28 7\nWAVE [255 96 254] [56 246 255] [255 248 140] 12 9 -134 30 6\nWAVE [255 182 80] [192 255 104] [255 102 214] 11 8 -118 28 7\nWAVE [96 224 255] [255 242 104] [255 130 186] 12 9 -102 26 6\nWAVE [255 148 70] [80 255 226] [228 148 255] 11 8 -86 24 7\nWAVE [255 80 150] [102 255 250] [255 212 86] 12 9 -70 22 6\n\nTO ARCSTRIPE :C :W :Y :B :H :L\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -220 :Y\nPD\nREPEAT :L [\n  FD 6\n  RT :H\n  FD 2\n  LT :H + 1\n  FD 6\n  RT :B\n]\nPU\nBK 440\nPD\nEND\n\nTO ARCBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :L\nARCSTRIPE :C1 :W1 :Y :B :H :L\nARCSTRIPE :C2 :W2 :Y :B :H :L\nARCSTRIPE :C3 :W1 :Y :B :H :L\nARCSTRIPE :C2 :W2 :Y :B :H :L\nARCSTRIPE :C1 :W1 :Y + 4 :B :H :L\nEND\n\nTO RILEY :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nARCBAND :C2 :C3 :C1 :W2 :W1 :Y - 3 :B + 1 :H + 1 28\nARCBAND :C3 :C1 :C2 :W1 :W2 :Y - 6 :B + 2 :H + 2 30\nARCBAND :C1 :C3 :C2 :W2 :W1 :Y - 9 :B + 3 :H + 1 32\nARCBAND :C2 :C1 :C3 :W1 :W2 :Y - 12 :B + 4 :H + 2 34\nARCBAND :C3 :C2 :C1 :W2 :W1 :Y - 15 :B + 5 :H + 1 36\nEND\n\nRILEY [255 72 192] [0 228 255] [255 216 88] 12 9 -234 18 6\nRILEY [255 128 68] [255 76 216] [76 255 190] 11 8 -220 20 7\nRILEY [255 92 246] [255 212 82] [92 224 255] 12 9 -206 22 6\nRILEY [255 244 136] [255 128 206] [108 255 230] 11 8 -192 24 7\nRILEY [255 100 166] [88 240 255] [255 204 78] 12 9 -178 26 6\nRILEY [100 255 188] [255 136 244] [255 192 70] 11 8 -164 28 7\nRILEY [255 92 252] [60 248 255] [255 250 142] 12 9 -150 30 6\nRILEY [255 184 82] [194 255 108] [255 104 216] 11 8 -136 28 7\nRILEY [100 226 255] [255 244 108] [255 132 188] 12 9 -122 26 6\nRILEY [255 150 72] [82 255 228] [230 150 255] 11 8 -108 24 7\nRILEY [255 82 152] [104 255 252] [255 214 88] 12 9 -94 22 6","CS\nSETBG [12 14 34]\n\nTO STRIPE :C :W :Y :B :H\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -250 :Y\nPD\nREPEAT 54 [\n  FD 6\n  RT :H\n  FD 2\n  LT :H + 1\n  FD 6\n  RT :B\n]\nPU\nBK 500\nPD\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C3 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y + 4 :B :H\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 3 :B + 1 :H + 1\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 6 :B + 2 :H + 2\nBAND :C1 :C3 :C2 :W2 :W1 :Y - 9 :B + 3 :H + 1\nBAND :C2 :C1 :C3 :W1 :W2 :Y - 12 :B + 4 :H + 2\nBAND :C3 :C2 :C1 :W2 :W1 :Y - 15 :B + 5 :H + 1\nEND\n\nTO ARCSTRIPE :C :W :Y :B :H :L\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -215 :Y\nPD\nREPEAT :L [\n  FD 5\n  RT :H\n  FD 2\n  LT :H + 1\n  FD 5\n  RT :B\n]\nPU\nBK 430\nPD\nEND\n\nTO ARCBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :L\nARCSTRIPE :C1 :W1 :Y :B :H :L\nARCSTRIPE :C2 :W2 :Y :B :H :L\nARCSTRIPE :C3 :W1 :Y :B :H :L\nARCSTRIPE :C2 :W2 :Y :B :H :L\nARCSTRIPE :C1 :W1 :Y + 4 :B :H :L\nEND\n\nTO RILEY :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nARCBAND :C2 :C3 :C1 :W2 :W1 :Y - 3 :B + 1 :H + 1 30\nARCBAND :C3 :C1 :C2 :W1 :W2 :Y - 6 :B + 2 :H + 2 32\nARCBAND :C1 :C3 :C2 :W2 :W1 :Y - 9 :B + 3 :H + 1 34\nARCBAND :C2 :C1 :C3 :W1 :W2 :Y - 12 :B + 4 :H + 2 36\nARCBAND :C3 :C2 :C1 :W2 :W1 :Y - 15 :B + 5 :H + 1 38\nEND\n\nRILEY [255 64 186] [0 232 255] [255 214 78] 13 10 -228 18 6\nRILEY [255 132 58] [255 74 222] [76 255 198] 12 9 -216 20 7\nRILEY [255 88 250] [255 208 86] [88 226 255] 13 10 -204 22 6\nRILEY [255 240 124] [255 124 210] [100 255 232] 12 9 -192 24 7\nRILEY [255 102 172] [86 244 255] [255 198 72] 13 10 -180 26 6\nRILEY [96 255 184] [255 134 246] [255 194 66] 12 9 -168 28 7\nRILEY [255 90 248] [58 250 255] [255 248 136] 13 10 -156 30 6\nRILEY [255 180 76] [190 255 112] [255 100 220] 12 9 -144 28 7\nRILEY [92 224 255] [255 244 104] [255 128 186] 13 10 -132 26 6\nRILEY [255 148 68] [78 255 230] [232 148 255] 12 9 -120 24 7\nRILEY [255 84 156] [106 255 252] [255 210 84] 13 10 -108 22 6","CS\nSETBG [12 14 34]\n\nTO STRIPE :C :W :Y :B :H\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -250 :Y\nPD\nREPEAT 42 [\n  FD 8\n  RT :H\n  FD 3\n  LT :H + 1\n  FD 8\n  RT :B\n]\nPU\nBK 500\nPD\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C3 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y + 3 :B :H\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 4 :B + 1 :H + 1\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 8 :B + 2 :H + 2\nBAND :C1 :C3 :C2 :W2 :W1 :Y - 12 :B + 3 :H + 1\nEND\n\nTO ARCSTRIPE :C :W :Y :B :H :L\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -215 :Y\nPD\nREPEAT :L [\n  FD 7\n  RT :H\n  FD 3\n  LT :H + 1\n  FD 7\n  RT :B\n]\nPU\nBK 430\nPD\nEND\n\nTO ARCBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :L\nARCSTRIPE :C1 :W1 :Y :B :H :L\nARCSTRIPE :C2 :W2 :Y :B :H :L\nARCSTRIPE :C3 :W1 :Y :B :H :L\nARCSTRIPE :C2 :W2 :Y :B :H :L\nARCSTRIPE :C1 :W1 :Y + 3 :B :H :L\nEND\n\nTO RILEY :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nARCBAND :C2 :C3 :C1 :W2 :W1 :Y - 4 :B + 1 :H + 1 24\nARCBAND :C3 :C1 :C2 :W1 :W2 :Y - 8 :B + 2 :H + 2 26\nARCBAND :C1 :C3 :C2 :W2 :W1 :Y - 12 :B + 3 :H + 1 28\nARCBAND :C2 :C1 :C3 :W1 :W2 :Y - 16 :B + 4 :H + 2 30\nEND\n\nRILEY [255 64 186] [0 232 255] [255 214 78] 13 10 -228 18 6\nRILEY [255 132 58] [255 74 222] [76 255 198] 12 9 -216 20 7\nRILEY [255 88 250] [255 208 86] [88 226 255] 13 10 -204 22 6\nRILEY [255 240 124] [255 124 210] [100 255 232] 12 9 -192 24 7\nRILEY [255 102 172] [86 244 255] [255 198 72] 13 10 -180 26 6\nRILEY [96 255 184] [255 134 246] [255 194 66] 12 9 -168 28 7\nRILEY [255 90 248] [58 250 255] [255 248 136] 13 10 -156 30 6\nRILEY [255 180 76] [190 255 112] [255 100 220] 12 9 -144 28 7\nRILEY [92 224 255] [255 244 104] [255 128 186] 13 10 -132 26 6\nRILEY [255 148 68] [78 255 230] [232 148 255] 12 9 -120 24 7\nRILEY [255 84 156] [106 255 252] [255 210 84] 13 10 -108 22 6","CS\nSETBG [18 16 42]\n\nTO STRIPE :C :W :Y :B :H\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -250 :Y\nPD\nREPEAT 42 [\n  FD 8\n  RT :H\n  FD 3\n  LT :H + 1\n  FD 8\n  RT :B\n]\nPU\nBK 500\nPD\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C3 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y + 2 :B :H\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 3 :B + 1 :H + 1\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 6 :B + 1 :H + 2\nBAND :C1 :C3 :C2 :W2 :W1 :Y - 9 :B + 2 :H + 1\nEND\n\nTO ARCSTRIPE :C :W :Y :B :H :L\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -215 :Y\nPD\nREPEAT :L [\n  FD 7\n  RT :H\n  FD 3\n  LT :H + 1\n  FD 7\n  RT :B\n]\nPU\nBK 430\nPD\nEND\n\nTO ARCBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :L\nARCSTRIPE :C1 :W1 :Y :B :H :L\nARCSTRIPE :C2 :W2 :Y :B :H :L\nARCSTRIPE :C3 :W1 :Y :B :H :L\nARCSTRIPE :C2 :W2 :Y :B :H :L\nARCSTRIPE :C1 :W1 :Y + 2 :B :H :L\nEND\n\nTO RILEY :C1 :C2 :C3 :W1 :W2 :Y :B :H\nWAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nARCBAND :C2 :C3 :C1 :W2 :W1 :Y - 4 :B + 1 :H + 1 24\nARCBAND :C3 :C1 :C2 :W1 :W2 :Y - 8 :B + 2 :H + 2 26\nARCBAND :C1 :C3 :C2 :W2 :W1 :Y - 12 :B + 3 :H + 1 28\nEND\n\nRILEY [255 64 186] [0 232 255] [255 214 78] 13 10 -228 18 6\nRILEY [255 132 58] [255 74 222] [76 255 198] 12 9 -216 20 7\nRILEY [255 88 250] [255 208 86] [88 226 255] 13 10 -204 22 6\nRILEY [255 240 124] [255 124 210] [100 255 232] 12 9 -192 24 7\nRILEY [255 102 172] [86 244 255] [255 198 72] 13 10 -180 26 6\nRILEY [96 255 184] [255 134 246] [255 194 66] 12 9 -168 28 7\nRILEY [255 90 248] [58 250 255] [255 248 136] 13 10 -156 30 6\nRILEY [255 180 76] [190 255 112] [255 100 220] 12 9 -144 28 7\nRILEY [92 224 255] [255 244 104] [255 128 186] 13 10 -132 26 6\nRILEY [255 148 68] [78 255 230] [232 148 255] 12 9 -120 24 7\nRILEY [255 84 156] [106 255 252] [255 210 84] 13 10 -108 22 6","CS\nSETBG [14 10 38]\n\nTO STRIPE :C :W :Y :B :H\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -250 :Y\nPD\nREPEAT 42 [\n  FD 8\n  RT :H\n  FD 3\n  LT :H + 1\n  FD 8\n  RT :B\n]\nPU\nBK 500\nPD\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C3 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y + 2 :B :H\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 2 :B + 1 :H + 1\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 4 :B + 1 :H + 2\nBAND :C1 :C3 :C2 :W2 :W1 :Y - 6 :B + 2 :H + 1\nEND\n\nTO ARCSTRIPE :C :W :Y :B :H :L\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -215 :Y\nPD\nREPEAT :L [\n  FD 7\n  RT :H\n  FD 3\n  LT :H + 1\n  FD 7\n  RT :B\n]\nPU\nBK 430\nPD\nEND\n\nTO ARCBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :L\nARCSTRIPE :C1 :W1 :Y :B :H :L\nARCSTRIPE :C2 :W2 :Y :B :H :L\nARCSTRIPE :C3 :W1 :Y :B :H :L\nARCSTRIPE :C2 :W2 :Y :B :H :L\nARCSTRIPE :C1 :W1 :Y + 2 :B :H :L\nEND\n\nTO RILEY :C1 :C2 :C3 :W1 :W2 :Y :B :H\nWAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nARCBAND :C2 :C3 :C1 :W2 :W1 :Y - 3 :B + 1 :H + 1 24\nARCBAND :C3 :C1 :C2 :W1 :W2 :Y - 6 :B + 2 :H + 2 26\nARCBAND :C1 :C3 :C2 :W2 :W1 :Y - 9 :B + 3 :H + 1 28\nEND\n\nRILEY [255 72 196] [44 242 255] [255 220 92] 13 10 -232 16 6\nRILEY [255 144 74] [255 70 232] [82 255 206] 12 9 -220 18 7\nRILEY [255 92 248] [255 214 84] [96 232 255] 13 10 -208 20 6\nRILEY [255 238 118] [255 116 214] [104 255 238] 12 9 -196 22 7\nRILEY [255 108 174] [92 250 255] [255 200 76] 13 10 -184 24 6\nRILEY [104 255 190] [255 140 248] [255 202 70] 12 9 -172 26 7\nRILEY [255 86 246] [66 252 255] [255 250 142] 13 10 -160 28 6\nRILEY [255 186 82] [194 255 118] [255 106 224] 12 9 -148 30 7\nRILEY [96 228 255] [255 246 110] [255 132 192] 13 10 -136 28 6\nRILEY [255 154 74] [82 255 236] [236 152 255] 12 9 -124 26 7","CS\nSETBG [18 8 44]\n\nTO STRIPE :C :W :Y :B :H\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -260 :Y\nPD\nREPEAT 52 [\n  FD 9\n  RT :H\n  FD 4\n  LT :H + 1\n  FD 9\n  RT :B\n]\nPU\nBK 520\nPD\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C3 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y + 2 :B :H\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 2 :B + 1 :H + 1\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 4 :B + 1 :H + 2\nBAND :C1 :C3 :C2 :W2 :W1 :Y - 6 :B + 2 :H + 1\nEND\n\nTO ARCSTRIPE :C :W :Y :B :H :L\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -240 :Y\nPD\nREPEAT :L [\n  FD 8\n  RT :H\n  FD 4\n  LT :H + 1\n  FD 8\n  RT :B\n]\nPU\nBK 480\nPD\nEND\n\nTO ARCBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :L\nARCSTRIPE :C1 :W1 :Y :B :H :L\nARCSTRIPE :C2 :W2 :Y :B :H :L\nARCSTRIPE :C3 :W1 :Y :B :H :L\nARCSTRIPE :C2 :W2 :Y :B :H :L\nARCSTRIPE :C1 :W1 :Y + 2 :B :H :L\nEND\n\nTO RILEY :C1 :C2 :C3 :W1 :W2 :Y :B :H\nWAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nARCBAND :C2 :C3 :C1 :W2 :W1 :Y - 3 :B + 1 :H + 1 30\nARCBAND :C3 :C1 :C2 :W1 :W2 :Y - 6 :B + 2 :H + 2 32\nARCBAND :C1 :C3 :C2 :W2 :W1 :Y - 9 :B + 3 :H + 1 34\nEND\n\nRILEY [255 84 208] [64 240 255] [255 224 96] 13 10 -208 10 4\nRILEY [255 150 72] [255 76 228] [90 255 208] 12 9 -196 11 5\nRILEY [255 94 246] [255 220 88] [100 234 255] 13 10 -184 12 4\nRILEY [255 236 122] [255 124 212] [110 255 236] 12 9 -172 13 5\nRILEY [255 112 180] [96 252 255] [255 206 78] 13 10 -160 14 4\nRILEY [110 255 194] [255 146 250] [255 210 72] 12 9 -148 15 5\nRILEY [255 88 244] [72 252 255] [255 252 146] 13 10 -136 16 4\nRILEY [255 190 86] [204 255 120] [255 112 226] 12 9 -124 17 5\nRILEY [102 232 255] [255 248 112] [255 136 196] 13 10 -112 16 4\nRILEY [255 158 78] [84 255 240] [240 156 255] 12 9 -100 15 5","CS\nSETBG [18 8 44]\n\nTO STRIPE :C :W :Y :B :H\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -260 :Y\nPD\nREPEAT 52 [\n  FD 9\n  RT :H\n  FD 4\n  LT :H + 1\n  FD 9\n  RT :B\n]\nPU\nBK 520\nPD\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C3 :W1 :Y :B :H\nSTRIPE :C2 :W2 :Y :B :H\nSTRIPE :C1 :W1 :Y + 2 :B :H\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 2 :B + 1 :H + 1\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 4 :B + 1 :H + 2\nBAND :C1 :C3 :C2 :W2 :W1 :Y - 6 :B + 2 :H + 1\nEND\n\nTO ARCSTRIPE :C :W :Y :B :H :L\nSETPC :C\nSETWIDTH :W\nPU\nSETXY -240 :Y\nPD\nREPEAT :L [\n  FD 8\n  RT :H\n  FD 4\n  LT :H + 1\n  FD 8\n  RT :B\n]\nPU\nBK 480\nPD\nEND\n\nTO ARCBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :L\nARCSTRIPE :C1 :W1 :Y :B :H :L\nARCSTRIPE :C2 :W2 :Y :B :H :L\nARCSTRIPE :C3 :W1 :Y :B :H :L\nARCSTRIPE :C2 :W2 :Y :B :H :L\nARCSTRIPE :C1 :W1 :Y + 2 :B :H :L\nEND\n\nTO RILEY :C1 :C2 :C3 :W1 :W2 :Y :B :H\nWAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H\nARCBAND :C2 :C3 :C1 :W2 :W1 :Y - 3 :B + 1 :H + 1 30\nARCBAND :C3 :C1 :C2 :W1 :W2 :Y - 6 :B + 2 :H + 2 32\nARCBAND :C1 :C3 :C2 :W2 :W1 :Y - 9 :B + 3 :H + 1 34\nARCBAND :C2 :C1 :C3 :W1 :W2 :Y - 12 :B + 3 :H + 2 36\nEND\n\nRILEY [255 84 208] [64 240 255] [255 224 96] 13 10 -208 10 4\nRILEY [255 150 72] [255 76 228] [90 255 208] 12 9 -196 11 5\nRILEY [255 94 246] [255 220 88] [100 234 255] 13 10 -184 12 4\nRILEY [255 236 122] [255 124 212] [110 255 236] 12 9 -172 13 5\nRILEY [255 112 180] [96 252 255] [255 206 78] 13 10 -160 14 4\nRILEY [110 255 194] [255 146 250] [255 210 72] 12 9 -148 15 5\nRILEY [255 88 244] [72 252 255] [255 252 146] 13 10 -136 16 4\nRILEY [255 190 86] [204 255 120] [255 112 226] 12 9 -124 17 5\nRILEY [102 232 255] [255 248 112] [255 136 196] 13 10 -112 16 4\nRILEY [255 158 78] [84 255 240] [240 156 255] 12 9 -100 15 5","CS\nSETBG [22 10 50]\n\nTO STRIPE :C :W :Y :B :H :X\nSETPC :C\nSETWIDTH :W\nPU\nSETXY :X :Y\nPD\nREPEAT 52 [\n  FD 9\n  RT :H\n  FD 4\n  LT :H + 1\n  FD 9\n  RT :B\n]\nPU\nBK 468\nPD\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nSTRIPE :C1 :W1 :Y :B :H :X\nSTRIPE :C2 :W2 :Y :B :H :X\nSTRIPE :C3 :W1 :Y :B :H :X\nSTRIPE :C2 :W2 :Y :B :H :X\nSTRIPE :C1 :W1 :Y + 2 :B :H :X\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 2 :B + 1 :H + 1 :X + 3\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 4 :B + 1 :H + 2 :X + 6\nBAND :C1 :C3 :C2 :W2 :W1 :Y - 6 :B + 2 :H + 1 :X + 9\nEND\n\nTO ARCSTRIPE :C :W :Y :B :H :L :X\nSETPC :C\nSETWIDTH :W\nPU\nSETXY :X :Y\nPD\nREPEAT :L [\n  FD 8\n  RT :H\n  FD 4\n  LT :H + 1\n  FD 8\n  RT :B\n]\nPU\nBK 468\nPD\nEND\n\nTO ARCBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :L :X\nARCSTRIPE :C1 :W1 :Y :B :H :L :X\nARCSTRIPE :C2 :W2 :Y :B :H :L :X\nARCSTRIPE :C3 :W1 :Y :B :H :L :X\nARCSTRIPE :C2 :W2 :Y :B :H :L :X\nARCSTRIPE :C1 :W1 :Y + 2 :B :H :L :X\nEND\n\nTO RILEY :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nWAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nARCBAND :C2 :C3 :C1 :W2 :W1 :Y - 3 :B + 1 :H + 1 30 :X + 10\nARCBAND :C3 :C1 :C2 :W1 :W2 :Y - 6 :B + 2 :H + 2 32 :X + 16\nARCBAND :C1 :C3 :C2 :W2 :W1 :Y - 9 :B + 3 :H + 1 34 :X + 22\nARCBAND :C2 :C1 :C3 :W1 :W2 :Y - 12 :B + 3 :H + 2 36 :X + 28\nEND\n\nRILEY [255 92 220] [70 244 255] [255 232 92] 13 10 -212 10 4 -18\nRILEY [255 162 72] [255 84 234] [96 255 214] 12 9 -200 11 5 -12\nRILEY [255 102 246] [255 228 96] [110 236 255] 13 10 -188 12 4 -6\nRILEY [255 242 128] [255 132 220] [120 255 240] 12 9 -176 13 5 0\nRILEY [255 118 186] [104 252 255] [255 214 84] 13 10 -164 14 4 7\nRILEY [118 255 204] [255 154 252] [255 218 76] 12 9 -152 15 5 14\nRILEY [255 94 248] [80 252 255] [255 252 154] 13 10 -140 16 4 21\nRILEY [255 196 92] [210 255 126] [255 118 230] 12 9 -128 17 5 28\nRILEY [110 236 255] [255 252 116] [255 144 204] 13 10 -116 16 4 35\nRILEY [255 166 84] [92 255 244] [244 164 255] 12 9 -104 15 5 42","CS\nSETBG [18 8 48]\n\nTO STRIPE :C :W :Y :B :H :X\nSETPC :C\nSETWIDTH :W\nPU\nSETXY :X :Y\nPD\nREPEAT 52 [\n  FD 9\n  RT :H\n  FD 4\n  LT :H + 1\n  FD 9\n  RT :B\n]\nPU\nBK 468\nPD\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nSTRIPE :C1 :W1 :Y :B :H :X\nSTRIPE :C2 :W2 :Y :B :H :X\nSTRIPE :C3 :W1 :Y :B :H :X\nSTRIPE :C2 :W2 :Y :B :H :X\nSTRIPE :C1 :W1 :Y + 2 :B :H :X\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 2 :B + 1 :H + 1 :X + 3\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 4 :B + 1 :H + 2 :X + 6\nBAND :C1 :C3 :C2 :W2 :W1 :Y - 6 :B + 2 :H + 1 :X + 9\nEND\n\nTO ARCSTRIPE :C :W :Y :B :H :L :X\nSETPC :C\nSETWIDTH :W\nPU\nSETXY :X :Y\nPD\nREPEAT :L [\n  FD 8\n  RT :H\n  FD 4\n  LT :H + 1\n  FD 8\n  RT :B\n]\nPU\nBK 468\nPD\nEND\n\nTO ARCBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :L :X\nARCSTRIPE :C1 :W1 :Y :B :H :L :X\nARCSTRIPE :C2 :W2 :Y :B :H :L :X\nARCSTRIPE :C3 :W1 :Y :B :H :L :X\nARCSTRIPE :C2 :W2 :Y :B :H :L :X\nARCSTRIPE :C1 :W1 :Y + 2 :B :H :L :X\nEND\n\nTO RILEY :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nWAVE :C1 :C2 :C3 :W1 :W2 :Y :B :X\nARCBAND :C2 :C3 :C1 :W2 :W1 :Y - 3 :B + 1 :H + 1 30 :X + 22\nARCBAND :C3 :C1 :C2 :W1 :W2 :Y - 6 :B + 2 :H + 2 32 :X + 10\nARCBAND :C1 :C3 :C2 :W2 :W1 :Y - 9 :B + 3 :H + 1 34 :X + 30\nARCBAND :C2 :C1 :C3 :W1 :W2 :Y - 12 :B + 3 :H + 2 36 :X + 18\nEND\n\nRILEY [255 92 220] [70 244 255] [255 232 92] 13 10 -216 10 4 -28\nRILEY [255 162 72] [255 84 234] [96 255 214] 12 9 -206 11 5 -16\nRILEY [255 102 246] [255 228 96] [110 236 255] 13 10 -194 12 4 -4\nRILEY [255 242 128] [255 132 220] [120 255 240] 12 9 -182 13 5 8\nRILEY [255 118 186] [104 252 255] [255 214 84] 13 10 -170 14 4 20\nRILEY [118 255 204] [255 154 252] [255 218 76] 12 9 -158 15 5 32\nRILEY [255 94 248] [80 252 255] [255 252 154] 13 10 -146 16 4 40\nRILEY [255 196 92] [210 255 126] [255 118 230] 12 9 -134 17 5 48\nRILEY [110 236 255] [255 252 116] [255 144 204] 13 10 -122 16 4 56\nRILEY [255 166 84] [92 255 244] [244 164 255] 12 9 -110 15 5 64","CS\nSETBG [18 8 48]\n\nTO STRIPE :C :W :Y :B :H :X\nSETPC :C\nSETWIDTH :W\nPU\nSETXY :X :Y\nPD\nREPEAT 52 [\n  FD 9\n  RT :H\n  FD 4\n  LT :H + 1\n  FD 9\n  RT :B\n]\nPU\nBK 468\nPD\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nSTRIPE :C1 :W1 :Y :B :H :X\nSTRIPE :C2 :W2 :Y :B :H :X\nSTRIPE :C3 :W1 :Y :B :H :X\nSTRIPE :C2 :W2 :Y :B :H :X\nSTRIPE :C1 :W1 :Y + 2 :B :H :X\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 2 :B + 1 :H + 1 :X + 3\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 4 :B + 1 :H + 2 :X + 6\nBAND :C1 :C3 :C2 :W2 :W1 :Y - 6 :B + 2 :H + 1 :X + 9\nEND\n\nTO ARCSTRIPE :C :W :Y :B :H :L :X\nSETPC :C\nSETWIDTH :W\nPU\nSETXY :X :Y\nPD\nREPEAT :L [\n  FD 8\n  RT :H\n  FD 4\n  LT :H + 1\n  FD 8\n  RT :B\n]\nPU\nBK 468\nPD\nEND\n\nTO ARCBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :L :X\nARCSTRIPE :C1 :W1 :Y :B :H :L :X\nARCSTRIPE :C2 :W2 :Y :B :H :L :X\nARCSTRIPE :C3 :W1 :Y :B :H :L :X\nARCSTRIPE :C2 :W2 :Y :B :H :L :X\nARCSTRIPE :C1 :W1 :Y + 2 :B :H :L :X\nEND\n\nTO RILEY :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nWAVE :C1 :C2 :C3 :W1 :W2 :Y :B :X\nARCBAND :C2 :C3 :C1 :W2 :W1 :Y - 3 :B + 1 :H + 1 30 :X + 16\nARCBAND :C3 :C1 :C2 :W1 :W2 :Y - 5 :B + 2 :H + 2 32 :X + 42\nARCBAND :C1 :C3 :C2 :W2 :W1 :Y - 7 :B + 3 :H + 1 34 :X - 8\nARCBAND :C2 :C1 :C3 :W1 :W2 :Y - 9 :B + 3 :H + 2 36 :X + 28\nEND\n\nRILEY [255 92 220] [70 244 255] [255 232 92] 13 10 -216 10 4 -28\nRILEY [255 162 72] [255 84 234] [96 255 214] 12 9 -206 11 5 -16\nRILEY [255 102 246] [255 228 96] [110 236 255] 13 10 -194 12 4 -4\nRILEY [255 242 128] [255 132 220] [120 255 240] 12 9 -182 13 5 8\nRILEY [255 118 186] [104 252 255] [255 214 84] 13 10 -170 14 4 20\nRILEY [118 255 204] [255 154 252] [255 218 76] 12 9 -158 15 5 32\nRILEY [255 94 248] [80 252 255] [255 252 154] 13 10 -146 16 4 40\nRILEY [255 196 92] [210 255 126] [255 118 230] 12 9 -134 17 5 48\nRILEY [110 236 255] [255 252 116] [255 144 204] 13 10 -122 16 4 56\nRILEY [255 166 84] [92 255 244] [244 164 255] 12 9 -110 15 5 64","CS\nSETBG [18 8 48]\n\nTO STRIPE :C :W :Y :B :H :X\nSETPC :C\nSETWIDTH :W\nPU\nSETXY :X :Y\nPD\nREPEAT 52 [\n  FD 9\n  RT :H\n  FD 4\n  LT :H + 1\n  FD 9\n  RT :B\n]\nPU\nBK 468\nPD\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nSTRIPE :C1 :W1 :Y :B :H :X\nSTRIPE :C2 :W2 :Y :B :H :X\nSTRIPE :C3 :W1 :Y :B :H :X\nSTRIPE :C2 :W2 :Y :B :H :X\nSTRIPE :C1 :W1 :Y + 1 :B :H :X\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 2 :B + 1 :H + 1 :X + 2\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 4 :B + 1 :H + 2 :X + 4\nBAND :C1 :C3 :C2 :W2 :W1 :Y - 6 :B + 2 :H + 1 :X + 6\nEND\n\nTO ARCSTRIPE :C :W :Y :B :H :L :X :R\nSETPC :C\nSETWIDTH :W\nPU\nSETXY :X :Y\nPD\nREPEAT :L [\n  FD 7\n  RT :H\n  FD 4\n  LT :H + 1\n  FD 7\n  RT :B\n]\nPU\nRT 90\nFD :R\nLT 90\nPD\nEND\n\nTO ARCBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :L :X :R\nARCSTRIPE :C1 :W1 :Y :B :H :L :X :R\nARCSTRIPE :C2 :W2 :Y :B :H :L :X :R\nARCSTRIPE :C3 :W1 :Y :B :H :L :X :R\nARCSTRIPE :C2 :W2 :Y :B :H :L :X :R\nARCSTRIPE :C1 :W1 :Y + 1 :B :H :L :X :R\nEND\n\nTO RILEY :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nWAVE :C1 :C2 :C3 :W1 :W2 :Y :B :X\nARCBAND :C2 :C3 :C1 :W2 :W1 :Y - 3 :B + 1 :H + 1 30 :X + 12 18\nARCBAND :C3 :C1 :C2 :W1 :W2 :Y - 5 :B + 2 :H + 2 32 :X + 36 34\nARCBAND :C1 :C3 :C2 :W2 :W1 :Y - 7 :B + 3 :H + 1 34 :X + 8 52\nARCBAND :C2 :C1 :C3 :W1 :W2 :Y - 9 :B + 3 :H + 2 36 :X + 28 72\nEND\n\nRILEY [255 92 220] [70 244 255] [255 232 92] 13 10 -216 10 4 -28\nRILEY [255 162 72] [255 84 234] [96 255 214] 12 9 -206 11 5 -16\nRILEY [255 102 246] [255 228 96] [110 236 255] 13 10 -194 12 4 -4\nRILEY [255 242 128] [255 132 220] [120 255 240] 12 9 -182 13 5 8\nRILEY [255 118 186] [104 252 255] [255 214 84] 13 10 -170 14 4 20\nRILEY [118 255 204] [255 154 252] [255 218 76] 12 9 -158 15 5 32\nRILEY [255 94 248] [80 252 255] [255 252 154] 13 10 -146 16 4 40\nRILEY [255 196 92] [210 255 126] [255 118 230] 12 9 -134 17 5 48\nRILEY [110 236 255] [255 252 116] [255 144 204] 13 10 -122 16 4 56\nRILEY [255 166 84] [92 255 244] [244 164 255] 12 9 -110 15 5 64","CS\nSETBG [18 8 48]\n\nTO STRIPE :C :W :Y :B :H :X\nSETPC :C\nSETWIDTH :W\nPU\nSETXY :X :Y\nPD\nREPEAT 52 [\n  FD 9\n  RT :H\n  FD 4\n  LT :H + 1\n  FD 9\n  RT :B\n]\nPU\nBK 468\nPD\nEND\n\nTO BAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nSTRIPE :C1 :W1 :Y :B :H :X\nSTRIPE :C2 :W2 :Y :B :H :X\nSTRIPE :C3 :W1 :Y :B :H :X\nSTRIPE :C2 :W2 :Y :B :H :X\nSTRIPE :C1 :W1 :Y + 1 :B :H :X\nEND\n\nTO WAVE :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nBAND :C2 :C3 :C1 :W2 :W1 :Y - 2 :B + 1 :H + 1 :X + 2\nBAND :C3 :C1 :C2 :W1 :W2 :Y - 4 :B + 1 :H + 2 :X + 4\nBAND :C1 :C3 :C2 :W2 :W1 :Y - 6 :B + 2 :H + 1 :X + 6\nEND\n\nTO ARCSTRIPE :C :W :Y :B :H :L :X :R\nSETPC :C\nSETWIDTH :W\nPU\nSETXY :X :Y\nPD\nREPEAT :L [\n  FD 7\n  RT :H\n  FD 4\n  LT :H + 1\n  FD 7\n  RT :B\n]\nPU\nRT 90\nFD :R\nLT 90\nPD\nEND\n\nTO ARCBAND :C1 :C2 :C3 :W1 :W2 :Y :B :H :L :X :R\nARCSTRIPE :C1 :W1 :Y :B :H :L :X :R\nARCSTRIPE :C2 :W2 :Y :B :H :L :X :R\nARCSTRIPE :C3 :W1 :Y :B :H :L :X :R\nARCSTRIPE :C2 :W2 :Y :B :H :L :X :R\nARCSTRIPE :C1 :W1 :Y + 1 :B :H :L :X :R\nEND\n\nTO RILEY :C1 :C2 :C3 :W1 :W2 :Y :B :H :X\nWAVE :C1 :C2 :C3 :W1 :W2 :Y :B :X\nARCBAND :C2 :C3 :C1 :W2 :W1 :Y - 3 :B + 1 :H + 1 30 :X + 12 18\nARCBAND :C3 :C1 :C2 :W1 :W2 :Y - 5 :B + 2 :H + 2 32 :X + 36 34\nARCBAND :C1 :C3 :C2 :W2 :W1 :Y - 7 :B + 3 :H + 1 34 :X + 8 52\nARCBAND :C2 :C1 :C3 :W1 :W2 :Y - 9 :B + 3 :H + 2 36 :X + 28 72\nARCBAND :C3 :C2 :C1 :W2 :W1 :Y - 11 :B + 4 :H + 1 38 :X + 18 90\nEND\n\nRILEY [255 92 220] [70 244 255] [255 232 92] 13 10 -216 10 4 -28\nRILEY [255 162 72] [255 84 234] [96 255 214] 12 9 -206 11 5 -16\nRILEY [255 102 246] [255 228 96] [110 236 255] 13 10 -194 12 4 -4\nRILEY [255 242 128] [255 132 220] [120 255 240] 12 9 -182 13 5 8\nRILEY [255 118 186] [104 252 255] [255 214 84] 13 10 -170 14 4 20\nRILEY [118 255 204] [255 154 252] [255 218 76] 12 9 -158 15 5 32\nRILEY [255 94 248] [80 252 255] [255 252 154] 13 10 -146 16 4 40\nRILEY [255 196 92] [210 255 126] [255 118 230] 12 9 -134 17 5 48\nRILEY [110 236 255] [255 252 116] [255 144 204] 13 10 -122 16 4 56\nRILEY [255 166 84] [92 255 244] [244 164 255] 12 9 -110 15 5 64\nRILEY [255 126 216] [126 255 168] [255 238 102] 13 10 -98 14 4 72"];
+var L=["Seed","Iteration 1","Iteration 2","Iteration 3","Iteration 4","Iteration 5","Iteration 6","Iteration 7","Iteration 8","Iteration 9","Iteration 10","Iteration 11","Iteration 12","Iteration 13","Iteration 14","Iteration 15","Iteration 16","Iteration 17","Iteration 18","Iteration 19","Iteration 20","Iteration 21","Iteration 22","Iteration 23","Iteration 24","Iteration 25","Iteration 26","Iteration 27","Iteration 28"];
+var FD=[{},{"score":7,"aes":3,"nov":4,"par":0,"sm":{"totalCommands":80,"distinctCommands":12,"nestingDepth":1,"colorChanges":7,"proceduresDefined":0,"repeatCount":6,"codeLength":729,"tokenCount":181},"im":{"distinctPixelColors":75,"spatialEntropy":0.6053,"fillRatio":0.0386,"symmetryScore":0.9894,"edgeDensity":0.0119}},{"score":14,"aes":3,"nov":4,"par":7,"sm":{"totalCommands":15,"distinctCommands":12,"nestingDepth":1,"colorChanges":2,"proceduresDefined":1,"repeatCount":1,"codeLength":384,"tokenCount":111},"im":{"distinctPixelColors":111,"spatialEntropy":0.6158,"fillRatio":0.0324,"symmetryScore":0.99,"edgeDensity":0.016}},{"score":14,"aes":3,"nov":4,"par":7,"sm":{"totalCommands":15,"distinctCommands":12,"nestingDepth":1,"colorChanges":2,"proceduresDefined":1,"repeatCount":1,"codeLength":407,"tokenCount":120},"im":{"distinctPixelColors":130,"spatialEntropy":0.6245,"fillRatio":0.0321,"symmetryScore":0.9877,"edgeDensity":0.0142}},{"score":16,"aes":4,"nov":5,"par":7,"sm":{"totalCommands":15,"distinctCommands":12,"nestingDepth":1,"colorChanges":2,"proceduresDefined":1,"repeatCount":1,"codeLength":476,"tokenCount":140},"im":{"distinctPixelColors":173,"spatialEntropy":0.6183,"fillRatio":0.0395,"symmetryScore":0.9774,"edgeDensity":0.0172}},{"score":16,"aes":4,"nov":5,"par":7,"sm":{"totalCommands":15,"distinctCommands":12,"nestingDepth":1,"colorChanges":2,"proceduresDefined":2,"repeatCount":1,"codeLength":853,"tokenCount":279},"im":{"distinctPixelColors":107,"spatialEntropy":0.5946,"fillRatio":0.0441,"symmetryScore":0.9777,"edgeDensity":0.0205}},{"score":14,"aes":3,"nov":4,"par":7,"sm":{"totalCommands":15,"distinctCommands":12,"nestingDepth":1,"colorChanges":2,"proceduresDefined":2,"repeatCount":1,"codeLength":897,"tokenCount":285},"im":{"distinctPixelColors":125,"spatialEntropy":0.5719,"fillRatio":0.0519,"symmetryScore":0.9607,"edgeDensity":0.0248}},{"score":14,"aes":4,"nov":3,"par":7,"sm":{"totalCommands":15,"distinctCommands":12,"nestingDepth":1,"colorChanges":2,"proceduresDefined":3,"repeatCount":1,"codeLength":1121,"tokenCount":352},"im":{"distinctPixelColors":143,"spatialEntropy":0.5759,"fillRatio":0.052,"symmetryScore":0.9623,"edgeDensity":0.0232}},{"score":10,"aes":2,"nov":1,"par":7,"sm":{"totalCommands":15,"distinctCommands":12,"nestingDepth":1,"colorChanges":2,"proceduresDefined":3,"repeatCount":1,"codeLength":1136,"tokenCount":357},"im":{"distinctPixelColors":143,"spatialEntropy":0.5759,"fillRatio":0.052,"symmetryScore":0.9623,"edgeDensity":0.0232}},{"score":14,"aes":4,"nov":3,"par":7,"sm":{"totalCommands":15,"distinctCommands":12,"nestingDepth":1,"colorChanges":2,"proceduresDefined":3,"repeatCount":1,"codeLength":1133,"tokenCount":357},"im":{"distinctPixelColors":152,"spatialEntropy":0.5958,"fillRatio":0.053,"symmetryScore":0.9562,"edgeDensity":0.0255}},{"score":16,"aes":4,"nov":5,"par":7,"sm":{"totalCommands":15,"distinctCommands":12,"nestingDepth":1,"colorChanges":2,"proceduresDefined":3,"repeatCount":1,"codeLength":1101,"tokenCount":352},"im":{"distinctPixelColors":160,"spatialEntropy":0.7028,"fillRatio":0.0361,"symmetryScore":0.9779,"edgeDensity":0.0226}},{"score":19.6,"aes":5,"nov":8,"par":6.6,"sm":{"totalCommands":17,"distinctCommands":12,"nestingDepth":1,"colorChanges":2,"proceduresDefined":3,"repeatCount":1,"codeLength":1120,"tokenCount":360},"im":{"distinctPixelColors":241,"spatialEntropy":1.2525,"fillRatio":0.1067,"symmetryScore":0.9048,"edgeDensity":0.0754}},{"score":17.6,"aes":6,"nov":5,"par":6.6,"sm":{"totalCommands":17,"distinctCommands":12,"nestingDepth":1,"colorChanges":2,"proceduresDefined":3,"repeatCount":1,"codeLength":1169,"tokenCount":375},"im":{"distinctPixelColors":228,"spatialEntropy":1.3225,"fillRatio":0.0985,"symmetryScore":0.9016,"edgeDensity":0.063}},{"score":16.6,"aes":4,"nov":6,"par":6.6,"sm":{"totalCommands":17,"distinctCommands":12,"nestingDepth":1,"colorChanges":2,"proceduresDefined":3,"repeatCount":1,"codeLength":1167,"tokenCount":375},"im":{"distinctPixelColors":241,"spatialEntropy":1.3878,"fillRatio":0.1257,"symmetryScore":0.9009,"edgeDensity":0.0699}},{"score":17.6,"aes":7,"nov":4,"par":6.6,"sm":{"totalCommands":17,"distinctCommands":12,"nestingDepth":1,"colorChanges":2,"proceduresDefined":3,"repeatCount":1,"codeLength":1215,"tokenCount":390},"im":{"distinctPixelColors":249,"spatialEntropy":1.3676,"fillRatio":0.1241,"symmetryScore":0.9169,"edgeDensity":0.0911}},{"score":15.6,"aes":5,"nov":4,"par":6.6,"sm":{"totalCommands":17,"distinctCommands":12,"nestingDepth":1,"colorChanges":2,"proceduresDefined":3,"repeatCount":1,"codeLength":1288,"tokenCount":413},"im":{"distinctPixelColors":238,"spatialEntropy":1.397,"fillRatio":0.1015,"symmetryScore":0.893,"edgeDensity":0.0615}},{"score":16.6,"aes":6,"nov":7,"par":3.5999999999999996,"sm":{"totalCommands":32,"distinctCommands":12,"nestingDepth":1,"colorChanges":3,"proceduresDefined":6,"repeatCount":2,"codeLength":2649,"tokenCount":833},"im":{"distinctPixelColors":262,"spatialEntropy":1.6832,"fillRatio":0.155,"symmetryScore":0.8894,"edgeDensity":0.0872}},{"score":10.6,"aes":5,"nov":2,"par":3.5999999999999996,"sm":{"totalCommands":32,"distinctCommands":12,"nestingDepth":1,"colorChanges":3,"proceduresDefined":6,"repeatCount":2,"codeLength":2661,"tokenCount":833},"im":{"distinctPixelColors":258,"spatialEntropy":1.7063,"fillRatio":0.1563,"symmetryScore":0.8889,"edgeDensity":0.087}},{"score":18.6,"aes":8,"nov":7,"par":3.5999999999999996,"sm":{"totalCommands":32,"distinctCommands":12,"nestingDepth":1,"colorChanges":3,"proceduresDefined":6,"repeatCount":2,"codeLength":2012,"tokenCount":604},"im":{"distinctPixelColors":249,"spatialEntropy":1.6147,"fillRatio":0.1781,"symmetryScore":0.9117,"edgeDensity":0.0773}},{"score":16.6,"aes":7,"nov":6,"par":3.5999999999999996,"sm":{"totalCommands":32,"distinctCommands":12,"nestingDepth":1,"colorChanges":3,"proceduresDefined":6,"repeatCount":2,"codeLength":1867,"tokenCount":558},"im":{"distinctPixelColors":258,"spatialEntropy":1.85,"fillRatio":0.2337,"symmetryScore":0.8987,"edgeDensity":0.1084}},{"score":18.6,"aes":8,"nov":7,"par":3.5999999999999996,"sm":{"totalCommands":32,"distinctCommands":12,"nestingDepth":1,"colorChanges":3,"proceduresDefined":6,"repeatCount":2,"codeLength":1813,"tokenCount":542},"im":{"distinctPixelColors":288,"spatialEntropy":2.6398,"fillRatio":0.462,"symmetryScore":0.8474,"edgeDensity":0.2212}},{"score":15.6,"aes":7,"nov":5,"par":3.5999999999999996,"sm":{"totalCommands":32,"distinctCommands":12,"nestingDepth":1,"colorChanges":3,"proceduresDefined":6,"repeatCount":2,"codeLength":1752,"tokenCount":521},"im":{"distinctPixelColors":265,"spatialEntropy":2.5646,"fillRatio":0.4562,"symmetryScore":0.8429,"edgeDensity":0.219}},{"score":16.6,"aes":7,"nov":6,"par":3.5999999999999996,"sm":{"totalCommands":32,"distinctCommands":12,"nestingDepth":1,"colorChanges":3,"proceduresDefined":6,"repeatCount":2,"codeLength":1753,"tokenCount":521},"im":{"distinctPixelColors":243,"spatialEntropy":2.5729,"fillRatio":0.4082,"symmetryScore":0.8008,"edgeDensity":0.2147}},{"score":16.6,"aes":8,"nov":5,"par":3.5999999999999996,"sm":{"totalCommands":32,"distinctCommands":12,"nestingDepth":1,"colorChanges":3,"proceduresDefined":6,"repeatCount":2,"codeLength":1806,"tokenCount":537},"im":{"distinctPixelColors":238,"spatialEntropy":2.6371,"fillRatio":0.4155,"symmetryScore":0.8179,"edgeDensity":0.2192}},{"score":15.6,"aes":8,"nov":4,"par":3.5999999999999996,"sm":{"totalCommands":32,"distinctCommands":12,"nestingDepth":1,"colorChanges":3,"proceduresDefined":6,"repeatCount":2,"codeLength":1942,"tokenCount":586},"im":{"distinctPixelColors":223,"spatialEntropy":2.6596,"fillRatio":0.4154,"symmetryScore":0.8167,"edgeDensity":0.2185}},{"score":15.6,"aes":8,"nov":4,"par":3.5999999999999996,"sm":{"totalCommands":32,"distinctCommands":12,"nestingDepth":1,"colorChanges":3,"proceduresDefined":6,"repeatCount":2,"codeLength":1939,"tokenCount":585},"im":{"distinctPixelColors":244,"spatialEntropy":2.6451,"fillRatio":0.4411,"symmetryScore":0.8135,"edgeDensity":0.2435}},{"score":14.6,"aes":8,"nov":3,"par":3.5999999999999996,"sm":{"totalCommands":32,"distinctCommands":12,"nestingDepth":1,"colorChanges":3,"proceduresDefined":6,"repeatCount":2,"codeLength":1937,"tokenCount":585},"im":{"distinctPixelColors":244,"spatialEntropy":2.6451,"fillRatio":0.4411,"symmetryScore":0.8134,"edgeDensity":0.2436}},{"score":14.2,"aes":8,"nov":3,"par":3.2,"sm":{"totalCommands":34,"distinctCommands":12,"nestingDepth":1,"colorChanges":3,"proceduresDefined":6,"repeatCount":2,"codeLength":1981,"tokenCount":600},"im":{"distinctPixelColors":236,"spatialEntropy":2.6378,"fillRatio":0.4411,"symmetryScore":0.8135,"edgeDensity":0.2425}},{"score":17.2,"aes":8,"nov":6,"par":3.2,"sm":{"totalCommands":34,"distinctCommands":12,"nestingDepth":1,"colorChanges":3,"proceduresDefined":6,"repeatCount":2,"codeLength":2111,"tokenCount":642},"im":{"distinctPixelColors":228,"spatialEntropy":2.6258,"fillRatio":0.4415,"symmetryScore":0.8042,"edgeDensity":0.2241}}];
+var cur=0,nxt=1,alpha=0,playing=true,lastT=null,phase="dwell",phaseT=0;
+var cvA=document.getElementById("cvA");
+var cvB=document.getElementById("cvB");
+var prg=document.getElementById("prog");
+function ib(k,v){return v!=null?'<div class="ib-group"><span class="ib-k">'+k+'</span><span class="ib-v">'+v+'</span></div>':'';}
+function updateInfobar(i){
+  var d=FD[i]||{};
+  var sm=d.sm||{}; var im=d.im||{};
+  document.getElementById("infobar").innerHTML=
+    ib("Score",d.score!=null?parseFloat(d.score).toFixed(2):null)+
+    ib("Aesthetic",d.aes!=null?parseFloat(d.aes).toFixed(2):null)+
+    ib("Novelty",d.nov!=null?parseFloat(d.nov).toFixed(2):null)+
+    ib("Parsimony",d.par!=null?parseFloat(d.par).toFixed(2):null)+
+    ib("Commands",sm.totalCommands)+
+    ib("Nesting",sm.nestingDepth)+
+    ib("Distinct cmds",sm.distinctCommands)+
+    ib("Color changes",sm.colorChanges)+
+    ib("Repeats",sm.repeatCount)+
+    ib("Procedures",sm.proceduresDefined)+
+    ib("Code length",sm.codeLength!=null?sm.codeLength+" ch":null)+
+    ib("Entropy",im.spatialEntropy!=null?parseFloat(im.spatialEntropy).toFixed(3):null)+
+    ib("Fill ratio",im.fillRatio!=null?(parseFloat(im.fillRatio)*100).toFixed(1)+"%":null)+
+    ib("Symmetry",im.symmetryScore!=null?parseFloat(im.symmetryScore).toFixed(3):null);
+}
+function resize(){var s=cvA.parentElement;var w=s.offsetWidth,h=s.offsetHeight;[cvA,cvB].forEach(function(cv){cv.width=w;cv.height=h;});redrawA();redrawB();}
+function redrawA(){drawCode(cvA,F[cur],0);}
+function redrawB(){drawCode(cvB,F[nxt],0);}
+new ResizeObserver(resize).observe(cvA.parentElement);
+L.forEach(function(_,i){var d=document.createElement("div");d.className="pip"+(i===0?" active":"");d.title=L[i];d.onclick=function(){go(i);};prg.appendChild(d);});
+function pips(){prg.querySelectorAll(".pip").forEach(function(p,i){p.classList.toggle("active",i===cur);});}
+function go(i){cur=i;nxt=(i+1)%F.length;alpha=0;phase="dwell";phaseT=0;cvB.style.opacity=0;cvB.style.transition="opacity 0ms";redrawA();redrawB();pips();document.getElementById("frameLbl").textContent=L[cur];updateInfobar(i);var cp=document.getElementById("codePanel");if(cp)cp.textContent=F[i]||"";}
+resize();go(0);
+function tick(ts){if(!playing){lastT=null;return;}if(!lastT)lastT=ts;var spd=parseFloat(document.getElementById("spd").value);var dt=(ts-lastT)*spd;lastT=ts;var DWELL=1400,FADE=900;if(phase==="dwell"){phaseT+=dt;if(phaseT>=DWELL){phaseT=0;phase="fade";cvB.style.transition="opacity 0ms";}}else{phaseT+=dt;alpha=Math.min(1,phaseT/FADE);cvB.style.transition="opacity 0ms";cvB.style.opacity=alpha;if(alpha>=1){cur=nxt;nxt=(cur+1)%F.length;alpha=0;phase="dwell";phaseT=0;cvB.style.opacity=0;redrawA();redrawB();pips();document.getElementById("frameLbl").textContent=L[cur];updateInfobar(cur);var cp=document.getElementById("codePanel");if(cp)cp.textContent=F[cur]||"";}}requestAnimationFrame(tick);}
+requestAnimationFrame(tick);
+// Restore speed from parent index.html if available
+(function(){
+  try{
+    var saved = window.parent && window.parent._dissolveSpeed;
+    if(saved && saved>0){document.getElementById('spd').value=saved;document.getElementById('spdVal').textContent=parseFloat(saved).toFixed(1)+'×';}
+  }catch(e){}
+})();
+document.getElementById("spd").oninput=function(){
+  var v=parseFloat(this.value);
+  document.getElementById("spdVal").textContent=v.toFixed(1)+"×";
+  // Persist to parent so next dissolve file opens at same speed
+  try{if(window.parent)window.parent._dissolveSpeed=v;}catch(e){}
+};
+function togglePlay(){playing=!playing;document.getElementById("btnPlay").textContent=playing?"⏸ Pause":"▶ Play";if(playing)requestAnimationFrame(tick);}
+function step(d){playing=false;document.getElementById("btnPlay").textContent="▶ Play";go((cur+d+F.length)%F.length);}
+</script></body></html>

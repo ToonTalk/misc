@@ -4,9 +4,9 @@
 
 **Can LLM-driven iterative evolution of programs produce Logo turtle graphics that are significantly better than what the same LLMs can generate in a single shot?**
 
-The Logo domain is ideal: programs are short, the language is simple, but the visual output space is rich. If evolution consistently exceeds one-shot generation, that's evidence that LLM-guided search through program space finds regions the model can't reach directly — analogous to how human iterative refinement surpasses first drafts, but with the variation and selection both delegated to AI.
+The Logo domain is ideal: programs are short, the language is simple, but the visual output space is rich. If evolution consistently exceeds one-shot generation, that's evidence that LLM-guided search through program space finds regions the model can't reach directly — analogous to how human iterative refinement surpasses first drafts, but with the variation and selection both delegated to AI. 
 
----
+\---
 
 ## Purpose
 
@@ -21,20 +21,20 @@ A new standalone HTML file (`logo-evolution-lab-experiment.html`) that extends t
 
 The original app remains untouched. This version shares its Logo compiler, renderer, and API layer.
 
----
+\---
 
 ## Architecture: What to Copy, What to Add
 
 ### Copy unchanged from the existing app
 
-- All CSS (variables, card styles, buttons, toggles, tree, modal, etc.)
-- `compileLogo()`, `autoFitQueue()`, `renderQueue()`, `drawCode()`, `canvasB64()`
-- `callClaude()`, `callGemini()`, `callOpenAI()`, `callAI()` (the full API layer including fallback logic)
-- `agentModify()`, `agentCritique()`, `parseCritiqueJSON()`, `cleanCode()`, `validateLogo()`
-- `buildPool()`, `addBackups()`, `selectWinner()`, `buildSelectionLog()`
-- `magDesc()`, `diffHTML()`, `escHtml()`, `parseMarkdown()`
-- `isArtifact()`, `notifyTab()`, theme toggle, modal system
-- `MODIFIER_SYS` and `CRITIC_SYS` prompt constants
+* All CSS (variables, card styles, buttons, toggles, tree, modal, etc.)
+* `compileLogo()`, `autoFitQueue()`, `renderQueue()`, `drawCode()`, `canvasB64()`
+* `callClaude()`, `callGemini()`, `callOpenAI()`, `callAI()` (the full API layer including fallback logic)
+* `agentModify()`, `agentCritique()`, `parseCritiqueJSON()`, `cleanCode()`, `validateLogo()`
+* `buildPool()`, `addBackups()`, `selectWinner()`, `buildSelectionLog()`
+* `magDesc()`, `diffHTML()`, `escHtml()`, `parseMarkdown()`
+* `isArtifact()`, `notifyTab()`, theme toggle, modal system
+* `MODIFIER\_SYS` and `CRITIC\_SYS` prompt constants
 
 ### New components
 
@@ -47,9 +47,9 @@ The original app remains untouched. This version shares its Logo compiler, rende
 7. **Results Dashboard** — the key evolution-vs-baseline comparison plus supporting views
 8. **Export System** — JSON, CSV, PNG gallery
 
----
+\---
 
-## 1. Experiment Definition Panel
+## 1\. Experiment Definition Panel
 
 Simplified to focus on the primary research question. Secondary parameters (magnitude, selection mode, critic mode) use sensible defaults that can be overridden but aren't the main variables.
 
@@ -58,40 +58,48 @@ Simplified to focus on the primary research question. Secondary parameters (magn
 A card titled **"Experiment Setup"** with these sections:
 
 #### Seed Programs (multi-entry)
-A textarea where each line is a separate seed Logo program (or labelled: `spiral: REPEAT 36 [FD 100 RT 170]`). Each seed gets a short ID. These are the starting points for evolutionary runs.
+
+A textarea where each line is a separate seed Logo program (or labelled: `spiral: REPEAT 36 \[FD 100 RT 170]`). Each seed gets a short ID. These are the starting points for evolutionary runs.
 
 #### Taste Descriptions (multi-entry)
+
 A list of aesthetic goal strings. Each gets an ID. These define what "better" means for each experimental condition.
 
 #### Models (multi-select)
+
 Checkboxes for available models: claude-sonnet-4-6, gemini-3-flash-preview, gemini-2.5-pro, gpt-5.4, etc. Each checked model will be tested for both evolution and one-shot generation.
 
 #### Evaluation Models (multi-select)
+
 Which models should serve as critics when re-evaluating final results. Defaults to all checked models. This produces the model×judge matrix.
 
 #### Primary Parameters (fixed for the main experiment)
-| Parameter | Default | Notes |
-|---|---|---|
-| Magnitude | 5 | Moderate changes per iteration |
-| Selection mode | Deterministic | Simplest to analyse |
-| Critic mode | images+code | Gives critic maximum information |
-| Variants per iteration | 2 | Balances exploration vs API cost |
-| Iterations per run | 15 | Enough to observe trajectory shape |
-| Repeats per condition | 3 | Characterises stochastic variation |
-| One-shot attempts per condition | 10 | Characterises the one-shot distribution |
+
+|Parameter|Default|Notes|
+|-|-|-|
+|Magnitude|5|Moderate changes per iteration|
+|Selection mode|Deterministic|Simplest to analyse|
+|Critic mode|images+code|Gives critic maximum information|
+|Variants per iteration|2|Balances exploration vs API cost|
+|Iterations per run|15|Enough to observe trajectory shape|
+|Repeats per condition|3|Characterises stochastic variation|
+|One-shot attempts per condition|10|Characterises the one-shot distribution|
 
 #### Advanced Overrides (collapsed by default)
+
 Expandable panel allowing the researcher to sweep magnitude, selection mode, critic mode, or variants as secondary experiments. Hidden by default — the primary experiment holds them fixed.
 
 #### Computed Run Count
+
 Live display: **"This experiment defines N conditions. Per condition: 1 evolutionary run × 3 repeats + 10 one-shot baselines + cross-model evaluation = M total API sessions"**
 
 #### API Keys
+
 Fields for Anthropic, Gemini, OpenAI keys. Required for any model checked above.
 
----
+\---
 
-## 2. Baseline Generator
+## 2\. Baseline Generator
 
 For each condition (taste × model), before any evolutionary run begins, generate one-shot baseline programs.
 
@@ -108,25 +116,27 @@ The distinction matters: if Baseline B matches the evolutionary winner, then the
 Use a dedicated system prompt (not the modifier prompt, which is tuned for constrained variation):
 
 ```
-BASELINE_SYS = `You are an expert Logo turtle graphics programmer. 
+BASELINE\_SYS = `You are an expert Logo turtle graphics programmer. 
 Write programs that create visually striking, aesthetically compelling images.
 Use the full Logo command set: FD, BK, RT, LT, REPEAT, SETPC, SETBG, PU, PD, ARC, CIRCLE, SETPW, TO...END.
 Return ONLY the Logo code, no explanation.`
 ```
 
 For Baseline A (from scratch):
+
 ```
-Write a Logo turtle graphics program that achieves this aesthetic goal: "[taste]"
+Write a Logo turtle graphics program that achieves this aesthetic goal: "\[taste]"
 Make it as visually compelling and sophisticated as possible.
 Return ONLY the Logo code.
 ```
 
 For Baseline B (single edit):
+
 ```
 Here is a Logo program:
-[seed code]
+\[seed code]
 
-Improve it as much as you want — rewrite completely if needed — to better achieve this aesthetic: "[taste]"
+Improve it as much as you want — rewrite completely if needed — to better achieve this aesthetic: "\[taste]"
 Return ONLY the improved Logo code.
 ```
 
@@ -135,15 +145,15 @@ Return ONLY the improved Logo code.
 ```
 Baseline {
   conditionId: string
-  type: 'from_scratch' | 'single_edit'
+  type: 'from\_scratch' | 'single\_edit'
   model: string
   taste: string
-  seed: string | null          // null for from_scratch
+  seed: string | null          // null for from\_scratch
   attemptIndex: number
   code: string
   structuralMetrics: StructuralMetrics
   imageMetrics: ImageMetrics
-  criticScores: { [judgeModel: string]: CriticScore }   // filled during cross-model evaluation
+  criticScores: { \[judgeModel: string]: CriticScore }   // filled during cross-model evaluation
   rawPrompt: string
   rawResponse: string
   timestamp: ISO datetime
@@ -158,9 +168,9 @@ CriticScore {
 }
 ```
 
----
+\---
 
-## 3. Structural Metrics Analyser
+## 3\. Structural Metrics Analyser
 
 Computed automatically for every program — baselines, evolutionary winners at each iteration, and all variants. No LLM required.
 
@@ -213,22 +223,24 @@ ImageMetrics {
 
 **Implementation note**: All image metrics are computed from canvas pixel data via `getImageData()`. They run in milliseconds and add no API cost.
 
----
+\---
 
-## 4. Cross-Model Evaluator
+## 4\. Cross-Model Evaluator
 
 After all evolutionary runs and baselines complete, the evaluator re-judges key programs using each evaluation model.
 
 ### What gets re-judged
 
 For each condition:
-- The evolutionary winner (final iteration) from each repeat
-- The best one-shot baseline (highest self-score) from each type
-- Optionally: the evolutionary winner at the midpoint iteration (e.g. iteration 7 of 15)
+
+* The evolutionary winner (final iteration) from each repeat
+* The best one-shot baseline (highest self-score) from each type
+* Optionally: the evolutionary winner at the midpoint iteration (e.g. iteration 7 of 15)
 
 ### Process
 
 For each program × judge model pair:
+
 1. Render the program to PNG
 2. Call the judge model with a single-image critic prompt (below)
 3. Record the scores
@@ -238,7 +250,7 @@ This produces a matrix: rows are programs, columns are judge models, cells are s
 ### Single-image critic prompt
 
 ```
-EVAL_CRITIC_SYS = `You are an art critic evaluating a single computer-generated image 
+EVAL\_CRITIC\_SYS = `You are an art critic evaluating a single computer-generated image 
 created by a Logo turtle graphics program.
 
 Score the image on:
@@ -252,13 +264,14 @@ Respond ONLY with JSON:
 ### Data model addition
 
 The `Run` record gains:
+
 ```
-crossModelScores: { [judgeModel: string]: CriticScore }
+crossModelScores: { \[judgeModel: string]: CriticScore }
 ```
 
----
+\---
 
-## 5. Batch Runner Engine
+## 5\. Batch Runner Engine
 
 ### Data model
 
@@ -267,10 +280,10 @@ Experiment {
   id: string (timestamp-based)
   created: ISO datetime
   parameters: {
-    seeds: { id: string, code: string, label: string }[],
-    tastes: { id: string, text: string }[],
-    models: string[],
-    evalModels: string[],
+    seeds: { id: string, code: string, label: string }\[],
+    tastes: { id: string, text: string }\[],
+    models: string\[],
+    evalModels: string\[],
     magnitude: number,
     selectionMode: string,
     criticMode: string,
@@ -279,12 +292,12 @@ Experiment {
     repeatsPerCondition: number,
     oneshotAttempts: number
   }
-  conditions: Condition[]
+  conditions: Condition\[]
   status: 'pending' | 'running' | 'completed' | 'stopped'
 }
 
 Condition {
-  id: string (e.g. "spiral_geometric_claude")
+  id: string (e.g. "spiral\_geometric\_claude")
   seedId: string
   tasteId: string
   model: string
@@ -296,20 +309,20 @@ Run {
   status: 'pending' | 'running' | 'completed' | 'error'
   startTime: ISO datetime
   endTime: ISO datetime
-  iterations: Iteration[]
+  iterations: Iteration\[]
   finalWinnerCode: string
   finalScore: number
-  scoreTrajectory: number[]
-  structuralTrajectory: StructuralMetrics[]
-  imageTrajectory: ImageMetrics[]
-  crossModelScores: { [judgeModel: string]: CriticScore }
+  scoreTrajectory: number\[]
+  structuralTrajectory: StructuralMetrics\[]
+  imageTrajectory: ImageMetrics\[]
+  crossModelScores: { \[judgeModel: string]: CriticScore }
   error: string | null
 }
 
 Iteration {
   index: number
   baseCode: string
-  variants: VariantRecord[]
+  variants: VariantRecord\[]
   winnerCode: string
   winnerScore: number
   winnerAestheticScore: number
@@ -369,10 +382,11 @@ Phases run sequentially. The user can stop between phases. Partial results are r
 ### Key refactoring of `runStep()`
 
 The existing `runStep()` reads parameters from the DOM and writes results to the DOM. The experiment version needs a `runStepPure(params)` that:
-- Takes `{baseCode, feedback, numVariants, magnitude, taste, model, selectionMode, criticMode}` as explicit arguments
-- Returns `{iteration: Iteration, winnerCode, feedback}` with all data including raw API captures
-- Does NOT touch the DOM
-- The batch runner calls this in a loop, then updates the progress UI separately
+
+* Takes `{baseCode, feedback, numVariants, magnitude, taste, model, selectionMode, criticMode}` as explicit arguments
+* Returns `{iteration: Iteration, winnerCode, feedback}` with all data including raw API captures
+* Does NOT touch the DOM
+* The batch runner calls this in a loop, then updates the progress UI separately
 
 ### Forcing the model
 
@@ -381,17 +395,18 @@ For experiments, when a specific model is being tested, fallback should be disab
 ### Progress UI
 
 A card showing:
-- Current phase: "Phase 1: Generating baselines" / "Phase 2: Evolution" / "Phase 3: Cross-model evaluation"
-- Overall progress bar: "Run 14 of 90 (15.6%)"
-- Current condition: "seed: spiral, taste: geometric, model: Claude"
-- Current iteration: "Iteration 3 of 15"
-- Elapsed time and rough ETA
-- **Stop** button (finishes current iteration, then stops — partial data retained)
-- Live mini-canvas showing the current program being evolved
 
----
+* Current phase: "Phase 1: Generating baselines" / "Phase 2: Evolution" / "Phase 3: Cross-model evaluation"
+* Overall progress bar: "Run 14 of 90 (15.6%)"
+* Current condition: "seed: spiral, taste: geometric, model: Claude"
+* Current iteration: "Iteration 3 of 15"
+* Elapsed time and rough ETA
+* **Stop** button (finishes current iteration, then stops — partial data retained)
+* Live mini-canvas showing the current program being evolved
 
-## 6. Raw API Logger
+\---
+
+## 6\. Raw API Logger
 
 Every `callAI()` invocation during an experiment records:
 
@@ -400,7 +415,7 @@ APICall {
   runId: string | null
   baselineId: string | null
   iterationIndex: number | null
-  agent: 'modifier' | 'critic' | 'baseline_generator' | 'cross_model_evaluator'
+  agent: 'modifier' | 'critic' | 'baseline\_generator' | 'cross\_model\_evaluator'
   modelRequested: string
   modelActuallyUsed: string
   systemPrompt: string
@@ -416,18 +431,19 @@ APICall {
 
 Implementation: modify `callAI` in the experiment version to return `{text, meta}` where `meta` contains the above fields.
 
----
+\---
 
-## 7. Results Dashboard
+## 7\. Results Dashboard
 
 ### 7a. The Key Chart: Evolution vs Baseline
 
 The primary visualisation answering the research question.
 
 For each condition (seed × taste × model), show:
-- The distribution of one-shot baseline scores as a dot strip or box plot
-- The evolutionary winners' final scores as highlighted markers
-- The evolutionary score trajectory as a small sparkline beside it
+
+* The distribution of one-shot baseline scores as a dot strip or box plot
+* The evolutionary winners' final scores as highlighted markers
+* The evolutionary score trajectory as a small sparkline beside it
 
 This makes it immediately visible whether evolution exceeds the one-shot ceiling.
 
@@ -449,104 +465,111 @@ Heatmap: rows = programs (grouped as "evolved" vs "baseline"), columns = judge m
 
 Sortable table of all completed runs:
 
-| Seed | Taste | Model | Repeat | Final Score | vs Best Baseline | Trajectory | Complexity | Time |
-|------|-------|-------|--------|-------------|-----------------|------------|------------|------|
+|Seed|Taste|Model|Repeat|Final Score|vs Best Baseline|Trajectory|Complexity|Time|
+|-|-|-|-|-|-|-|-|-|
 
-- **vs Best Baseline**: difference between final score and best one-shot score for same condition. Green if positive.
-- **Trajectory**: sparkline (inline SVG polyline, 60×20)
-- Clicking a row expands to show iteration detail
+* **vs Best Baseline**: difference between final score and best one-shot score for same condition. Green if positive.
+* **Trajectory**: sparkline (inline SVG polyline, 60×20)
+* Clicking a row expands to show iteration detail
 
 ### 7f. Visual Gallery
 
 Grid of final winner canvases paired with best one-shot baseline for comparison, labelled with condition parameters. Evolved winner on left, best baseline on right. Clicking opens modal with code + playback.
 
----
+\---
 
-## 8. Export System
+## 8\. Export System
 
 ### JSON export (primary)
 
 The entire `Experiment` object as a single JSON file including all conditions, runs, iterations, baselines, API call metadata, and all metrics.
 
-Filename: `experiment_{id}_{timestamp}.json`
+Filename: `experiment\_{id}\_{timestamp}.json`
 
 ### CSV exports
 
 **runs.csv** — one row per evolutionary run:
+
 ```
-condition_id, seed_label, taste, model, repeat_index, iterations_completed, 
-final_score, final_aesthetic, final_novelty, 
-best_baseline_a_score, best_baseline_b_score, 
-score_vs_baseline_a, score_vs_baseline_b,
-final_distinct_commands, final_nesting_depth, final_code_length,
-final_spatial_entropy, final_fill_ratio,
-elapsed_ms, error
+condition\_id, seed\_label, taste, model, repeat\_index, iterations\_completed, 
+final\_score, final\_aesthetic, final\_novelty, 
+best\_baseline\_a\_score, best\_baseline\_b\_score, 
+score\_vs\_baseline\_a, score\_vs\_baseline\_b,
+final\_distinct\_commands, final\_nesting\_depth, final\_code\_length,
+final\_spatial\_entropy, final\_fill\_ratio,
+elapsed\_ms, error
 ```
 
 **iterations.csv** — one row per iteration across all runs:
+
 ```
-condition_id, repeat_index, iteration, 
-winner_score, winner_aesthetic, winner_novelty,
-distinct_commands, nesting_depth, color_changes, code_length,
-spatial_entropy, fill_ratio, symmetry_score,
-num_variants_generated, num_variants_valid, 
-model_used, modifier_latency_ms, critic_latency_ms
+condition\_id, repeat\_index, iteration, 
+winner\_score, winner\_aesthetic, winner\_novelty,
+distinct\_commands, nesting\_depth, color\_changes, code\_length,
+spatial\_entropy, fill\_ratio, symmetry\_score,
+num\_variants\_generated, num\_variants\_valid, 
+model\_used, modifier\_latency\_ms, critic\_latency\_ms
 ```
 
 **baselines.csv** — one row per baseline attempt:
+
 ```
-condition_id, type, model, taste, seed_label, attempt_index,
-score_aesthetic, score_novelty, score_total,
-distinct_commands, nesting_depth, code_length,
-spatial_entropy, fill_ratio
+condition\_id, type, model, taste, seed\_label, attempt\_index,
+score\_aesthetic, score\_novelty, score\_total,
+distinct\_commands, nesting\_depth, code\_length,
+spatial\_entropy, fill\_ratio
 ```
 
-**cross_model_scores.csv** — one row per program × judge combination:
+**cross\_model\_scores.csv** — one row per program × judge combination:
+
 ```
-program_type, condition_id, repeat_index, judge_model,
-aesthetic_score, novelty_score, total_score, reason
+program\_type, condition\_id, repeat\_index, judge\_model,
+aesthetic\_score, novelty\_score, total\_score, reason
 ```
 
 ### PNG gallery export
 
 A zip file containing:
-- `evolved/{condition_id}_rep{n}.png` — final evolutionary winners
-- `baseline_scratch/{condition_id}_attempt{n}.png` — from-scratch baselines
-- `baseline_edit/{condition_id}_seed{s}_attempt{n}.png` — single-edit baselines
 
----
+* `evolved/{condition\_id}\_rep{n}.png` — final evolutionary winners
+* `baseline\_scratch/{condition\_id}\_attempt{n}.png` — from-scratch baselines
+* `baseline\_edit/{condition\_id}\_seed{s}\_attempt{n}.png` — single-edit baselines
 
-## 9. UI Structure
+\---
+
+## 9\. UI Structure
 
 Two tabs at the top:
 
-### Tab 1: Setup & Run
-- Experiment Definition Panel (section 1)
-- Batch Runner progress (section 5) — appears when running
-- Live mini-canvas
+### Tab 1: Setup \& Run
+
+* Experiment Definition Panel (section 1)
+* Batch Runner progress (section 5) — appears when running
+* Live mini-canvas
 
 ### Tab 2: Results
-- Evolution vs Baseline chart (7a) — the headline finding
-- Score Trajectory chart (7b)
-- Structural Metrics chart (7c)
-- Cross-Model Agreement matrix (7d)
-- Run Table (7e)
-- Visual Gallery (7f)
-- Export buttons (section 8)
+
+* Evolution vs Baseline chart (7a) — the headline finding
+* Score Trajectory chart (7b)
+* Structural Metrics chart (7c)
+* Cross-Model Agreement matrix (7d)
+* Run Table (7e)
+* Visual Gallery (7f)
+* Export buttons (section 8)
 
 Header: Logo Evolution Lab branding + chip `EXPERIMENT EDITION`.
 
----
+\---
 
-## 10. State Management
+## 10\. State Management
 
 ```javascript
 const EXP = {
   experiment: null,
-  runs: [],
-  baselines: [],
-  apiLog: [],
-  currentPhase: null,      // 'baselines' | 'evolution' | 'cross_eval'
+  runs: \[],
+  baselines: \[],
+  apiLog: \[],
+  currentPhase: null,      // 'baselines' | 'evolution' | 'cross\_eval'
   currentRunIndex: -1,
   isRunning: false,
   stopRequested: false,
@@ -555,13 +578,14 @@ const EXP = {
 
 Data held in memory. Export buttons serialise from this object. `beforeunload` warning if unsaved data exists.
 
----
+\---
 
-## 11. Implementation Notes for Sonnet
+## 11\. Implementation Notes for Sonnet
 
 ### Build order (phased)
 
 **Phase A — Core engine (build first, test immediately)**
+
 1. Copy existing HTML file as starting point
 2. Strip interactive UI HTML but keep ALL JavaScript functions
 3. Refactor `runStep()` → `runStepPure(params)` (explicit params, no DOM, returns structured data)
@@ -588,30 +612,34 @@ Data held in memory. Export buttons serialise from this object. `beforeunload` w
 ### Key refactoring details
 
 `runStepPure(params)` must:
-- Accept `{baseCode, feedback, numVariants, magnitude, taste, model, selectionMode, criticMode}`
-- Call modified `agentModify` / `agentCritique` that take explicit arguments instead of reading DOM
-- Return full `Iteration` record including raw API data and computed metrics
-- Never touch the DOM
+
+* Accept `{baseCode, feedback, numVariants, magnitude, taste, model, selectionMode, criticMode}`
+* Call modified `agentModify` / `agentCritique` that take explicit arguments instead of reading DOM
+* Return full `Iteration` record including raw API data and computed metrics
+* Never touch the DOM
 
 `computeStructuralMetrics(code)`:
-- Parse Logo source to count commands, measure nesting, etc.
-- Can reuse parts of `compileLogo`'s tokenizer
-- Pure function, no side effects
+
+* Parse Logo source to count commands, measure nesting, etc.
+* Can reuse parts of `compileLogo`'s tokenizer
+* Pure function, no side effects
 
 `computeImageMetrics(canvas)`:
-- Takes a canvas element with program already rendered
-- Uses `getImageData()` to access pixels
-- Returns `ImageMetrics` object
-- Pure function
+
+* Takes a canvas element with program already rendered
+* Uses `getImageData()` to access pixels
+* Returns `ImageMetrics` object
+* Pure function
 
 ### Sparklines
 
 Inline SVG polylines in a 60×20 viewBox:
+
 ```javascript
 function sparkline(values) {
   const max = Math.max(...values), min = Math.min(...values);
   const points = values.map((v, i) => 
-    `${(i / (values.length - 1)) * 60},${20 - ((v - min) / (max - min || 1)) * 18}`
+    `${(i / (values.length - 1)) \* 60},${20 - ((v - min) / (max - min || 1)) \* 18}`
   ).join(' ');
   return `<svg viewBox="0 0 60 20" width="60" height="20"><polyline points="${points}" fill="none" stroke="var(--teal)" stroke-width="1.5"/></svg>`;
 }
@@ -625,9 +653,9 @@ Hand-drawn inline SVG for all charts. Data volumes are small. No charting librar
 
 Will be larger than the 160KB original. That's fine for a researcher's tool. Single self-contained HTML file.
 
----
+\---
 
-## 12. Research Workflows This Enables
+## 12\. Research Workflows This Enables
 
 ### Primary experiment: Does evolution beat one-shot?
 
@@ -643,12 +671,13 @@ The evolution-vs-baseline chart directly answers the question.
 4. **Seed complexity effect**: Simple seeds vs complex seeds — do they converge to similar quality?
 5. **Human-AI agreement**: Export visual gallery, show to human raters, compare with critic scores.
 
----
+\---
 
-## 13. What This Document Does NOT Cover
+## 13\. What This Document Does NOT Cover
 
-- Statistical analysis code (researcher uses Python/R on exported CSVs)
-- Headless/CLI execution (remains a browser app)
-- Multi-user or server-side features (single-user, client-side only)
-- Changes to the original Logo Evolution Lab app
-- The human evaluation instrument (separate tool consuming PNG exports)
+* Statistical analysis code (researcher uses Python/R on exported CSVs)
+* Headless/CLI execution (remains a browser app)
+* Multi-user or server-side features (single-user, client-side only)
+* Changes to the original Logo Evolution Lab app
+* The human evaluation instrument (separate tool consuming PNG exports)
+

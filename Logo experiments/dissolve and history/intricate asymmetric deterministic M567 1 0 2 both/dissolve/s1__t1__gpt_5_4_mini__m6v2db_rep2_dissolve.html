@@ -1,0 +1,691 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<title>Intricate asymmetric patterns with heavy use of  · rep2 — Dissolve</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0e1a;color:#b8cce4;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:16px 16px 32px;gap:10px}
+h1{font-size:1rem;color:#e8f2ff;letter-spacing:.05em;text-align:center}
+.stage{position:relative;width:min(560px,90vmin);aspect-ratio:1;background:#000;border-radius:8px;overflow:hidden;box-shadow:0 4px 32px rgba(0,0,0,.8)}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%}
+.controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+input[type=range]{accent-color:#3ff5c0;width:100px}
+button{background:#0f1530;border:1px solid #233060;color:#b8cce4;padding:4px 12px;border-radius:5px;cursor:pointer;font-size:.78rem}
+button:hover{border-color:#3ff5c0;color:#3ff5c0}
+.frame-lbl{font-size:.78rem;color:#3ff5c0;min-width:200px;text-align:center;font-family:monospace}
+.progress{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;max-width:560px}
+.pip{width:8px;height:8px;border-radius:50%;background:#233060;cursor:pointer;transition:background .15s}
+.pip.active{background:#3ff5c0}
+.infobar{background:#0d1425;border:1px solid #1e2d50;border-radius:6px;padding:8px 12px;width:min(700px,98vw);display:flex;flex-wrap:wrap;gap:8px 20px;font-size:.68rem;font-family:monospace}
+.ib-k{color:#6a88b0;text-transform:uppercase;letter-spacing:.07em;font-size:.58rem}
+.ib-v{color:#d4e4f7;font-weight:600}
+.ib-group{display:flex;flex-direction:column;gap:1px;min-width:70px}
+.mtbl{width:100%;border-collapse:collapse;font-size:.65rem}
+.mtbl td{padding:3px 8px;border-bottom:1px solid #1e2d50}
+.mk{color:#6a88b0;white-space:nowrap;width:40%}
+.mv{color:#d4e4f7;font-weight:600}
+details{width:min(700px,98vw);background:#0d1425;border:1px solid #1e2d50;border-radius:6px;padding:0}
+summary{padding:8px 12px;font-size:.7rem;color:#6a88b0;cursor:pointer;letter-spacing:.06em;text-transform:uppercase}
+summary:hover{color:#3ff5c0}
+.det-inner{padding:8px 12px 12px}
+</style></head><body>
+<h1>Intricate asymmetric patterns with heavy use of  · rep2</h1>
+<div class="stage"><canvas id="cvA"></canvas><canvas id="cvB" style="opacity:0;transition:opacity 0ms linear"></canvas></div>
+<div class="frame-lbl" id="frameLbl">Seed</div>
+<div class="controls">
+<span style="font-size:.7rem;color:#6a88b0">Speed</span>
+<input type="range" id="spd" min="0.2" max="10" step="0.1" value="1">
+<span id="spdVal" style="font-size:.7rem;min-width:2.2em">1.0×</span>
+<button id="btnPlay" onclick="togglePlay()">⏸ Pause</button>
+<button onclick="step(-1)">◄</button>
+<button onclick="step(1)">►</button>
+</div>
+<div class="progress" id="prog"></div>
+<div class="infobar" id="infobar"></div>
+<div style="width:min(700px,98vw);background:#0d1425;border:1px solid #1e2d50;border-radius:6px;padding:0"><div style="padding:4px 12px 3px;font-size:.57rem;color:#6a88b0;text-transform:uppercase;letter-spacing:.08em;display:flex;justify-content:space-between;align-items:center"><span>Logo Code</span><button id="btnCopyCode" style="background:none;border:1px solid #233060;color:#6a88b0;padding:1px 8px;font-size:.6rem;border-radius:3px;cursor:pointer" onclick="navigator.clipboard.writeText(document.getElementById('codePanel').textContent).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1400)})">Copy</button></div><pre id="codePanel" style="font-family:monospace;font-size:.68rem;color:#3aaa6a;padding:8px 12px 10px;margin:0;white-space:pre-wrap;word-break:break-all;max-height:160px;overflow-y:auto"></pre></div>
+<details><summary>Experiment Parameters</summary><div class="det-inner"><table class="mtbl">
+    <tr><td class="mk">Seed</td><td class="mv">Line</td></tr> <tr><td class="mk">Taste</td><td class="mv">Intricate asymmetric patterns with heavy use of color</td></tr> <tr><td class="mk">Model</td><td class="mv">gpt-5.4-mini</td></tr>
+    <tr><td class="mk">Run type</td><td class="mv">Evolution</td></tr> <tr><td class="mk">Repeat</td><td class="mv">2</td></tr>
+    <tr><td class="mk">Iterations</td><td class="mv">21</td></tr> <tr><td class="mk">Magnitude</td><td class="mv">6</td></tr>
+    <tr><td class="mk">Selection</td><td class="mv">deterministic</td></tr> <tr><td class="mk">Variants/iter</td><td class="mv">2</td></tr>
+    <tr><td class="mk">Aesthetic weight</td><td class="mv">1</td></tr> <tr><td class="mk">Novelty weight</td><td class="mv">0.5</td></tr>
+    <tr><td class="mk">Parsimony weight</td><td class="mv">2</td></tr>
+    <tr><td class="mk">Final score</td><td class="mv">18.80</td></tr>
+    <tr><td class="mk">Final aes</td><td class="mv">8.00</td></tr>
+    <tr><td class="mk">Final nov</td><td class="mv">0.00</td></tr>
+    <tr><td class="mk">Cross-model aes</td><td class="mv">9.00 (gemini-2.5-flash)</td></tr>
+  </table></div></details>
+<script>
+const activeAnims={};
+function compileLogo(code, W, H) {
+  const queue = [];
+  const procs = {};
+  let callDepth = 0;
+  const MAX_DEPTH = 200, MAX_OPS = 120000;
+  let opCount = 0;
+
+  let sx = W/2, sy = H/2, heading = 0;
+  let penDown = true, penColor = '#1e293b', penSize = 1.5;
+  const unknownCmds = new Set();
+
+  const toRad = h => (h - 90) * Math.PI / 180;
+
+  const NAMED_COLORS = {
+    BLACK:'#000',BLUE:'#0055ff',GREEN:'#00cc44',CYAN:'#00ffff',
+    RED:'#ff3333',MAGENTA:'#ff00ff',YELLOW:'#ffff00',WHITE:'#fff',
+    ORANGE:'#ff8800',PURPLE:'#8833cc',BROWN:'#aa6600',PINK:'#ffaacc',
+    GRAY:'#888',GREY:'#888',LIME:'#aaff00',TEAL:'#00aaaa',NAVY:'#000088',
+    GOLD:'#ffcc00',VIOLET:'#8800ff',INDIGO:'#4400aa',CRIMSON:'#cc1133',
+    CORAL:'#ff6644',SKYBLUE:'#66aaff',MINT:'#44ffbb',ROSE:'#ff4477',
+    AMBER:'#ffaa00',SILVER:'#c0c0c0',MAROON:'#800000',OLIVE:'#808000',
+  };
+  const LOGO_PALETTE = [
+    '#000','#0000ff','#00ff00','#00ffff','#ff0000','#ff00ff','#ffff00','#fff',
+    '#a52a2a','#d2b48c','#008000','#40e0d0','#ffa500','#800080','#ffd700','#c0c0c0',
+  ];
+
+  function resolveColor(v) {
+    if (Array.isArray(v)) {
+      // 3-element numeric array → RGB
+      if (v.length === 3 && v.every(x => typeof x === 'number' || !isNaN(Number(x)))) {
+        const r=Math.round(Number(v[0])||0),g=Math.round(Number(v[1])||0),b=Math.round(Number(v[2])||0);
+        return 'rgb('+r+','+g+','+b+')';
+      }
+      // Single-element array (e.g. from ITEM returning a list wrap) → unwrap
+      if (v.length === 1) return resolveColor(v[0]);
+      // Multi-element word array → try first element as a color name
+      return resolveColor(v[0]);
+    }
+    if (typeof v === 'number') return LOGO_PALETTE[Math.abs(Math.floor(v)) % LOGO_PALETTE.length];
+    const s = String(v).trim().toUpperCase();
+    if (NAMED_COLORS[s]) return NAMED_COLORS[s];
+    // Try as CSS hex or named
+    if (s.startsWith('#') || s.startsWith('RGB')) return v;
+    return v;
+  }
+
+  function drawTo(nx, ny) {
+    if (penDown) queue.push({type:'line',x1:sx,y1:sy,x2:nx,y2:ny,c:penColor,w:penSize});
+    sx = nx; sy = ny;
+  }
+
+  function arcLines(cx, cy, r, startA, endA, ccw) {
+    if (r <= 0) return;
+    const span = ccw
+      ? ((startA - endA + 2*Math.PI) % (2*Math.PI)) || 2*Math.PI
+      : ((endA - startA + 2*Math.PI) % (2*Math.PI)) || 2*Math.PI;
+    const n = Math.max(6, Math.round(32 * span / (2*Math.PI)));
+    const step = (ccw ? -1 : 1) * span / n;
+    let px = cx + r*Math.cos(startA), py = cy + r*Math.sin(startA);
+    for (let i = 1; i <= n; i++) {
+      const a = startA + step * i;
+      const nx2 = cx + r*Math.cos(a), ny2 = cy + r*Math.sin(a);
+      if (penDown) queue.push({type:'line',x1:px,y1:py,x2:nx2,y2:ny2,c:penColor,w:penSize});
+      px = nx2; py = ny2;
+    }
+    sx = px; sy = py;
+  }
+
+  function tokenize(src) {
+    src = src.replace(/;[^\n]*/g,' ');
+    const T = []; let i = 0;
+    while (i < src.length) {
+      const c = src[i];
+      if (/\s/.test(c)) { i++; continue; }
+      if (c==='[') { T.push(['[']); i++; }
+      else if (c===']') { T.push([']']); i++; }
+      else if (c==='(') { T.push(['(']); i++; }
+      else if (c===')') { T.push([')']); i++; }
+      else if (c==='+') { T.push(['+']); i++; }
+      else if (c==='*') { T.push(['*']); i++; }
+      else if (c==='/') { T.push(['/']); i++; }
+      else if (c==='<') { T.push([src[i+1]==='='?(i++,'<='):'<']); i++; }
+      else if (c==='>') { T.push([src[i+1]==='='?(i++,'>='):'>']); i++; }
+      else if (c==='=') { T.push(['=']); i++; }
+      else if (c==='-') {
+        const prev = T[T.length-1];
+        const isOp = !prev || ['[','(','+','-','*','/','<','>','<=','>=','='].includes(prev[0]);
+        const prevWasSpace = i>0 && /\s/.test(src[i-1]);
+        if ((isOp || prevWasSpace) && i+1<src.length && /[\d.]/.test(src[i+1])) {
+          let n='-'; i++;
+          while (i<src.length && /[\d.]/.test(src[i])) n+=src[i++];
+          T.push(['NUM',parseFloat(n)]);
+        } else { T.push(['-']); i++; }
+      }
+      else if (/[\d.]/.test(c)) {
+        let n=''; while (i<src.length && /[\d.]/.test(src[i])) n+=src[i++];
+        T.push(['NUM',parseFloat(n)]);
+      }
+      else if (c==='"') {
+        i++; let w='';
+        while (i<src.length && !/[\s\[\]()]/.test(src[i])) w+=src[i++];
+        T.push(['WORD',w]);
+      }
+      else if (c===':') {
+        i++; let n='';
+        while (i<src.length && /[\w]/.test(src[i])) n+=src[i++];
+        T.push(['VAR',n.toUpperCase()]);
+      }
+      else if (/[a-zA-Z_]/.test(c)) {
+        let w=''; while (i<src.length && /[\w?!]/.test(src[i])) w+=src[i++];
+        T.push(['CMD',w.toUpperCase()]);
+      }
+      else i++;
+    }
+    return T;
+  }
+
+  function collectList(T,p) {
+    let depth=1; p++;
+    const list=[];
+    while (p<T.length&&depth>0) {
+      if (T[p][0]==='[') depth++;
+      else if (T[p][0]===']') { if(--depth===0){p++;break;} }
+      list.push(T[p]); p++;
+    }
+    return [list,p];
+  }
+
+  function getValue(T,p,V) {
+    if (p>=T.length) return [0,p];
+    const t=T[p]; const k=t[0];
+    if (k==='NUM') return [t[1],p+1];
+    if (k==='WORD') return [t[1],p+1];
+    if (k==='VAR') return [V[t[1]]!==undefined?V[t[1]]:0,p+1];
+    if (k==='[') {
+      // Evaluate each element in the list as a value (for SETPC [r g b] etc.)
+      let np2=p+1; const items=[];
+      let depth=0;
+      // Check if it's a nested list (contains sub-lists)
+      let hasNested=false;
+      for(let qi=p+1;qi<T.length;qi++){if(T[qi][0]===']'&&depth===0)break;if(T[qi][0]==='['){hasNested=true;break;}if(T[qi][0]==='CMD'){}}
+      if(hasNested){
+        // Return as token array (code list for REPEAT, IF, etc.)
+        const [list,np3]=collectList(T,p); return [list,np3];
+      }
+      // Flat list: evaluate each element as a value
+      while(np2<T.length && T[np2][0]!==']'){
+        const [v,nnp]=getValue(T,np2,V); items.push(v); np2=nnp;
+      }
+      return [items, np2+1];
+    }
+    if (k==='(') {
+      if (T[p+1] && T[p+1][0]==='CMD' && T[p+1][1]==='LIST') {
+        const items=[]; let np2=p+2;
+        while(np2<T.length && T[np2][0]!==')'){
+          const [v,nnp]=getValue(T,np2,V); items.push(v); np2=nnp;
+        }
+        return [items, np2+1];
+      }
+      const [v,np2]=evalExpr(T,p+1,V);
+      return [v, T[np2]&&T[np2][0]===')'? np2+1 : np2];
+    }
+    if (k==='CMD') {
+      const cmd=t[1]; p++;
+      const FN={
+        SQRT:a=>Math.sqrt(Math.abs(a)),SIN:a=>Math.sin(a*Math.PI/180),
+        COS:a=>Math.cos(a*Math.PI/180),TAN:a=>Math.tan(a*Math.PI/180),
+        ABS:a=>Math.abs(a),INT:a=>Math.trunc(a),ROUND:a=>Math.round(a),
+        MINUS:a=>-a,NOT:a=>a?0:1,
+        RANDOM:a=>Math.floor(Math.random()*(Math.abs(Math.floor(a))||1)),
+      };
+      if(FN[cmd]){const [a,np2]=getValue(T,p,V);return [FN[cmd](parseFloat(a)||0),np2];}
+      if(procs[cmd]){
+        const proc=procs[cmd];
+        const args=[];let np2=p;
+        for(let i=0;i<proc.params.length;i++){const [a,nnp]=getValue(T,np2,V);args.push(a);np2=nnp;}
+        const lv={...V};proc.params.forEach((pr,i)=>lv[pr]=args[i]);
+        let result=0;
+        try{callDepth++;if(callDepth<MAX_DEPTH)exec(proc.body,lv);}catch(e){if(e&&e.returnValue!==undefined)result=e.returnValue;}
+        callDepth--;
+        return [result,np2];
+      }
+      if(cmd==='REPCOUNT') return [V['__REPCOUNT']||0,p];
+
+      // Two-argument math functions (prefix and infix both supported)
+      if(cmd==='MOD'||cmd==='REMAINDER'){
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        const rb=parseFloat(b)||1;
+        return [((parseFloat(a)||0)%rb+Math.abs(rb))%Math.abs(rb), np3];
+      }
+      if(cmd==='MAX'){
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        return [Math.max(parseFloat(a)||0, parseFloat(b)||0), np3];
+      }
+      if(cmd==='MIN'){
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        return [Math.min(parseFloat(a)||0, parseFloat(b)||0), np3];
+      }
+      if(cmd==='AND'){
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        return [(parseFloat(a)&&parseFloat(b))?1:0, np3];
+      }
+      if(cmd==='OR'){
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        return [(parseFloat(a)||parseFloat(b))?1:0, np3];
+      }
+      if(cmd==='POWER'){
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        return [Math.pow(parseFloat(a)||0, parseFloat(b)||0), np3];
+      }
+      if(cmd==='ATAN'){
+        // ATAN y x (two-arg arctangent, degrees)
+        const [a,np2]=getValue(T,p,V); const [b,np3]=getValue(T,np2,V);
+        return [Math.atan2(parseFloat(a)||0, parseFloat(b)||0)*180/Math.PI, np3];
+      }
+
+      // List/word operations
+      if(cmd==='ITEM'){
+        // ITEM n list — 1-based index into list or word
+        const [idx,np2]=getValue(T,p,V);
+        const [lst,np3]=getValue(T,np2,V);
+        const i=Math.round(parseFloat(idx)||1);
+        if(Array.isArray(lst)) return [lst[i-1]!==undefined?lst[i-1]:0, np3];
+        if(typeof lst==='string'){const ch=lst[i-1];return [ch!==undefined?ch:'',np3];}
+        return [0,np3];
+      }
+      if(cmd==='PICK'){
+        // PICK list — random element (1-based)
+        const [lst,np2]=getValue(T,p,V);
+        if(Array.isArray(lst)&&lst.length) return [lst[Math.floor(Math.random()*lst.length)],np2];
+        return [0,np2];
+      }
+      if(cmd==='COUNT'){
+        const [lst,np2]=getValue(T,p,V);
+        return [Array.isArray(lst)?lst.length:(typeof lst==='string'?lst.length:0),np2];
+      }
+      if(cmd==='FIRST'){
+        const [lst,np2]=getValue(T,p,V);
+        return [Array.isArray(lst)?lst[0]:(typeof lst==='string'?lst[0]||'':''),np2];
+      }
+      if(cmd==='LAST'){
+        const [lst,np2]=getValue(T,p,V);
+        return [Array.isArray(lst)?lst[lst.length-1]:(typeof lst==='string'?lst[lst.length-1]||'':''),np2];
+      }
+      if(cmd==='BUTFIRST'||cmd==='BF'){
+        const [lst,np2]=getValue(T,p,V);
+        return [Array.isArray(lst)?lst.slice(1):(typeof lst==='string'?lst.slice(1):''),np2];
+      }
+      if(cmd==='BUTLAST'||cmd==='BL'){
+        const [lst,np2]=getValue(T,p,V);
+        return [Array.isArray(lst)?lst.slice(0,-1):(typeof lst==='string'?lst.slice(0,-1):''),np2];
+      }
+      if(cmd==='EMPTY?'||cmd==='EMPTYP'){
+        const [lst,np2]=getValue(T,p,V);
+        return [(Array.isArray(lst)?lst.length===0:(String(lst).length===0))?1:0,np2];
+      }
+      if(cmd==='MEMBER?'||cmd==='MEMBERP'){
+        const [item,np2]=getValue(T,p,V);
+        const [lst,np3]=getValue(T,np2,V);
+        return [Array.isArray(lst)?lst.some(x=>String(x).toUpperCase()===String(item).toUpperCase())?1:0:0,np3];
+      }
+      if(cmd==='LIST'){
+        // LIST a b — makes a two-element list
+        const [a,np2]=getValue(T,p,V);
+        const [b,np3]=getValue(T,np2,V);
+        return [[a,b],np3];
+      }
+      if(cmd==='SENTENCE'||cmd==='SE'){
+        const [a,np2]=getValue(T,p,V);
+        const [b,np3]=getValue(T,np2,V);
+        const fa=Array.isArray(a)?a:[a]; const fb=Array.isArray(b)?b:[b];
+        return [[...fa,...fb],np3];
+      }
+      if(cmd==='WORD'){
+        const [a,np2]=getValue(T,p,V);
+        const [b,np3]=getValue(T,np2,V);
+        return [String(a)+String(b),np3];
+      }
+      if(cmd==='LPUT'){
+        const [item,np2]=getValue(T,p,V);
+        const [lst,np3]=getValue(T,np2,V);
+        return [Array.isArray(lst)?[...lst,item]:[item],np3];
+      }
+      if(cmd==='FPUT'){
+        const [item,np2]=getValue(T,p,V);
+        const [lst,np3]=getValue(T,np2,V);
+        return [Array.isArray(lst)?[item,...lst]:[item],np3];
+      }
+
+      // Unrecognized CMD — treat as a string value (e.g. color names like WHITE, GOLD, RED)
+      return [cmd,p];
+    }
+    return [0,p+1];
+  }
+
+  function evalExpr(T,p,V) {
+    let [left,np]=getValue(T,p,V);
+    while(np<T.length){
+      const op=T[np][0];
+      // Handle MOD, REMAINDER, AND, OR as infix CMD operators
+      const isCmdOp = op==='CMD' && ['MOD','REMAINDER','AND','OR','MAX','MIN','POWER'].includes(T[np][1]);
+      if(!['+','-','*','/','<','>','<=','>=','='].includes(op) && !isCmdOp)break;
+      const [right,nnp]=getValue(T, isCmdOp?np+1:np+1, V);
+      const l=parseFloat(left)||0,r=parseFloat(right)||0;
+      if(op==='+')left=l+r;
+      else if(op==='-')left=l-r;
+      else if(op==='*')left=l*r;
+      else if(op==='/')left=r!==0?l/r:0;
+      else if(op==='<')left=l<r?1:0;
+      else if(op==='>')left=l>r?1:0;
+      else if(op==='<=')left=l<=r?1:0;
+      else if(op==='>=')left=l>=r?1:0;
+      else if(op==='=')left=(String(left)===String(right)?1:0);
+      else if(isCmdOp){
+        const cn=T[np][1];
+        if(cn==='MOD'||cn==='REMAINDER'){const rb=r||1;left=((l%rb)+Math.abs(rb))%Math.abs(rb);}
+        else if(cn==='MAX')left=Math.max(l,r);
+        else if(cn==='MIN')left=Math.min(l,r);
+        else if(cn==='AND')left=(l&&r)?1:0;
+        else if(cn==='OR')left=(l||r)?1:0;
+        else if(cn==='POWER')left=Math.pow(l,r);
+      }
+      np=nnp;
+    }
+    return [left,np];
+  }
+
+  function exec(T,V) {
+    let p=0;
+    while(p<T.length) {
+      if(opCount++>MAX_OPS)return;
+      const t=T[p]; const k=t[0];
+      if(k!=='CMD'){p++;continue;}
+      const cmd=t[1]; p++;
+      if(cmd==='TO'){
+        let name=T[p]?T[p][1]:''; p++;
+        const params=[];
+        while(p<T.length&&T[p][0]==='VAR'){params.push(T[p][1]);p++;}
+        const body=[];
+        while(p<T.length){
+          if(T[p][0]==='CMD'&&T[p][1]==='END'){p++;break;}
+          body.push(T[p]);p++;
+        }
+        procs[name]={params,body};
+        continue;
+      }
+      if(cmd==='END')continue;
+      if(cmd==='OUTPUT'||cmd==='OP'){
+        const [v,np]=evalExpr(T,p,V);p=np;
+        throw {returnValue:v};
+      }
+      if(cmd==='STOP')return;
+      if(cmd==='MAKE'||cmd==='MAKEGLOBAL'){
+        const [nm,np]=getValue(T,p,V); p=np;
+        const [vl,np2]=evalExpr(T,p,V); p=np2;
+        V[String(nm).toUpperCase()]=vl;
+        continue;
+      }
+      if(cmd==='LOCAL'){const [nm,np]=getValue(T,p,V);p=np;V[String(nm).toUpperCase()]=0;continue;}
+      if(cmd==='FD'||cmd==='FORWARD'){
+        const [d,np]=evalExpr(T,p,V); p=np;
+        const dist=parseFloat(d)||0;
+        const a=toRad(heading);
+        drawTo(sx+Math.cos(a)*dist, sy+Math.sin(a)*dist);
+        continue;
+      }
+      if(cmd==='BK'||cmd==='BACK'||cmd==='BACKWARD'){
+        const [d,np]=evalExpr(T,p,V); p=np;
+        const dist=parseFloat(d)||0;
+        const a=toRad(heading+180);
+        drawTo(sx+Math.cos(a)*dist, sy+Math.sin(a)*dist);
+        continue;
+      }
+      if(cmd==='RT'||cmd==='RIGHT'){const [d,np]=evalExpr(T,p,V);p=np;heading=(heading+parseFloat(d)||0)%360;continue;}
+      if(cmd==='LT'||cmd==='LEFT'){const [d,np]=evalExpr(T,p,V);p=np;heading=((heading-parseFloat(d)||0)%360+360)%360;continue;}
+      if(cmd==='SETHEADING'||cmd==='SH'){const [d,np]=evalExpr(T,p,V);p=np;heading=((parseFloat(d)||0)%360+360)%360;continue;}
+      if(cmd==='PU'||cmd==='PENUP'){penDown=false;continue;}
+      if(cmd==='PD'||cmd==='PENDOWN'){penDown=true;continue;}
+      if(cmd==='HOME'){drawTo(W/2,H/2);heading=0;continue;}
+      if(cmd==='CS'||cmd==='CLEARSCREEN'){
+        queue.push({type:'bg',color:'#fff'});
+        sx=W/2;sy=H/2;heading=0;penDown=true;
+        continue;
+      }
+      if(cmd==='SETXY'||cmd==='SETPOS'){
+        const [xv,np]=evalExpr(T,p,V);p=np;
+        const [yv,np2]=evalExpr(T,p,V);p=np2;
+        drawTo(W/2+(parseFloat(xv)||0), H/2+(parseFloat(yv)||0));
+        continue;
+      }
+      if(cmd==='SETX'){const [xv,np]=evalExpr(T,p,V);p=np;drawTo(W/2+(parseFloat(xv)||0),sy);continue;}
+      if(cmd==='SETY'){const [yv,np]=evalExpr(T,p,V);p=np;drawTo(sx,H/2+(parseFloat(yv)||0));continue;}
+      if(cmd==='SETPC'||cmd==='SETPENCOLOR'||cmd==='PC'){
+        const [cv,np]=getValue(T,p,V);p=np;
+        penColor=resolveColor(cv);
+        continue;
+      }
+      if(cmd==='SETBG'||cmd==='SETBACKGROUND'){
+        const [cv,np]=getValue(T,p,V);p=np;
+        queue.push({type:'bg',color:resolveColor(cv)});
+        continue;
+      }
+      if(cmd==='SETPENSIZE'||cmd==='SETWIDTH'||cmd==='SETPW'||cmd==='PW'){
+        const [sv,np]=evalExpr(T,p,V);p=np;
+        penSize=Math.max(0.1,parseFloat(sv)||1);
+        continue;
+      }
+      if(cmd==='HT'||cmd==='HIDETURTLE'||cmd==='ST'||cmd==='SHOWTURTLE'){continue;}
+      if(cmd==='REPEAT'){
+        const [n,np]=evalExpr(T,p,V);p=np;
+        const [body,np2]=collectList(T,p);p=np2;
+        const count=Math.floor(parseFloat(n)||0);
+        for(let i=1;i<=count;i++){
+          if(opCount>MAX_OPS)break;
+          V['__REPCOUNT']=i;
+          exec(body,{...V});
+        }
+        continue;
+      }
+      if(cmd==='FOREVER'){
+        const [body,np]=collectList(T,p);p=np;
+        let i=0;
+        while(opCount<MAX_OPS&&i++<10000)exec(body,{...V});
+        continue;
+      }
+      if(cmd==='WHILE'){
+        const condStart=p;
+        const [cond,np]=collectList(T,p);p=np;
+        const [body,np2]=collectList(T,p);p=np2;
+        let guard=0;
+        while(guard++<10000&&opCount<MAX_OPS){
+          const [cv]=evalExpr(cond,0,V);
+          if(!parseFloat(cv))break;
+          exec(body,{...V});
+        }
+        continue;
+      }
+      if(cmd==='IF'){
+        const [cv,np]=evalExpr(T,p,V);p=np;
+        const [body,np2]=collectList(T,p);p=np2;
+        if(parseFloat(cv))exec(body,{...V});
+        continue;
+      }
+      if(cmd==='IFELSE'){
+        const [cv,np]=evalExpr(T,p,V);p=np;
+        const [tbody,np2]=collectList(T,p);p=np2;
+        const [fbody,np3]=collectList(T,p);p=np3;
+        exec(parseFloat(cv)?tbody:fbody,{...V});
+        continue;
+      }
+      if(cmd==='FOR'){
+        const [spec,np]=collectList(T,p);p=np;
+        const [body,np2]=collectList(T,p);p=np2;
+        if(spec.length>=4){
+          const varName=spec[0][1];
+          const [startV]=evalExpr(spec,1,V);
+          const [endV]=evalExpr(spec,2,V);
+          const [stepV]=evalExpr(spec,3,V);
+          const start=parseFloat(startV)||0,end=parseFloat(endV)||0,step=parseFloat(stepV)||1;
+          const lv={...V};
+          if(step>0)for(let i=start;i<=end&&opCount<MAX_OPS;i+=step){lv[varName]=i;exec(body,{...lv});}
+          else if(step<0)for(let i=start;i>=end&&opCount<MAX_OPS;i+=step){lv[varName]=i;exec(body,{...lv});}
+        }
+        continue;
+      }
+      if(cmd==='ARC'){
+        const [anglev,np]=evalExpr(T,p,V);p=np;
+        const [rv,np2]=evalExpr(T,p,V);p=np2;
+        const angle=parseFloat(anglev)||0;
+        const r=Math.abs(parseFloat(rv)||0);
+        if(r>0){
+          const startA=toRad(heading-90);
+          const ccw=angle<0;
+          const spanAngle=Math.abs(angle);
+          const endA=startA+(ccw?-1:1)*spanAngle*Math.PI/180;
+          const cx2=sx-r*Math.cos(startA), cy2=sy-r*Math.sin(startA);
+          arcLines(cx2,cy2,r,startA,endA,ccw);
+        }
+        continue;
+      }
+      if(cmd==='CIRCLE'){
+        const [rv,np]=evalExpr(T,p,V);p=np;
+        const r=Math.abs(parseFloat(rv)||0);
+        if(r>0){
+          const startA=toRad(heading-90);
+          const cx2=sx-r*Math.cos(startA), cy2=sy-r*Math.sin(startA);
+          arcLines(cx2,cy2,r,startA,startA+2*Math.PI,false);
+        }
+        continue;
+      }
+      if(cmd==='DOT'){
+        const [rv,np]=evalExpr(T,p,V);p=np;
+        const r2=parseFloat(rv)||5;
+        queue.push({type:'dot',cx:sx,cy:sy,r:Math.abs(r2),c:penColor});
+        continue;
+      }
+      if(cmd==='LABEL'||cmd==='PRINT'||cmd==='SHOW'||cmd==='TYPE'){
+        const [,np]=getValue(T,p,V);p=np;
+        continue;
+      }
+      if(cmd==='WAIT'||cmd==='CLEARTEXT'||cmd==='CT'){continue;}
+      if(procs[cmd]){
+        const proc=procs[cmd];
+        const args=[];let np=p;
+        for(let i=0;i<proc.params.length;i++){const [a,nnp]=getValue(T,np,V);args.push(a);np=nnp;}
+        p=np;
+        const lv={};proc.params.forEach((pr,i)=>lv[pr]=args[i]);
+        callDepth++;
+        if(callDepth<MAX_DEPTH){
+          try{exec(proc.body,lv);}
+          catch(e){if(!e||e.returnValue===undefined)throw e;}
+        }
+        callDepth--;
+        continue;
+      }
+      unknownCmds.add(cmd);
+    }
+  }
+
+  try { exec(tokenize(code),{}); } catch(e) { if(!e||e.returnValue===undefined) console.warn('compileLogo error:',e); }
+  return {queue, unknownCmds};
+}
+function autoFitQueue(queue, W, H) {
+  if (!queue.length) return queue;
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  for (const op of queue) {
+    if (op.type==='line') {
+      minX=Math.min(minX,op.x1,op.x2);maxX=Math.max(maxX,op.x1,op.x2);
+      minY=Math.min(minY,op.y1,op.y2);maxY=Math.max(maxY,op.y1,op.y2);
+    } else if (op.type==='dot') {
+      minX=Math.min(minX,op.cx-op.r);maxX=Math.max(maxX,op.cx+op.r);
+      minY=Math.min(minY,op.cy-op.r);maxY=Math.max(maxY,op.cy+op.r);
+    }
+  }
+  if (!isFinite(minX)) return queue;
+  const dw=maxX-minX, dh=maxY-minY;
+  if (dw===0&&dh===0) return queue;
+  const pad=0.06;
+  const scaleFit=Math.min((W*(1-2*pad))/Math.max(dw,1),(H*(1-2*pad))/Math.max(dh,1));
+  const fillRatio=Math.max(dw/W, dh/H);
+  const scale = fillRatio > 0.4 ? Math.min(scaleFit, 1/fillRatio*(1-2*pad)) : scaleFit;
+  if (!isFinite(scale)||scale<=0) return queue;
+  const cx=(minX+maxX)/2, cy=(minY+maxY)/2;
+  const ox=W/2-cx*scale, oy=H/2-cy*scale;
+  return queue.map(op => {
+    if (op.type==='line') return {...op,x1:op.x1*scale+ox,y1:op.y1*scale+oy,x2:op.x2*scale+ox,y2:op.y2*scale+oy,w:Math.max(0.3,op.w*Math.sqrt(scale))};
+    if (op.type==='dot') return {...op,cx:op.cx*scale+ox,cy:op.cy*scale+oy,r:Math.max(1,op.r*scale)};
+    return op;
+  });
+}
+function renderQueue(canvas, queue, getSpeedFn) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d', {willReadFrequently:true});
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.lineCap='round';ctx.lineJoin='round';
+  if (activeAnims[canvas.id]) { cancelAnimationFrame(activeAnims[canvas.id]); delete activeAnims[canvas.id]; }
+  const getSpd = () => typeof getSpeedFn==='function' ? getSpeedFn() : (getSpeedFn||0);
+  function drawOp(op) {
+    if (op.type==='bg') { ctx.fillStyle=op.color;ctx.fillRect(0,0,canvas.width,canvas.height); }
+    else if (op.type==='line') {
+      ctx.beginPath();ctx.moveTo(op.x1,op.y1);ctx.lineTo(op.x2,op.y2);
+      ctx.strokeStyle=op.c;ctx.lineWidth=op.w;ctx.stroke();
+    } else if (op.type==='dot') {
+      ctx.beginPath();ctx.arc(op.cx,op.cy,op.r,0,2*Math.PI);ctx.fillStyle=op.c;ctx.fill();
+    }
+  }
+  if (getSpd()===0||queue.length===0) { queue.forEach(drawOp); return; }
+  let i = 0;
+  function frame() {
+    const spd=getSpd();
+    if (spd===0) { while(i<queue.length) drawOp(queue[i++]); return; }
+    const n = Math.max(1,Math.floor(spd));
+    const end = Math.min(i+n, queue.length);
+    while (i<end) drawOp(queue[i++]);
+    if (i<queue.length) activeAnims[canvas.id]=requestAnimationFrame(frame);
+  }
+  activeAnims[canvas.id]=requestAnimationFrame(frame);
+}
+function drawCode(el,code,spd){var c=typeof el==="string"?document.getElementById(el):el;if(!c)return;var res=compileLogo(code,c.width,c.height);var rawQ=res.queue||res;var q=autoFitQueue(rawQ,c.width,c.height);renderQueue(c,q,spd);}
+var F=["FD 100","FD 100","FD 100","FD 100","FD 100","FD 100","FD 100","FD 100","FD 100","FD 100","FD 100","CS\nSETBG [10 10 18]\nMAKE \"A 12\nMAKE \"B 38\nMAKE \"C 66\nREPEAT 9 [\nREPEAT 14 [\nSETPC (ITEM (1 + MOD REPCOUNT 7) [CYAN MAGENTA YELLOW ORANGE TEAL ROSE AMBER])\nFD :A + REPCOUNT\nRT 47\nFD :B\nLT 29\nFD :C\nRT 81\nFD 14\nLT 19\n]\nLT 27\nFD 34\nRT 11\n]","CS\nSETBG [10 10 18]\nMAKE \"A 12\nMAKE \"B 38\nMAKE \"C 66\nREPEAT 9 [\nREPEAT 14 [\nSETPC (ITEM (1 + MOD REPCOUNT 7) [CYAN MAGENTA YELLOW ORANGE TEAL ROSE AMBER])\nFD :A + REPCOUNT\nRT 47\nFD :B\nLT 29\nFD :C\nRT 81\nFD 14\nLT 19\n]\nLT 27\nFD 34\nRT 11\n]","CS\nSETBG [10 10 18]\nMAKE \"A 12\nMAKE \"B 38\nMAKE \"C 66\nREPEAT 9 [\nREPEAT 14 [\nSETPC (ITEM (1 + MOD REPCOUNT 7) [CYAN MAGENTA YELLOW ORANGE TEAL ROSE AMBER])\nFD :A + REPCOUNT\nRT 47\nFD :B\nLT 29\nFD :C\nRT 81\nFD 14\nLT 19\n]\nLT 27\nFD 34\nRT 11\n]","CS\nSETBG [10 10 18]\nMAKE \"A 12\nMAKE \"B 38\nMAKE \"C 66\nREPEAT 9 [\nREPEAT 14 [\nSETPC (ITEM (1 + MOD REPCOUNT 7) [CYAN MAGENTA YELLOW ORANGE TEAL ROSE AMBER])\nFD :A + REPCOUNT\nRT 47\nFD :B\nLT 29\nFD :C\nRT 81\nFD 14\nLT 19\n]\nIFELSE (MOD REPCOUNT 2 = 0) [LT 23] [LT 31]\nFD 34\nRT 11\n]","CS\nSETBG [10 10 18]\nMAKE \"A 12\nMAKE \"B 38\nMAKE \"C 66\nREPEAT 9 [\nREPEAT 14 [\nSETPC (ITEM (1 + MOD REPCOUNT 7) [CYAN MAGENTA YELLOW ORANGE TEAL ROSE AMBER])\nFD :A + REPCOUNT\nRT 47\nFD :B\nLT 29\nFD :C\nRT 81\nFD 14\nLT 19\n]\nIFELSE (MOD REPCOUNT 2 = 0) [LT 23] [LT 31]\nFD 34\nRT 11\n]","CS\nSETBG [10 10 18]\nMAKE \"A 12\nMAKE \"B 38\nMAKE \"C 66\nREPEAT 9 [\nREPEAT 14 [\nSETPC (ITEM (1 + MOD REPCOUNT 7) [CYAN MAGENTA YELLOW ORANGE TEAL ROSE AMBER])\nFD :A + REPCOUNT\nRT (43 + MOD REPCOUNT 9)\nFD :B\nLT 29\nFD :C\nRT 81\nFD 14\nLT 19\n]\nIFELSE (MOD REPCOUNT 2 = 0) [LT 23] [LT 31]\nFD 34\nRT 11\n]","CS\nSETBG [10 10 18]\nMAKE \"A 12\nMAKE \"B 38\nMAKE \"C 66\nREPEAT 9 [\nREPEAT 14 [\nSETPC (ITEM (1 + MOD REPCOUNT 7) [CYAN MAGENTA YELLOW ORANGE TEAL ROSE AMBER])\nFD :A + REPCOUNT\nRT (43 + MOD REPCOUNT 9)\nFD :B\nLT 29\nFD :C\nRT (73 + MOD REPCOUNT 17)\nFD 14\nLT 19\n]\nIFELSE (MOD REPCOUNT 2 = 0) [LT 23] [LT 31]\nFD 34\nRT 11\n]","CS\nSETBG [10 10 18]\nMAKE \"A 12\nMAKE \"B 38\nMAKE \"C 66\nREPEAT 9 [\nREPEAT 14 [\nSETPC (ITEM (1 + MOD REPCOUNT 7) [CYAN MAGENTA YELLOW ORANGE TEAL ROSE AMBER])\nFD :A + REPCOUNT\nRT (43 + MOD REPCOUNT 9)\nFD :B\nIFELSE (MOD REPCOUNT 2 = 0) [RT 67] [RT 89]\nFD :C\nRT (73 + MOD REPCOUNT 17)\nFD 14\nLT 19\n]\nIFELSE (MOD REPCOUNT 2 = 0) [LT 23] [LT 31]\nFD 34\nRT 11\n]","CS\nSETBG [10 10 18]\nMAKE \"A 12\nMAKE \"B 38\nMAKE \"C 66\nREPEAT 9 [\nREPEAT 14 [\nSETPC (ITEM (1 + MOD REPCOUNT 7) [CYAN MAGENTA YELLOW ORANGE TEAL ROSE AMBER])\nFD :A + REPCOUNT\nRT (43 + MOD REPCOUNT 9)\nFD :B\nIFELSE (MOD REPCOUNT 2 = 0) [RT 67] [RT 89]\nFD :C\nRT (73 + MOD REPCOUNT 17)\nFD 14\nLT 19\n]\nIFELSE (MOD REPCOUNT 2 = 0) [LT 23] [LT 31]\nFD 34\nRT 11\n]","CS\nSETBG [10 10 18]\nMAKE \"A 12\nMAKE \"B 38\nMAKE \"C 66\nREPEAT 9 [\nREPEAT 14 [\nSETPC (ITEM (1 + MOD REPCOUNT 7) [CYAN MAGENTA YELLOW ORANGE TEAL ROSE AMBER])\nFD :A + REPCOUNT\nRT (43 + MOD REPCOUNT 9)\nFD :B\nIFELSE (MOD REPCOUNT 2 = 0) [RT 67] [RT 89]\nFD :C\nRT (73 + MOD REPCOUNT 17)\nFD 14\nLT 19\n]\nIFELSE (MOD REPCOUNT 2 = 0) [LT 23] [LT 31]\nFD 34\nRT 11\n]","CS\nSETBG [10 10 18]\nMAKE \"A 12\nMAKE \"B 38\nMAKE \"C 66\nREPEAT 9 [\nREPEAT 14 [\nSETPC (ITEM (1 + MOD REPCOUNT 7) [CYAN MAGENTA YELLOW ORANGE TEAL ROSE AMBER])\nFD :A + REPCOUNT\nRT (43 + MOD REPCOUNT 9)\nFD :B\nIFELSE (MOD REPCOUNT 2 = 0) [RT 67] [RT 89]\nFD :C\nRT (73 + MOD REPCOUNT 17)\nFD 14\nLT 19\n]\nIFELSE (MOD REPCOUNT 2 = 0) [LT 23] [LT 31]\nFD 34\nRT 11\n]"];
+var L=["Seed","Iteration 1","Iteration 2","Iteration 3","Iteration 4","Iteration 5","Iteration 6","Iteration 7","Iteration 8","Iteration 9","Iteration 10","Iteration 11","Iteration 12","Iteration 13","Iteration 14","Iteration 15","Iteration 16","Iteration 17","Iteration 18","Iteration 19","Iteration 20","Iteration 21"];
+var FD=[{},{"score":20.6,"aes":1,"nov":0,"par":9.8,"sm":{"totalCommands":1,"distinctCommands":1,"nestingDepth":0,"colorChanges":0,"proceduresDefined":0,"repeatCount":0,"codeLength":6,"tokenCount":2},"im":{"distinctPixelColors":5,"spatialEntropy":0.498,"fillRatio":0.0089,"symmetryScore":1,"edgeDensity":0.0089}},{"score":20.6,"aes":1,"nov":0,"par":9.8,"sm":{"totalCommands":1,"distinctCommands":1,"nestingDepth":0,"colorChanges":0,"proceduresDefined":0,"repeatCount":0,"codeLength":6,"tokenCount":2},"im":{"distinctPixelColors":5,"spatialEntropy":0.498,"fillRatio":0.0089,"symmetryScore":1,"edgeDensity":0.0089}},{"score":20.6,"aes":1,"nov":0,"par":9.8,"sm":{"totalCommands":1,"distinctCommands":1,"nestingDepth":0,"colorChanges":0,"proceduresDefined":0,"repeatCount":0,"codeLength":6,"tokenCount":2},"im":{"distinctPixelColors":5,"spatialEntropy":0.498,"fillRatio":0.0089,"symmetryScore":1,"edgeDensity":0.0089}},{"score":20.6,"aes":1,"nov":0,"par":9.8,"sm":{"totalCommands":1,"distinctCommands":1,"nestingDepth":0,"colorChanges":0,"proceduresDefined":0,"repeatCount":0,"codeLength":6,"tokenCount":2},"im":{"distinctPixelColors":5,"spatialEntropy":0.498,"fillRatio":0.0089,"symmetryScore":1,"edgeDensity":0.0089}},{"score":20.6,"aes":1,"nov":0,"par":9.8,"sm":{"totalCommands":1,"distinctCommands":1,"nestingDepth":0,"colorChanges":0,"proceduresDefined":0,"repeatCount":0,"codeLength":6,"tokenCount":2},"im":{"distinctPixelColors":5,"spatialEntropy":0.498,"fillRatio":0.0089,"symmetryScore":1,"edgeDensity":0.0089}},{"score":20.6,"aes":1,"nov":0,"par":9.8,"sm":{"totalCommands":1,"distinctCommands":1,"nestingDepth":0,"colorChanges":0,"proceduresDefined":0,"repeatCount":0,"codeLength":6,"tokenCount":2},"im":{"distinctPixelColors":5,"spatialEntropy":0.498,"fillRatio":0.0089,"symmetryScore":1,"edgeDensity":0.0089}},{"score":20.6,"aes":1,"nov":0,"par":9.8,"sm":{"totalCommands":1,"distinctCommands":1,"nestingDepth":0,"colorChanges":0,"proceduresDefined":0,"repeatCount":0,"codeLength":6,"tokenCount":2},"im":{"distinctPixelColors":5,"spatialEntropy":0.498,"fillRatio":0.0089,"symmetryScore":1,"edgeDensity":0.0089}},{"score":20.6,"aes":1,"nov":0,"par":9.8,"sm":{"totalCommands":1,"distinctCommands":1,"nestingDepth":0,"colorChanges":0,"proceduresDefined":0,"repeatCount":0,"codeLength":6,"tokenCount":2},"im":{"distinctPixelColors":5,"spatialEntropy":0.498,"fillRatio":0.0089,"symmetryScore":1,"edgeDensity":0.0089}},{"score":20.6,"aes":1,"nov":0,"par":9.8,"sm":{"totalCommands":1,"distinctCommands":1,"nestingDepth":0,"colorChanges":0,"proceduresDefined":0,"repeatCount":0,"codeLength":6,"tokenCount":2},"im":{"distinctPixelColors":5,"spatialEntropy":0.498,"fillRatio":0.0089,"symmetryScore":1,"edgeDensity":0.0089}},{"score":20.6,"aes":1,"nov":0,"par":9.8,"sm":{"totalCommands":1,"distinctCommands":1,"nestingDepth":0,"colorChanges":0,"proceduresDefined":0,"repeatCount":0,"codeLength":6,"tokenCount":2},"im":{"distinctPixelColors":5,"spatialEntropy":0.498,"fillRatio":0.0089,"symmetryScore":1,"edgeDensity":0.0089}},{"score":21.4,"aes":9,"nov":8,"par":6.2,"sm":{"totalCommands":19,"distinctCommands":8,"nestingDepth":3,"colorChanges":2,"proceduresDefined":0,"repeatCount":2,"codeLength":235,"tokenCount":65},"im":{"distinctPixelColors":325,"spatialEntropy":2.1854,"fillRatio":0.1571,"symmetryScore":0.9219,"edgeDensity":0.2093}},{"score":20.4,"aes":8,"nov":0,"par":6.2,"sm":{"totalCommands":19,"distinctCommands":8,"nestingDepth":3,"colorChanges":2,"proceduresDefined":0,"repeatCount":2,"codeLength":235,"tokenCount":65},"im":{"distinctPixelColors":325,"spatialEntropy":2.1854,"fillRatio":0.1571,"symmetryScore":0.9219,"edgeDensity":0.2093}},{"score":20.4,"aes":8,"nov":0,"par":6.2,"sm":{"totalCommands":19,"distinctCommands":8,"nestingDepth":3,"colorChanges":2,"proceduresDefined":0,"repeatCount":2,"codeLength":235,"tokenCount":65},"im":{"distinctPixelColors":325,"spatialEntropy":2.1854,"fillRatio":0.1571,"symmetryScore":0.9219,"edgeDensity":0.2093}},{"score":20.6,"aes":9,"nov":4,"par":5.8,"sm":{"totalCommands":21,"distinctCommands":9,"nestingDepth":3,"colorChanges":2,"proceduresDefined":0,"repeatCount":2,"codeLength":273,"tokenCount":77},"im":{"distinctPixelColors":315,"spatialEntropy":2.2452,"fillRatio":0.1875,"symmetryScore":0.9035,"edgeDensity":0.2468}},{"score":19.6,"aes":8,"nov":0,"par":5.8,"sm":{"totalCommands":21,"distinctCommands":9,"nestingDepth":3,"colorChanges":2,"proceduresDefined":0,"repeatCount":2,"codeLength":273,"tokenCount":77},"im":{"distinctPixelColors":315,"spatialEntropy":2.2452,"fillRatio":0.1875,"symmetryScore":0.9035,"edgeDensity":0.2468}},{"score":20.6,"aes":9,"nov":6,"par":5.8,"sm":{"totalCommands":21,"distinctCommands":9,"nestingDepth":3,"colorChanges":2,"proceduresDefined":0,"repeatCount":2,"codeLength":292,"tokenCount":81},"im":{"distinctPixelColors":321,"spatialEntropy":2.1405,"fillRatio":0.1342,"symmetryScore":0.9301,"edgeDensity":0.1785}},{"score":20.6,"aes":9,"nov":6,"par":5.8,"sm":{"totalCommands":21,"distinctCommands":9,"nestingDepth":3,"colorChanges":2,"proceduresDefined":0,"repeatCount":2,"codeLength":312,"tokenCount":85},"im":{"distinctPixelColors":323,"spatialEntropy":2.0112,"fillRatio":0.1424,"symmetryScore":0.9199,"edgeDensity":0.1858}},{"score":19.8,"aes":9,"nov":7,"par":5.4,"sm":{"totalCommands":23,"distinctCommands":9,"nestingDepth":3,"colorChanges":2,"proceduresDefined":0,"repeatCount":2,"codeLength":350,"tokenCount":97},"im":{"distinctPixelColors":353,"spatialEntropy":2.4702,"fillRatio":0.2592,"symmetryScore":0.8577,"edgeDensity":0.3216}},{"score":18.8,"aes":8,"nov":0,"par":5.4,"sm":{"totalCommands":23,"distinctCommands":9,"nestingDepth":3,"colorChanges":2,"proceduresDefined":0,"repeatCount":2,"codeLength":350,"tokenCount":97},"im":{"distinctPixelColors":353,"spatialEntropy":2.4702,"fillRatio":0.2592,"symmetryScore":0.8577,"edgeDensity":0.3216}},{"score":18.8,"aes":8,"nov":0,"par":5.4,"sm":{"totalCommands":23,"distinctCommands":9,"nestingDepth":3,"colorChanges":2,"proceduresDefined":0,"repeatCount":2,"codeLength":350,"tokenCount":97},"im":{"distinctPixelColors":353,"spatialEntropy":2.4702,"fillRatio":0.2592,"symmetryScore":0.8577,"edgeDensity":0.3216}},{"score":18.8,"aes":8,"nov":0,"par":5.4,"sm":{"totalCommands":23,"distinctCommands":9,"nestingDepth":3,"colorChanges":2,"proceduresDefined":0,"repeatCount":2,"codeLength":350,"tokenCount":97},"im":{"distinctPixelColors":353,"spatialEntropy":2.4702,"fillRatio":0.2592,"symmetryScore":0.8577,"edgeDensity":0.3216}}];
+var cur=0,nxt=1,alpha=0,playing=true,lastT=null,phase="dwell",phaseT=0;
+var cvA=document.getElementById("cvA");
+var cvB=document.getElementById("cvB");
+var prg=document.getElementById("prog");
+function ib(k,v){return v!=null?'<div class="ib-group"><span class="ib-k">'+k+'</span><span class="ib-v">'+v+'</span></div>':'';}
+function updateInfobar(i){
+  var d=FD[i]||{};
+  var sm=d.sm||{}; var im=d.im||{};
+  document.getElementById("infobar").innerHTML=
+    ib("Score",d.score!=null?parseFloat(d.score).toFixed(2):null)+
+    ib("Aesthetic",d.aes!=null?parseFloat(d.aes).toFixed(2):null)+
+    ib("Novelty",d.nov!=null?parseFloat(d.nov).toFixed(2):null)+
+    ib("Parsimony",d.par!=null?parseFloat(d.par).toFixed(2):null)+
+    ib("Commands",sm.totalCommands)+
+    ib("Nesting",sm.nestingDepth)+
+    ib("Distinct cmds",sm.distinctCommands)+
+    ib("Color changes",sm.colorChanges)+
+    ib("Repeats",sm.repeatCount)+
+    ib("Procedures",sm.proceduresDefined)+
+    ib("Code length",sm.codeLength!=null?sm.codeLength+" ch":null)+
+    ib("Entropy",im.spatialEntropy!=null?parseFloat(im.spatialEntropy).toFixed(3):null)+
+    ib("Fill ratio",im.fillRatio!=null?(parseFloat(im.fillRatio)*100).toFixed(1)+"%":null)+
+    ib("Symmetry",im.symmetryScore!=null?parseFloat(im.symmetryScore).toFixed(3):null);
+}
+function resize(){var s=cvA.parentElement;var w=s.offsetWidth,h=s.offsetHeight;[cvA,cvB].forEach(function(cv){cv.width=w;cv.height=h;});redrawA();redrawB();}
+function redrawA(){drawCode(cvA,F[cur],0);}
+function redrawB(){drawCode(cvB,F[nxt],0);}
+new ResizeObserver(resize).observe(cvA.parentElement);
+L.forEach(function(_,i){var d=document.createElement("div");d.className="pip"+(i===0?" active":"");d.title=L[i];d.onclick=function(){go(i);};prg.appendChild(d);});
+function pips(){prg.querySelectorAll(".pip").forEach(function(p,i){p.classList.toggle("active",i===cur);});}
+function go(i){cur=i;nxt=(i+1)%F.length;alpha=0;phase="dwell";phaseT=0;cvB.style.opacity=0;cvB.style.transition="opacity 0ms";redrawA();redrawB();pips();document.getElementById("frameLbl").textContent=L[cur];updateInfobar(i);var cp=document.getElementById("codePanel");if(cp)cp.textContent=F[i]||"";}
+resize();go(0);
+function tick(ts){if(!playing){lastT=null;return;}if(!lastT)lastT=ts;var spd=parseFloat(document.getElementById("spd").value);var dt=(ts-lastT)*spd;lastT=ts;var DWELL=1400,FADE=900;if(phase==="dwell"){phaseT+=dt;if(phaseT>=DWELL){phaseT=0;phase="fade";cvB.style.transition="opacity 0ms";}}else{phaseT+=dt;alpha=Math.min(1,phaseT/FADE);cvB.style.transition="opacity 0ms";cvB.style.opacity=alpha;if(alpha>=1){cur=nxt;nxt=(cur+1)%F.length;alpha=0;phase="dwell";phaseT=0;cvB.style.opacity=0;redrawA();redrawB();pips();document.getElementById("frameLbl").textContent=L[cur];updateInfobar(cur);var cp=document.getElementById("codePanel");if(cp)cp.textContent=F[cur]||"";}}requestAnimationFrame(tick);}
+requestAnimationFrame(tick);
+// Restore speed from parent index.html if available
+(function(){
+  try{
+    var saved = window.parent && window.parent._dissolveSpeed;
+    if(saved && saved>0){document.getElementById('spd').value=saved;document.getElementById('spdVal').textContent=parseFloat(saved).toFixed(1)+'×';}
+  }catch(e){}
+})();
+document.getElementById("spd").oninput=function(){
+  var v=parseFloat(this.value);
+  document.getElementById("spdVal").textContent=v.toFixed(1)+"×";
+  // Persist to parent so next dissolve file opens at same speed
+  try{if(window.parent)window.parent._dissolveSpeed=v;}catch(e){}
+};
+function togglePlay(){playing=!playing;document.getElementById("btnPlay").textContent=playing?"⏸ Pause":"▶ Play";if(playing)requestAnimationFrame(tick);}
+function step(d){playing=false;document.getElementById("btnPlay").textContent="▶ Play";go((cur+d+F.length)%F.length);}
+</script></body></html>

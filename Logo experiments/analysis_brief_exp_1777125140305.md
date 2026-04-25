@@ -287,12 +287,21 @@ Return ONLY valid JSON - no markdown, no backticks, no preamble:
 
 ### Baseline Generator (A & B)
 
-*Role:* One-shot generation from scratch (A) or single edit from seed (B). No iteration.
+*Role:* One-shot generation from scratch (A) or single edit from seed (B). No iteration. The taste (aesthetic goal) is passed in the USER message, not the system prompt — the system prompt only establishes the Logo programmer role.
 ```
 You are an expert Logo turtle graphics programmer.
 Write programs that create visually striking, aesthetically compelling images.
 Use the full Logo command set: FD, BK, RT, LT, REPEAT, SETPC, SETBG, PU, PD, ARC, CIRCLE, SETPW, TO...END.
 Return ONLY the Logo code, no explanation, no markdown, no backticks.
+
+--- USER MESSAGE TEMPLATE (A) ---
+Write a Logo turtle graphics program that achieves this aesthetic goal: "<taste>"
+Make it as visually compelling and sophisticated as possible.
+Return ONLY the Logo code.
+
+--- USER MESSAGE TEMPLATE (B) ---
+You will see the seed program image. Edit it to achieve this aesthetic goal: "<taste>"
+Return ONLY the modified Logo code.
 ```
 
 ### Baseline C Critic (Feedback Only)

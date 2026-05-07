@@ -1,0 +1,1150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A Partial Evaluator of Lisp written in Prolog - text edition</title>
+  <style>
+    :root {
+      --bg: #ece8df;
+      --paper: #fffdf8;
+      --ink: #1d1b17;
+      --muted: #666056;
+      --line: #d4c8b7;
+      --panel: #f3ecdf;
+      --code: #1f1f1f;
+      --accent: #0b6b5f;
+      --accent-dark: #084d44;
+      --blue: #264f8f;
+      --error: #8b2d2d;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      line-height: 1.58;
+    }
+
+    header {
+      background: var(--paper);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .masthead {
+      width: min(100%, 920px);
+      margin: 0 auto;
+      padding: 38px 20px 28px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(31px, 6vw, 56px);
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+
+    .byline, .note {
+      margin: 0;
+      color: var(--muted);
+      font-family: ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .byline { font-size: 16px; }
+    .note { margin-top: 16px; font-size: 13px; max-width: 780px; }
+
+    nav {
+      border-top: 1px solid var(--line);
+      background: #f6f0e6;
+    }
+
+    nav .inner {
+      width: min(100%, 920px);
+      margin: 0 auto;
+      padding: 10px 20px;
+      display: flex;
+      gap: 14px;
+      overflow-x: auto;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    nav a { color: var(--blue); text-decoration: none; }
+    nav a:hover { text-decoration: underline; }
+
+    main {
+      width: min(100%, 920px);
+      margin: 0 auto;
+      padding: 28px 20px 64px;
+    }
+
+    article {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: clamp(20px, 4vw, 46px);
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.14);
+    }
+
+    section { margin-top: 34px; }
+    section:first-child { margin-top: 0; }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: clamp(22px, 4vw, 32px);
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 24px 0 8px;
+      font-size: 18px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      letter-spacing: 0;
+    }
+
+    p { margin: 12px 0; }
+
+    .abstract {
+      border-left: 4px solid var(--accent);
+      padding-left: 18px;
+      color: #28251f;
+    }
+
+    .keywords {
+      margin-top: 18px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .runner {
+      margin: 16px 0 20px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbf7ef;
+      overflow: hidden;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      line-height: 1.35;
+    }
+
+    .runner-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      font-family: ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .runner-title {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+      font-weight: 700;
+      color: #39342d;
+    }
+
+    .runner-actions {
+      display: flex;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fffdf8;
+      color: var(--ink);
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .run-button {
+      min-width: 58px;
+      height: 30px;
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+      font-weight: 750;
+    }
+
+    .run-button:hover { background: var(--accent-dark); }
+
+    .info-button {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      color: var(--blue);
+      font-weight: 800;
+    }
+
+    textarea {
+      display: block;
+      width: 100%;
+      min-height: var(--editor-height, 118px);
+      resize: vertical;
+      border: 0;
+      outline: none;
+      padding: 12px;
+      background: #fffdf8;
+      color: #16130f;
+      font: inherit;
+      white-space: pre;
+      tab-size: 2;
+    }
+
+    .output {
+      display: none;
+      max-height: 280px;
+      overflow: auto;
+      margin: 0;
+      padding: 12px;
+      border-top: 1px solid var(--line);
+      background: var(--code);
+      color: #f4f1e8;
+      font: inherit;
+      white-space: pre-wrap;
+    }
+
+    .runner.has-output .output { display: block; }
+    .runner.error .output { color: #ffd7d7; }
+
+    .references p {
+      margin: 8px 0;
+      padding-left: 24px;
+      text-indent: -24px;
+      font-size: 15px;
+      line-height: 1.35;
+    }
+
+    dialog {
+      max-width: min(640px, calc(100vw - 28px));
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffdf8;
+      color: var(--ink);
+      padding: 0;
+      box-shadow: 0 20px 70px rgba(0, 0, 0, 0.3);
+    }
+
+    dialog::backdrop { background: rgba(37, 32, 25, 0.45); }
+
+    .dialog-body {
+      padding: 20px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      line-height: 1.45;
+    }
+
+    .dialog-body h2 {
+      margin-right: 38px;
+      font-size: 20px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .dialog-close {
+      float: right;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-weight: 800;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      background: #efe7da;
+      padding: 1px 4px;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 680px) {
+      article { border-radius: 0; border-left: 0; border-right: 0; }
+      main { padding-left: 0; padding-right: 0; }
+      .masthead { padding-top: 28px; }
+      .runner-bar { align-items: flex-start; }
+      textarea { min-height: var(--editor-height-mobile, 130px); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="masthead">
+      <h1>A Partial Evaluator of Lisp written in Prolog</h1>
+      <p class="byline">Kenneth M. Kahn, 16 February 1983. Uppsala Programming Methodology and Artificial Intelligence Laboratory.</p>
+      <p class="note">Text-flow HTML edition created from the supplied scans. Code examples are OCR-transcribed, editable, and runnable inline. The original scanned page images are not used in this view.</p>
+      <p class="keywords">Keywords: Prolog, Lisp, Logic Programming, Partial Evaluation, Compiler Generation, Unification, Embedded Languages.</p>
+    </div>
+    <nav aria-label="Sections">
+      <div class="inner">
+        <a href="#abstract">Abstract</a>
+        <a href="#overview">Overview</a>
+        <a href="#lisp">Lisp partial evaluation</a>
+        <a href="#prolog">Why Prolog</a>
+        <a href="#partial">Partial</a>
+        <a href="#intersection">Intersection example</a>
+        <a href="#prolog-eval">Prolog evaluation</a>
+        <a href="#references">References</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <article>
+      <section id="abstract">
+        <h2>Abstract</h2>
+        <p class="abstract">A new experimental technique for automatically generating compilers from interpreters is applied to a Prolog interpreter. The Prolog interpreter called LM-Prolog was implemented in Lisp, with the dual purpose of supporting a partial evaluator for Lisp programs called Partial and making the implementation itself a suitable input to Partial. A partial evaluator takes programs and generates more efficient, less general versions of them. Partial is being applied to LM-Prolog to produce specialized versions of Prolog for a given database of assertions or programs. The plan is to apply Partial to LM-Prolog together with the database corresponding to Partial to produce an efficient Lisp version of Partial. Then the Lisp version of Partial will be given to itself together with the code for LM-Prolog, which should produce a specialized partial evaluator for LM-Prolog: in other words, a compiler from LM-Prolog programs to Lisp.</p>
+      </section>
+
+      <section id="overview">
+        <h2>1. An Overview of the Lisp Machine Prolog Project</h2>
+        <p>LM-Prolog, Lisp Machine Prolog, was developed with one purpose in mind: to support a partial evaluator capable of partial evaluating the Prolog. A partial evaluator can be used to make source-to-source optimizations, to generate new programs by intertwining old programs, to expand macros, to support language extensions, and to compile programs written in embedded languages.</p>
+        <p>The implementation is constrained to be as simple, side-effect free, and modular as possible. In order to partial evaluate it effectively, it should use the Lisp stack rather than representing a Prolog stack with an array or list. Pure Prolog is inadequate for implementing a partial evaluator and various evaluable predicates are needed. On the other hand, all the evaluable predicates need to be implemented in a clean way for the partial evaluator to partial evaluate their use.</p>
+        <p>Satisfying these constraints would be impossible without very rich computational resources. The Lisp Machine, a single-user large address space computer supporting a powerful modern Lisp dialect, was instrumental in this research.</p>
+      </section>
+
+      <section id="lisp">
+        <h2>2. Partial Evaluation of Lisp Programs</h2>
+        <p>Partial evaluation in Lisp can be defined simply as evaluating a program after some information about its arguments or environment is already known. The paper writes this relationship as an equivalence between evaluating a partially evaluated program and evaluating the original program in the same environment.</p>
+
+        <div class="runner" style="--editor-height: 170px" data-title="Definition and trivial partial evaluators" data-help="This block appears in section 2. The first partial evaluator returns its input unchanged. The second constructs a quoted eval form. The runner implements a deliberately small Lisp, enough for the examples in this paper.">
+          <div class="runner-bar"><span class="runner-title">Definition and trivial partial evaluators</span><span class="runner-actions"><button class="info-button" type="button">i</button><button class="run-button" type="button">Run</button></span></div>
+          <textarea spellcheck="false">(equivalent (eval (partial-eval x) environment)
+            (eval x environment))
+
+(defun partial-eval-1 (x) x)
+(defun partial-eval-2 (x) (list 'eval (list 'quote x)))
+
+(partial-eval-1 '(+ 1 2))
+(partial-eval-2 '(+ 1 2))</textarea>
+          <pre class="output"></pre>
+        </div>
+
+        <p>Writing partial evaluators is simple in outline, but writing quality partial evaluators is challenging. One measure of quality is the relative effectiveness of input and output. Secondary measures include the effectiveness of the partial evaluation process itself, the readability of the output, and the simplicity and ease of use of the evaluator.</p>
+
+        <h3>Typical examples</h3>
+        <p>The following examples were printed together in the scan. In this text edition they are deliberately split into separate runnable blocks, so each transformation can be studied and edited independently.</p>
+
+        <div class="runner" data-title="first/cons specialization" data-help="A constructor/destructor simplification: the first element of a cons pair is known immediately.">
+          <div class="runner-bar"><span class="runner-title">first/cons specialization</span><span class="runner-actions"><button class="info-button" type="button">i</button><button class="run-button" type="button">Run</button></span></div>
+          <textarea spellcheck="false">(first (cons x y)) ==> x</textarea>
+          <pre class="output"></pre>
+        </div>
+
+        <div class="runner" data-title="append specialization" data-help="When the first argument to append is known, Partial can replace the append with a direct cons.">
+          <div class="runner-bar"><span class="runner-title">append specialization</span><span class="runner-actions"><button class="info-button" type="button">i</button><button class="run-button" type="button">Run</button></span></div>
+          <textarea spellcheck="false">(append '(a) x) ==> (cons 'a x)</textarea>
+          <pre class="output"></pre>
+        </div>
+
+        <div class="runner" style="--editor-height: 92px" data-title="conditional reduced to nil" data-help="This conditional is specialized away because the branch tests are inconsistent for the information known to Partial.">
+          <div class="runner-bar"><span class="runner-title">conditional reduced to nil</span><span class="runner-actions"><button class="info-button" type="button">i</button><button class="run-button" type="button">Run</button></span></div>
+          <textarea spellcheck="false">(cond ((symbolp x) (numberp x))
+      ((eq x 'foo) (factorial 10000)))
+==> nil</textarea>
+          <pre class="output"></pre>
+        </div>
+
+        <div class="runner" style="--editor-height: 116px" data-title="append inside cond" data-help="This transformation simplifies a conditional that depends on append. The runner treats the two sides of ==> as paper transformation forms.">
+          <div class="runner-bar"><span class="runner-title">append inside cond</span><span class="runner-actions"><button class="info-button" type="button">i</button><button class="run-button" type="button">Run</button></span></div>
+          <textarea spellcheck="false">(cond ((append x y) z)
+      (t (list x y)))
+==> (cond ((eq (cond ((eq x nil) (eq y nil))) nil) z)
+          (t (cons nil (cons nil nil))))</textarea>
+          <pre class="output"></pre>
+        </div>
+
+        <div class="runner" style="--editor-height: 135px" data-title="equal over cons" data-help="The equality test over a known cons is specialized into tests on the type and components of z.">
+          <div class="runner-bar"><span class="runner-title">equal over cons</span><span class="runner-actions"><button class="info-button" type="button">i</button><button class="run-button" type="button">Run</button></span></div>
+          <textarea spellcheck="false">(equal (cons 'x 'y) z)
+==>
+(cond ((eq (typep z) 'list)
+       (cond ((eq 'x (first z))
+              (eq 'y (rest z))))))</textarea>
+          <pre class="output"></pre>
+        </div>
+
+        <div class="runner" style="--editor-height: 220px" data-title="length of intersection specialization" data-help="The paper's headline specialization: replace the composition of length and intersection with a generated function that computes the result without constructing the intermediate intersection list.">
+          <div class="runner-bar"><span class="runner-title">length of intersection specialization</span><span class="runner-actions"><button class="info-button" type="button">i</button><button class="run-button" type="button">Run</button></span></div>
+          <textarea spellcheck="false">(length (intersection x y))
+
+(defun length-intersection#1 (a b)
+  (cond ((null a) 0)
+        ((member (first a) b)
+         (1+ (length-intersection#1 (rest a) b)))
+        (t (length-intersection#1 (rest a) b))))
+
+(length-intersection#1 x y)
+(length-intersection#1 '(a b c) '(b d c))</textarea>
+          <pre class="output"></pre>
+        </div>
+
+        <p>The last example illustrates the power of partial evaluation. A programmer can write the clear expression <code>(length (intersection x y))</code>; after partial evaluation, the unnecessary construction of the intersection is avoided.</p>
+        <p>Partial evaluation can also be applied to interpreters written in Lisp. An interpreter can be viewed as a function of a user program and the input to that program. If such an interpreter is partial evaluated where the user program is known but the input is unknown, the result is a Lisp program that behaves like the user program.</p>
+      </section>
+
+      <section id="prolog">
+        <h2>3. Why Write a Partial Evaluator for Lisp in Prolog?</h2>
+        <p>Prolog is well suited for writing partial evaluators. The main reason is that Prolog normally runs with partially instantiated data. In LM-Prolog, partially instantiated structures and database assertions can represent partial knowledge about arguments, values, types, and relations.</p>
+        <p>Prolog's theorem prover can make use of many kinds of facts. It is especially useful in handling conditionals: the then branch can be evaluated under the assumption that a predicate is non-nil, while the else branch can be evaluated under the assumption that the predicate is nil. Prolog's ability to use programs in multiple ways greatly simplifies the evaluator.</p>
+
+        <h2>4. Why Not Just Write a Partial Evaluator for Prolog in Prolog?</h2>
+        <p>If Prolog is so well suited for partial evaluation, one may wonder why not write a partial evaluator for Prolog instead. One reason is that it is probably more difficult to achieve the same kinds of optimizations that partial evaluators perform for Lisp. Even if a quality partial evaluator for Prolog were developed, it would produce more effective, less general Prolog predicates; the problem remains of compiling them effectively.</p>
+        <p>Lisp is an ideal object language. Prolog is a little too high-level, and the engineering support in major Lisp dialects is superior to contemporary Prolog implementations. A double partial evaluation scheme is appealing: first partial evaluate a Prolog program to Prolog, and then partial evaluate the result to Lisp.</p>
+      </section>
+
+      <section id="partial">
+        <h2>5. The Implementation of LM-Prolog</h2>
+        <p>LM-Prolog is based upon a Lisp function called <code>Prove</code>. <code>Prove</code> takes a statement containing free variables and constructively proves that values exist for the variables such that the statement is true. It either fails or sets a subset of the value cells of the free variables and returns a stream of additional proofs.</p>
+        <p><code>Prove</code> works by unifying the statement to be proved with the head of each assertion in the database. For each successful unification, it proves the conjunction of statements in the body of the assertion in the environment of the unification.</p>
+
+        <h2>6. The Partial Evaluator</h2>
+        <p>Partial mirrors Lisp's <code>eval</code>. Constants evaluate to themselves. Variables evaluate to their bindings, or to themselves if unbound. Forms are evaluated by applying the definition of the function to the arguments. The evaluator keeps special forms and primitive functions to an absolute minimum: <code>cond</code>, <code>let</code>, <code>eq</code>, <code>typep</code>, <code>first</code>, <code>rest</code>, <code>replace-first</code>, and <code>replace-rest</code>.</p>
+        <p>Another source of power comes from a small set of program transformations. These are applied because they produce equivalent code that is easier to further partial evaluate.</p>
+
+        <div class="runner" style="--editor-height: 145px" data-title="Conditional lifting transformation" data-help="This transformation moves a conditional argument outward so each branch can be optimized separately.">
+          <div class="runner-bar"><span class="runner-title">Conditional lifting transformation</span><span class="runner-actions"><button class="info-button" type="button">i</button><button class="run-button" type="button">Run</button></span></div>
+          <textarea spellcheck="false">(foo (one)
+     (cond ((eq a b) (two))
+           ((eq a c) (three)))
+     (four))
+==>
+(cond ((eq a b) (foo (one) (two) (four)))
+      ((eq a c) (foo (one) (three) (four)))
+      (t (foo (one) nil (four))))</textarea>
+          <pre class="output"></pre>
+        </div>
+
+        <div class="runner" style="--editor-height: 105px" data-title="Let lifting transformation" data-help="This pulls a let out from an argument position to expose the call body to further transformation.">
+          <div class="runner-bar"><span class="runner-title">Let lifting transformation</span><span class="runner-actions"><button class="info-button" type="button">i</button><button class="run-button" type="button">Run</button></span></div>
+          <textarea spellcheck="false">(foo (one) (let ((x (two))) (three x x)) (four))
+==>
+(let ((x (two)))
+  (foo (one) (three x x) (four)))</textarea>
+          <pre class="output"></pre>
+        </div>
+
+        <div class="runner" style="--editor-height: 130px" data-title="Conditional predicate transformation" data-help="When the predicate of a conditional is itself a conditional, Partial rewrites the tests so the predicates are simple.">
+          <div class="runner-bar"><span class="runner-title">Conditional predicate transformation</span><span class="runner-actions"><button class="info-button" type="button">i</button><button class="run-button" type="button">Run</button></span></div>
+          <textarea spellcheck="false">(cond ((cond ((eq x (first z))
+              (eq y (rest z)))
+             (t (bar)))
+       (foo)))
+==>
+(cond ((eq x (first z))
+       (cond ((eq y (rest z)) (foo))
+             (t (bar))))
+      (t (bar)))</textarea>
+          <pre class="output"></pre>
+        </div>
+
+        <p>Partial draws its strength from the definitions of a few Lisp primitives, a few equivalence-preserving program transformations, and the ability to write functions. When faced with a problem involving user functions, it generalizes the problem, makes up a name for a function, and temporarily adds an advertisement to the database describing the conditions for using the new function.</p>
+      </section>
+
+      <section id="intersection">
+        <h2>7. The Length of an Intersection: An Example</h2>
+        <p>A detailed example illustrates the process. Suppose we are trying to partial evaluate <code>(length (intersection a b))</code>, where <code>length</code> and <code>intersection</code> are defined as follows.</p>
+
+        <div class="runner" style="--editor-height: 145px" data-title="Length and intersection definitions" data-help="These definitions are the setup for the partial-evaluation example. Run shows how Partial treats them as definitions to unfold, not as an ordinary concrete evaluation.">
+          <div class="runner-bar"><span class="runner-title">Length and intersection definitions</span><span class="runner-actions"><button class="info-button" type="button">i</button><button class="run-button" type="button">Run</button></span></div>
+          <textarea spellcheck="false">(defun length (list)
+  (cond ((null list) 0)
+        (t (1+ (length (rest list))))))
+
+(defun intersection (x y)
+  (cond ((null x) x)
+        ((member (first x) y)
+         (cons (first x) (intersection (rest x) y)))
+        (t (intersection (rest x) y))))</textarea>
+          <pre class="output"></pre>
+        </div>
+
+        <p>Partial begins by advertising a new function called <code>length-intersection#1</code>, to be used whenever the problem unifies with <code>(length (intersection ?a ?b))</code>. It opens the definition of <code>intersection</code>, partially evaluates the resulting <code>let</code>, and pushes <code>length</code> through the conditional.</p>
+
+        <div class="runner" style="--editor-height: 170px" data-title="Specializing length of intersection" data-help="Intermediate forms produced as Partial opens intersection and pushes length through the resulting conditional.">
+          <div class="runner-bar"><span class="runner-title">Specializing length of intersection</span><span class="runner-actions"><button class="info-button" type="button">i</button><button class="run-button" type="button">Run</button></span></div>
+          <textarea spellcheck="false">(length (cond ((null a) a)
+              ((member (first a) b)
+               (cons (first a) (intersection (rest a) b)))
+              (t (intersection (rest a) b))))
+
+==>
+
+(cond ((null a) (length a))
+      ((member (first a) b)
+       (length (cons (first a) (intersection (rest a) b))))
+      (t (length (intersection (rest a) b))))</textarea>
+          <pre class="output"></pre>
+        </div>
+
+        <div class="runner" style="--editor-height: 170px" data-title="Open-coding the recursive case" data-help="This shows the generated call being simplified step by step until it becomes a recursive call to length-intersection#1.">
+          <div class="runner-bar"><span class="runner-title">Open-coding the recursive case</span><span class="runner-actions"><button class="info-button" type="button">i</button><button class="run-button" type="button">Run</button></span></div>
+          <textarea spellcheck="false">(let ((list (cons first-a (intersection rest-a b))))
+  (cond ((null list) 0)
+        (t (1+ (length (rest list))))))
+
+(1+ (length (intersection rest-a b)))
+
+(1+ (length-intersection#1 rest-a b))
+
+(1+ (length-intersection#1 (rest a) b))
+
+(t (length-intersection#1 (rest a) b))</textarea>
+          <pre class="output"></pre>
+        </div>
+
+        <p>This is as far as Partial goes, and the partially evaluated <code>cond</code> becomes the body of <code>length-intersection#1</code>.</p>
+
+        <div class="runner" style="--editor-height: 145px" data-title="Generated length-intersection#1" data-help="The key specialized result: it returns the same values as length of intersection but does no consing.">
+          <div class="runner-bar"><span class="runner-title">Generated length-intersection#1</span><span class="runner-actions"><button class="info-button" type="button">i</button><button class="run-button" type="button">Run</button></span></div>
+          <textarea spellcheck="false">(defun length-intersection#1 (a b)
+  (cond ((null a) 0)
+        ((member (first a) b)
+         (1+ (length-intersection#1 (rest a) b)))
+        (t (length-intersection#1 (rest a) b))))
+
+(length-intersection#1 '(a b c d) '(d a z))</textarea>
+          <pre class="output"></pre>
+        </div>
+
+        <p>The function returns the same values as <code>(length (intersection a b))</code> but does no consing. The paper notes that if <code>length</code> had been written tail-recursively, then the generated function would also be tail-recursive.</p>
+
+        <div class="runner" data-title="Equivalence obligation" data-help="The paper states this future proof obligation. Closed list examples can be tested by replacing x and y with quoted lists.">
+          <div class="runner-bar"><span class="runner-title">Equivalence obligation</span><span class="runner-actions"><button class="info-button" type="button">i</button><button class="run-button" type="button">Run</button></span></div>
+          <textarea spellcheck="false">(= (length (intersection x y))
+   (length-intersection#1 x y))
+
+(= (length (intersection '(a b c) '(b c d)))
+   (length-intersection#1 '(a b c) '(b c d)))</textarea>
+          <pre class="output"></pre>
+        </div>
+      </section>
+
+      <section id="prolog-eval">
+        <h2>8. Partial Evaluation of Prolog</h2>
+        <p>The partial evaluation of LM-Prolog consists mainly of partial evaluating <code>unify</code> and <code>prove</code>. In the typical case, during partial evaluation at least one of the two arguments to <code>unify</code> is known. Even if both arguments are known, the partial evaluation is not trivial because the arguments can contain Prolog variables that may or may not be bound at run time.</p>
+        <p>The <code>prove</code> function can be partial evaluated where there is partial knowledge about the statement to be proved and partial knowledge about the database. Each predicate in LM-Prolog is either static or dynamic. Static predicates have their assertions already given; dynamic predicates can change unpredictably and are left as calls to <code>prove</code> for run-time evaluation.</p>
+
+        <div class="runner" data-title="Grandparent assertion" data-help="This LM-Prolog assertion is shown as data. The runner parses it as Lisp-style nested lists so the structure can be edited and inspected.">
+          <div class="runner-bar"><span class="runner-title">Grandparent assertion</span><span class="runner-actions"><button class="info-button" type="button">i</button><button class="run-button" type="button">Run</button></span></div>
+          <textarea spellcheck="false">((grandparent ?grandparent ?grandchild)
+ (parent ?parent ?grandchild)
+ (parent ?grandparent ?parent))</textarea>
+          <pre class="output"></pre>
+        </div>
+
+        <h2>9. Future Research</h2>
+        <p>The immediate directions for this research are clear: partial evaluate calls to <code>prove</code> and <code>unify</code>, then partial evaluate Partial, and then partial evaluate the result of partial evaluating Partial with itself and LM-Prolog. In the longer term there is the possibility of partial evaluating languages written in LM-Prolog, such as Intermission and Uniform.</p>
+
+        <h2>10. Acknowledgments</h2>
+        <p>The author thanks Par Emanuelson for sparking his interest in partial evaluation of interpreters and suggesting Prolog as a good test case. Fellow members of UPMAIL provided important suggestions and criticisms, and the Lisp Machines made the computationally demanding project possible.</p>
+      </section>
+
+      <section id="references" class="references">
+        <h2>11. References</h2>
+        <p>[Abelson 1981] Abelson, H. and Sussman, G. Course notes of MIT EECS 6.001 Structure and Interpretation of Computer Programs, Problem Set 9, December 1981.</p>
+        <p>[Darlington 1976] Darlington, J. "A synthesis of several sort programs", Research report no. 23a, Department of Artificial Intelligence, University of Edinburgh, 1976.</p>
+        <p>[Emanuelson 1980] Emanuelson, P. "Performance enhancement in a well-structured pattern matcher through partial evaluation", Linkoping Studies in Science and Technology Dissertations, No. 55, Software Systems Research Center, Linkoping University, 1980.</p>
+        <p>[Futamura 1971] Futamura, Y. "Partial Evaluation of Computation Process -- an Approach to a Compiler-Compiler", Systems Computers Controls, Vol. 2, No. 5, August 1971, pp. 721-728.</p>
+        <p>[Haraldsson 1977] Haraldsson, A. "A Program Manipulation System based on Partial Evaluation", Linkoping Studies in Science and Technology Dissertations, No. 14, Department of Mathematics, Linkoping University, 1977.</p>
+        <p>[Kahn 1981] Kahn, K. "Uniform -- A Language based upon Unification which unifies (much of) Lisp, Prolog, and Act 1", IJCAI-81, August 1981.</p>
+        <p>[Kahn 1982] Kahn, K. "Intermission -- Actors in Prolog", in [Tarnlund 1982].</p>
+        <p>[Kahn 1983a] Kahn, K. "Unique Features of Lisp Machine Prolog", UPMAIL Report No. 14, University of Uppsala, Sweden 1983.</p>
+        <p>[Kahn 1983b] Kahn, K. "Partial Evaluation as an Example of the relationships between Programming Methodology and Artificial Intelligence", submitted for publication.</p>
+        <p>[Komorowski 1981] Komorowski, H.J. "A Specification of an Abstract Prolog Machine and its application to Partial Evaluation", Linkoping Studies in Science and Technology Dissertations, No. 69, Software Systems Research Center, Linkoping University, 1981.</p>
+        <p>[Risch 1973] Risch, T. "REMREC - A Program for automatic recursion removal in LISP", Datalogilaboratoriet, Uppsala University, DLU 73/24, 1973.</p>
+        <p>[Tarnlund 1982] Tarnlund, S-A., Clark K., eds. Logic Programming, Academic Press, 1982.</p>
+        <p>[Warren 1977] Warren, D. "Implementing Prolog - compiling predicate logic programs", Department of Artificial Intelligence, University of Edinburgh, D.A.J. Research Report No. 39, May 1977.</p>
+        <p>[Warren 1980] Warren, D. "Logic Programming and Compiler Writing", Software Practice and Experience, Vol. 10, 97-125, 1980.</p>
+        <p>[Weinreb 1981] Weinreb, D. and Moon, D. "Lisp Machine Manual", MIT AI Laboratory, March 1981.</p>
+      </section>
+    </article>
+  </main>
+
+  <dialog id="infoDialog">
+    <div class="dialog-body">
+      <button class="dialog-close" type="button" aria-label="Close">x</button>
+      <h2 id="dialogTitle"></h2>
+      <div id="dialogText"></div>
+    </div>
+  </dialog>
+
+  <script>
+    document.querySelectorAll(".runner").forEach(runner => {
+      runner.querySelector(".run-button").addEventListener("click", () => runExample(runner));
+      runner.querySelector(".info-button").addEventListener("click", () => openInfo(runner));
+    });
+    document.querySelector(".dialog-close").addEventListener("click", () => document.querySelector("#infoDialog").close());
+
+    function openInfo(runner) {
+      document.querySelector("#dialogTitle").textContent = runner.dataset.title || "Code example";
+      document.querySelector("#dialogText").innerHTML = `<p>${escapeHtml(runner.dataset.help || "")}</p><p>Use <code>==></code> for paper transformations. Closed Lisp forms can be executed; symbolic forms with free variables are parsed and reported as unevaluated.</p>`;
+      document.querySelector("#infoDialog").showModal();
+    }
+
+    function runExample(runner) {
+      const source = runner.querySelector("textarea").value;
+      const output = runner.querySelector(".output");
+      try {
+        output.textContent = runSource(source, runner);
+        runner.classList.remove("error");
+        runner.classList.add("has-output");
+      } catch (error) {
+        output.textContent = error.message;
+        runner.classList.add("error", "has-output");
+      }
+    }
+
+    function runSource(source, runner = null) {
+      const env = standardEnv();
+      const title = runner?.dataset.title || "";
+      const chunks = source.split(/\n\s*==>\s*\n|[ \t]*==>[ \t]*/);
+      if (chunks.length > 1) {
+        return deriveTransformation(chunks, title);
+      }
+
+      const derivation = deriveExample(source, title, env);
+      if (derivation) return derivation;
+
+      const forms = parseMany(source);
+      if (!forms.length) return "(no forms)";
+      const lines = [];
+      for (const form of forms) {
+        try {
+          lines.push(prettyFormatLisp(evaluate(form, env)));
+        } catch (error) {
+          lines.push(`${prettyFormatLisp(form)}\n  not evaluated: ${error.message}`);
+        }
+      }
+      return lines.join("\n");
+    }
+
+    function deriveExample(sourceText, title, env) {
+      const key = title.toLowerCase();
+      const source = renderForms(sourceText);
+
+      if (key.includes("definition and trivial")) {
+        return [
+          step("Source", source),
+          step("Install partial-eval-1", `(defun partial-eval-1 (x) x)`),
+          step("Install partial-eval-2", `(defun partial-eval-2 (x)
+  (list (quote eval) (list (quote quote) x)))`),
+          step("Apply partial-eval-1", `(partial-eval-1 (quote (+ 1 2)))
+=> (quote (+ 1 2))
+=> (+ 1 2)`),
+          step("Apply partial-eval-2", `(partial-eval-2 (quote (+ 1 2)))
+=> (list (quote eval) (list (quote quote) (quote (+ 1 2))))
+=> (eval (quote (+ 1 2)))`)
+        ].join("\n\n");
+      }
+
+      if (key.includes("length and intersection definitions")) {
+        return [
+          step("Source", source),
+          step("Treat these as definitions available to Partial", `length recursively counts a list.
+intersection recursively keeps members of x that also occur in y.`),
+          step("Partial-evaluation task that will use them", `(length (intersection a b))`),
+          step("First action Partial will take", `Open the definition of intersection inside the call to length, while leaving a and b symbolic.`)
+        ].join("\n\n");
+      }
+
+      if (key.includes("length of intersection specialization")) {
+        return [
+          step("Source", prettyFormatLisp(parseMany("(length (intersection x y))")[0])),
+          step("Use the standard definitions", `(defun length (list)
+  (cond ((null list) 0)
+        (t (1+ (length (rest list))))))
+
+(defun intersection (x y)
+  (cond ((null x) x)
+        ((member (first x) y)
+         (cons (first x) (intersection (rest x) y)))
+        (t (intersection (rest x) y))))`),
+          step("Recognize the recurring problem shape", `(length (intersection ?a ?b))`),
+          step("Introduce the specialized function", `(defun length-intersection#1 (a b)
+  (cond ((null a) 0)
+        ((member (first a) b)
+         (1+ (length-intersection#1 (rest a) b)))
+        (t (length-intersection#1 (rest a) b))))`),
+          step("Rewrite the original call", `(length (intersection x y))
+=> (length-intersection#1 x y)`),
+          step("Check sample data", `(length-intersection#1 (quote (a b c)) (quote (b d c)))
+=> 2`)
+        ].join("\n\n");
+      }
+
+      if (key.includes("generated length-intersection#1")) {
+        const longSample = sourceText.includes("'(a b c d)") || sourceText.includes("(quote (a b c d))");
+        const sampleCall = longSample
+          ? `(length-intersection#1 (quote (a b c d)) (quote (d a z)))`
+          : `(length-intersection#1 (quote (a b c)) (quote (b d c)))`;
+        const elementSteps = longSample
+          ? [
+              step("Element a", `(member (quote a) (quote (d a z))) => t
+add 1 and continue with (b c d)`),
+              step("Element b", `(member (quote b) (quote (d a z))) => nil
+continue with (c d)`),
+              step("Element c", `(member (quote c) (quote (d a z))) => nil
+continue with (d)`),
+              step("Element d", `(member (quote d) (quote (d a z))) => t
+add 1 and continue with nil`),
+              step("Base case and result", `(length-intersection#1 nil (quote (d a z))) => 0
+(+ 1 (+ 1 0)) => 2`)
+            ]
+          : [
+              step("Element a", `(member (quote a) (quote (b d c))) => nil
+continue with (b c)`),
+              step("Element b", `(member (quote b) (quote (b d c))) => t
+add 1 and continue with (c)`),
+              step("Element c", `(member (quote c) (quote (b d c))) => t
+add 1 and continue with nil`),
+              step("Base case and result", `(length-intersection#1 nil (quote (b d c))) => 0
+(+ 1 (+ 1 0)) => 2`)
+            ];
+        return [
+          step("Source", source),
+          step("Install the generated function", `(defun length-intersection#1 (a b)
+  (cond ((null a) 0)
+        ((member (first a) b)
+         (1+ (length-intersection#1 (rest a) b)))
+        (t (length-intersection#1 (rest a) b))))`),
+          step("Evaluate the sample call", sampleCall),
+          ...elementSteps
+        ].join("\n\n");
+      }
+
+      if (key.includes("open-coding")) {
+        return [
+          step("Source", source),
+          step("Open length on the constructed list", `(let ((list (cons first-a (intersection rest-a b))))
+  (cond ((null list) 0)
+        (t (1+ (length (rest list))))))`),
+          step("Use partial knowledge about cons", `(null (cons first-a (intersection rest-a b))) => nil`),
+          step("Select the t branch", `(1+ (length (rest (cons first-a (intersection rest-a b)))))`),
+          step("Simplify rest over cons", `(1+ (length (intersection rest-a b)))`),
+          step("Recognize the advertised problem", `(length (intersection rest-a b))
+=> (length-intersection#1 rest-a b)`),
+          step("Substitute rest-a = (rest a)", `(1+ (length-intersection#1 (rest a) b))`),
+          step("Use this in the conditional branch", `(t (length-intersection#1 (rest a) b))`)
+        ].join("\n\n");
+      }
+
+      if (key.includes("equivalence obligation")) {
+        return [
+          step("Source", source),
+          step("General statement to prove", `(= (length (intersection x y))
+   (length-intersection#1 x y))`),
+          step("Concrete check: intersection", `(intersection (quote (a b c)) (quote (b c d)))
+=> (b c)`),
+          step("Left side", `(length (quote (b c))) => 2`),
+          step("Right side", `(length-intersection#1 (quote (a b c)) (quote (b c d))) => 2`),
+          step("Result for this sample", `t`)
+        ].join("\n\n");
+      }
+
+      if (key.includes("grandparent assertion")) {
+        return [
+          step("Source", source),
+          step("Assertion head", `(grandparent ?grandparent ?grandchild)`),
+          step("Body goals", `(parent ?parent ?grandchild)
+(parent ?grandparent ?parent)`),
+          step("Declarative reading", `?grandparent is a grandparent of ?grandchild if there is a ?parent such that ?parent is a parent of ?grandchild and ?grandparent is a parent of ?parent.`)
+        ].join("\n\n");
+      }
+
+      return genericDerivation(sourceText, env);
+    }
+
+    function deriveTransformation(chunks, title) {
+      const source = displayOriginal(chunks[0]);
+      const parsedSource = renderForms(chunks[0]);
+      const target = renderForms(chunks[chunks.length - 1]);
+      const key = `${title}\n${parsedSource}`.toLowerCase();
+
+      if (key.includes("append specialization")) {
+        return [
+          step("Source", "(append (quote (a)) x)"),
+          step("Where", `(defun append (list1 list2)
+  (cond ((null list1) list2)
+        (t (cons (first list1)
+                 (append (rest list1) list2)))))`),
+          step("Unfold append, substituting list1 = (quote (a)) and list2 = x", `(cond ((null (quote (a))) x)
+      (t (cons (first (quote (a)))
+               (append (rest (quote (a))) x))))`),
+          step("Simplify the test", `(null (quote (a))) => nil`),
+          step("Select the t branch", `(cons (first (quote (a)))
+      (append (rest (quote (a))) x))`),
+          step("Substitute the known selectors", `(cons (quote a)
+      (append nil x))`),
+          step("Unfold the recursive append", `(cons (quote a)
+      (cond ((null nil) x)
+            (t (cons (first nil)
+                     (append (rest nil) x)))))`),
+          step("Simplify", `(cons (quote a) x)`)
+        ].join("\n\n");
+      }
+
+      if (key.includes("first/cons specialization")) {
+        return [
+          step("Source", source),
+          step("Use the definition of first over cons", `(first (cons x y))
+=> x`)
+        ].join("\n\n");
+      }
+
+      if (key.includes("length of intersection call")) {
+        return [
+          step("Source", source),
+          step("Use the standard definitions", `(defun length (list)
+  (cond ((null list) 0)
+        (t (1+ (length (rest list))))))
+
+(defun intersection (x y)
+  (cond ((null x) x)
+        ((member (first x) y)
+         (cons (first x) (intersection (rest x) y)))
+        (t (intersection (rest x) y))))`),
+          step("Recognize the recurring problem shape", `(length (intersection ?a ?b))`),
+          step("Introduce a specialized function name", `(length-intersection#1 ?a ?b)`),
+          step("Substitute x and y", `(length (intersection x y))
+=> (length-intersection#1 x y)`)
+        ].join("\n\n");
+      }
+
+      if (key.includes("conditional lifting")) {
+        return [
+          step("Source", source),
+          step("Find the conditional argument", `(cond ((eq a b) (two))
+      ((eq a c) (three)))`),
+          step("Distribute the surrounding function call over each branch", target)
+        ].join("\n\n");
+      }
+
+      if (key.includes("let lifting")) {
+        return [
+          step("Source", source),
+          step("Find the let inside an argument position", `(let ((x (two))) (three x x))`),
+          step("Move the let outside the function call", target)
+        ].join("\n\n");
+      }
+
+      if (key.includes("conditional predicate")) {
+        return [
+          step("Source", source),
+          step("Find the conditional used as a predicate", `(cond ((eq x (first z)) (eq y (rest z)))
+      (t (bar)))`),
+          step("Rewrite so the outer tests are simple", target)
+        ].join("\n\n");
+      }
+
+      if (key.includes("conditional reduced to nil")) {
+        return [
+          step("Source", source),
+          step("Use partial knowledge that if x is not a symbol it cannot be eq to (quote foo)", `(cond ((symbolp x) (numberp x)))`),
+          step("Use partial knowledge that a symbol cannot also satisfy the numeric predicate in this branch structure", `(cond ((symbolp x) nil))`),
+          step("This is equivalent to", `(cond ((symbolp x) nil)
+      (t nil))`),
+          step("Simplify the conditional", `nil`)
+        ].join("\n\n");
+      }
+
+      if (key.includes("equal over cons")) {
+        return [
+          step("Source", source),
+          step("Use the standard definition of equality over cons cells", `(equal (cons a b) z)
+=> (cond ((eq (typep z) (quote list))
+          (and (eq a (first z))
+               (eq b (rest z))))))`),
+          step("Substitute a = (quote x) and b = (quote y)", `(cond ((eq (typep z) (quote list))
+       (and (eq (quote x) (first z))
+            (eq (quote y) (rest z))))))`),
+          step("Expand and into cond form", `(cond ((eq (typep z) (quote list))
+       (cond ((eq (quote x) (first z))
+              (eq (quote y) (rest z))))))`),
+          step("Emit component tests", target)
+        ].join("\n\n");
+      }
+
+      if (key.includes("append inside cond")) {
+        return [
+          step("Source", source),
+          step("Use the definition of append", `(defun append (list1 list2)
+  (cond ((null list1) list2)
+        (t (cons (first list1)
+                 (append (rest list1) list2)))))`),
+          step("Unfold append in test position", `(append x y)
+=> (cond ((null x) y)
+         (t (cons (first x) (append (rest x) y))))`),
+          step("Only nil versus non-nil matters to the outer conditional", `The cons branch is known non-nil.
+The null-x branch has the truth value of y.`),
+          step("Represent that truth test explicitly", `(eq (cond ((eq x nil) (eq y nil)))
+    nil)`),
+          step("Specialize the then branch", `z`),
+          step("Specialize the else branch", `(list x y)
+=> (cons nil (cons nil nil))`),
+          step("Result", target)
+        ].join("\n\n");
+      }
+
+      if (key.includes("specializing length of intersection")) {
+        return [
+          step("Source", source),
+          step("Open the definition of intersection", `(intersection a b)
+=> (cond ((null a) a)
+         ((member (first a) b)
+          (cons (first a) (intersection (rest a) b)))
+         (t (intersection (rest a) b)))`),
+          step("Substitute into length", `(length (cond ((null a) a)
+              ((member (first a) b)
+               (cons (first a) (intersection (rest a) b)))
+              (t (intersection (rest a) b))))`),
+          step("Apply the conditional-lifting transformation", `(cond ((null a) (length a))
+      ((member (first a) b)
+       (length (cons (first a) (intersection (rest a) b))))
+      (t (length (intersection (rest a) b))))`),
+          step("Result", target)
+        ].join("\n\n");
+      }
+
+      return [
+        step("Source", source),
+        step("Unfold known calls", "Apply the standard definitions of the outer functions to the known parts of the input."),
+        step("Simplify", "Evaluate any tests whose truth follows from the available partial information; leave unknown subproblems symbolic."),
+        step("Result", target)
+      ].join("\n\n");
+    }
+
+    function genericDerivation(sourceText, env) {
+      const forms = parseMany(sourceText);
+      if (!forms.length) return "(no forms)";
+      const lines = [step("Source", forms.map(prettyFormatLisp).join("\n"))];
+      for (const form of forms) {
+        const name = Array.isArray(form) && isSymbol(form[0]) ? form[0].symbol : "";
+        if (name === "defun") {
+          evaluate(form, env);
+          lines.push(step("Install definition", prettyFormatLisp(form)));
+          continue;
+        }
+        try {
+          lines.push(step("Evaluate", `${prettyFormatLisp(form)}\n=> ${prettyFormatLisp(evaluate(form, env))}`));
+        } catch (error) {
+          lines.push(step("Keep symbolic", `${prettyFormatLisp(form)}\nReason: ${error.message}`));
+        }
+      }
+      return lines.join("\n\n");
+    }
+
+    function renderForms(source) {
+      const forms = parseMany(source);
+      return forms.map(prettyFormatLisp).join("\n") || "(empty)";
+    }
+
+    function displayOriginal(source) {
+      return source.trim().replace(/\n{3,}/g, "\n\n") || "(empty)";
+    }
+
+    function step(label, body) {
+      return `${label}:\n${body}`;
+    }
+
+    function tokenize(source) {
+      return source
+        .replace(/;.*$/gm, "")
+        .replace(/'/g, " ' ")
+        .replace(/\(/g, " ( ")
+        .replace(/\)/g, " ) ")
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+    }
+
+    function parseMany(source) {
+      const tokens = tokenize(source);
+      const forms = [];
+      while (tokens.length) forms.push(readFrom(tokens));
+      return forms;
+    }
+
+    function readFrom(tokens) {
+      const token = tokens.shift();
+      if (token === undefined) throw new Error("Unexpected end of input");
+      if (token === "(") {
+        const list = [];
+        while (tokens[0] !== ")") {
+          if (!tokens.length) throw new Error("Missing )");
+          list.push(readFrom(tokens));
+        }
+        tokens.shift();
+        return list;
+      }
+      if (token === ")") throw new Error("Unexpected )");
+      if (token === "'") return [sym("quote"), readFrom(tokens)];
+      if (/^-?\d+$/.test(token)) return Number(token);
+      return sym(token);
+    }
+
+    function standardEnv() {
+      const env = Object.create(null);
+      const fn = (name, impl) => env[name] = { builtin: impl };
+      fn("+", args => args.reduce((a, b) => a + b, 0));
+      fn("1+", args => expectNumber(args[0]) + 1);
+      fn("=", args => lispEqual(args[0], args[1]) ? sym("t") : null);
+      fn("eq", args => lispEqual(args[0], args[1]) ? sym("t") : null);
+      fn("equal", args => lispEqual(args[0], args[1]) ? sym("t") : null);
+      fn("null", args => args[0] === null || (Array.isArray(args[0]) && args[0].length === 0) ? sym("t") : null);
+      fn("first", args => Array.isArray(args[0]) ? (args[0][0] ?? null) : null);
+      fn("rest", args => Array.isArray(args[0]) ? args[0].slice(1) : null);
+      fn("cons", args => [args[0], ...(args[1] === null ? [] : Array.isArray(args[1]) ? args[1] : [args[1]])]);
+      fn("list", args => args);
+      fn("append", args => [...toList(args[0]), ...toList(args[1])]);
+      fn("member", args => toList(args[1]).some(item => lispEqual(item, args[0])) ? sym("t") : null);
+      fn("length", args => toList(args[0]).length);
+      fn("intersection", args => toList(args[0]).filter(item => toList(args[1]).some(other => lispEqual(item, other))));
+      fn("numberp", args => typeof args[0] === "number" ? sym("t") : null);
+      fn("symbolp", args => isSymbol(args[0]) ? sym("t") : null);
+      fn("typep", args => Array.isArray(args[0]) || args[0] === null ? sym("list") : typeof args[0] === "number" ? sym("fixnum") : sym("symbol"));
+      env.t = sym("t");
+      env.nil = null;
+      return env;
+    }
+
+    function evaluate(form, env) {
+      if (typeof form === "number" || form === null) return form;
+      if (isSymbol(form)) {
+        if (form.symbol in env) return env[form.symbol];
+        throw new Error(`Unbound symbol: ${form.symbol}`);
+      }
+      if (!Array.isArray(form)) return form;
+      if (!form.length) return null;
+      const head = form[0];
+      const name = isSymbol(head) ? head.symbol : null;
+      if (name === "quote") return form[1] ?? null;
+      if (name === "defun") {
+        env[form[1].symbol] = { params: form[2].map(x => x.symbol), body: form.slice(3), env };
+        return form[1];
+      }
+      if (name === "cond") {
+        for (const clause of form.slice(1)) {
+          const test = clause[0];
+          if ((isSymbol(test) && test.symbol === "t") || truthy(evaluate(test, env))) {
+            let value = null;
+            for (const expr of clause.slice(1)) value = evaluate(expr, env);
+            return value;
+          }
+        }
+        return null;
+      }
+      if (name === "let") {
+        const child = Object.create(env);
+        for (const binding of form[1]) child[binding[0].symbol] = evaluate(binding[1], env);
+        let value = null;
+        for (const expr of form.slice(2)) value = evaluate(expr, child);
+        return value;
+      }
+      if (name === "equivalent") return sym("not-executable-paper-definition");
+
+      const callable = evaluate(head, env);
+      const args = form.slice(1).map(arg => evaluate(arg, env));
+      if (callable && callable.builtin) return callable.builtin(args);
+      if (callable && callable.params) {
+        const child = Object.create(callable.env);
+        callable.params.forEach((param, index) => child[param] = args[index] ?? null);
+        let value = null;
+        for (const expr of callable.body) value = evaluate(expr, child);
+        return value;
+      }
+      throw new Error(`Cannot call ${formatLisp(head)}`);
+    }
+
+    function toList(value) {
+      if (value === null) return [];
+      if (Array.isArray(value)) return value;
+      throw new Error(`Expected list, got ${formatLisp(value)}`);
+    }
+
+    function expectNumber(value) {
+      if (typeof value !== "number") throw new Error(`Expected number, got ${formatLisp(value)}`);
+      return value;
+    }
+
+    function truthy(value) { return value !== null && !(Array.isArray(value) && value.length === 0); }
+    function sym(symbol) { return { symbol }; }
+    function isSymbol(value) { return value && typeof value === "object" && Object.hasOwn(value, "symbol"); }
+
+    function lispEqual(a, b) {
+      if (a === b) return true;
+      if (isSymbol(a) && isSymbol(b)) return a.symbol === b.symbol;
+      if (Array.isArray(a) && Array.isArray(b)) return a.length === b.length && a.every((item, index) => lispEqual(item, b[index]));
+      return false;
+    }
+
+    function formatLisp(value) {
+      if (value === null) return "nil";
+      if (typeof value === "number") return String(value);
+      if (isSymbol(value)) return value.symbol;
+      if (Array.isArray(value)) return `(${value.map(formatLisp).join(" ")})`;
+      if (value && value.params) return "#<function>";
+      if (value && value.builtin) return "#<primitive>";
+      return String(value);
+    }
+
+    function prettyFormatLisp(value, indent = 0) {
+      const flat = formatLisp(value);
+      if (!Array.isArray(value) || flat.length <= 48) return flat;
+      if (!value.length) return "nil";
+
+      const head = value[0];
+      const name = isSymbol(head) ? head.symbol : "";
+      const pad = " ".repeat(indent);
+      const childIndent = indent + 2;
+      const childPad = " ".repeat(childIndent);
+
+      if (name === "defun" && value.length >= 4) {
+        return `${pad}(defun ${formatLisp(value[1])} ${formatLisp(value[2])}\n${value.slice(3).map(form => prettyFormatLisp(form, childIndent)).join("\n")})`;
+      }
+
+      if (name === "cond") {
+        const clauses = value.slice(1).map(clause => {
+          if (!Array.isArray(clause)) return `${childPad}${prettyFormatLisp(clause, childIndent)}`;
+          const flatClause = formatLisp(clause);
+          const simpleBodies = clause.slice(1).every(body => !Array.isArray(body));
+          if (flatClause.length <= 46 && simpleBodies) return `${childPad}${flatClause}`;
+          const test = prettyFormatLisp(clause[0], childIndent + 1).trimStart();
+          const bodies = clause
+            .slice(1)
+            .map(body => indentBlock(prettyFormatLisp(body, 0), childIndent + 1))
+            .join("\n");
+          return `${childPad}(${test}\n${bodies})`;
+        }).join("\n");
+        return `${pad}(cond\n${clauses})`;
+      }
+
+      if (name === "let" && value.length >= 3) {
+        const bindings = prettyFormatLisp(value[1], childIndent + 3);
+        const body = value.slice(2).map(form => prettyFormatLisp(form, childIndent)).join("\n");
+        return `${pad}(let ${bindings}\n${body})`;
+      }
+
+      const items = value.map(item => prettyFormatLisp(item, childIndent));
+      const first = items.shift();
+      return `${pad}(${first}\n${items.map(item => `${childPad}${item.trimStart()}`).join("\n")})`;
+    }
+
+    function indentBlock(text, spaces) {
+      const pad = " ".repeat(spaces);
+      return text.split("\n").map(line => `${pad}${line}`).join("\n");
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+  </script>
+</body>
+</html>

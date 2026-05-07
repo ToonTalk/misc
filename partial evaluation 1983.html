@@ -314,19 +314,6 @@
         <h2>2. Partial Evaluation of Lisp Programs</h2>
         <p>Partial evaluation in Lisp can be defined simply as evaluating a program after some information about its arguments or environment is already known. The paper writes this relationship as an equivalence between evaluating a partially evaluated program and evaluating the original program in the same environment.</p>
 
-        <div class="runner" style="--editor-height: 170px" data-title="Definition and trivial partial evaluators" data-help="This block appears in section 2. The first partial evaluator returns its input unchanged. The second constructs a quoted eval form. The runner implements a deliberately small Lisp, enough for the examples in this paper.">
-          <div class="runner-bar"><span class="runner-title">Definition and trivial partial evaluators</span><span class="runner-actions"><button class="info-button" type="button">i</button><button class="run-button" type="button">Run</button></span></div>
-          <textarea spellcheck="false">(equivalent (eval (partial-eval x) environment)
-            (eval x environment))
-
-(defun partial-eval-1 (x) x)
-(defun partial-eval-2 (x) (list 'eval (list 'quote x)))
-
-(partial-eval-1 '(+ 1 2))
-(partial-eval-2 '(+ 1 2))</textarea>
-          <pre class="output"></pre>
-        </div>
-
         <p>Writing partial evaluators is simple in outline, but writing quality partial evaluators is challenging. One measure of quality is the relative effectiveness of input and output. Secondary measures include the effectiveness of the partial evaluation process itself, the readability of the output, and the simplicity and ease of use of the evaluator.</p>
 
         <h3>Typical examples</h3>
@@ -368,21 +355,6 @@
 (cond ((eq (typep z) 'list)
        (cond ((eq 'x (first z))
               (eq 'y (rest z))))))</textarea>
-          <pre class="output"></pre>
-        </div>
-
-        <div class="runner" style="--editor-height: 220px" data-title="length of intersection specialization" data-help="The paper's headline specialization: replace the composition of length and intersection with a generated function that computes the result without constructing the intermediate intersection list.">
-          <div class="runner-bar"><span class="runner-title">length of intersection specialization</span><span class="runner-actions"><button class="info-button" type="button">i</button><button class="run-button" type="button">Run</button></span></div>
-          <textarea spellcheck="false">(length (intersection x y))
-
-(defun length-intersection#1 (a b)
-  (cond ((null a) 0)
-        ((member (first a) b)
-         (1+ (length-intersection#1 (rest a) b)))
-        (t (length-intersection#1 (rest a) b))))
-
-(length-intersection#1 x y)
-(length-intersection#1 '(a b c) '(b d c))</textarea>
           <pre class="output"></pre>
         </div>
 
@@ -630,21 +602,6 @@
       const key = title.toLowerCase();
       const source = renderForms(sourceText);
 
-      if (key.includes("definition and trivial")) {
-        return [
-          step("Source", source),
-          step("Install partial-eval-1", `(defun partial-eval-1 (x) x)`),
-          step("Install partial-eval-2", `(defun partial-eval-2 (x)
-  (list (quote eval) (list (quote quote) x)))`),
-          step("Apply partial-eval-1", `(partial-eval-1 (quote (+ 1 2)))
-=> (quote (+ 1 2))
-=> (+ 1 2)`),
-          step("Apply partial-eval-2", `(partial-eval-2 (quote (+ 1 2)))
-=> (list (quote eval) (list (quote quote) (quote (+ 1 2))))
-=> (eval (quote (+ 1 2)))`)
-        ].join("\n\n");
-      }
-
       if (key.includes("length and intersection definitions")) {
         return [
           step("Source", source),
@@ -652,31 +609,6 @@
 intersection recursively keeps members of x that also occur in y.`),
           step("Partial-evaluation task that will use them", `(length (intersection a b))`),
           step("First action Partial will take", `Open the definition of intersection inside the call to length, while leaving a and b symbolic.`)
-        ].join("\n\n");
-      }
-
-      if (key.includes("length of intersection specialization")) {
-        return [
-          step("Source", prettyFormatLisp(parseMany("(length (intersection x y))")[0])),
-          step("Use the standard definitions", `(defun length (list)
-  (cond ((null list) 0)
-        (t (1+ (length (rest list))))))
-
-(defun intersection (x y)
-  (cond ((null x) x)
-        ((member (first x) y)
-         (cons (first x) (intersection (rest x) y)))
-        (t (intersection (rest x) y))))`),
-          step("Recognize the recurring problem shape", `(length (intersection ?a ?b))`),
-          step("Introduce the specialized function", `(defun length-intersection#1 (a b)
-  (cond ((null a) 0)
-        ((member (first a) b)
-         (1+ (length-intersection#1 (rest a) b)))
-        (t (length-intersection#1 (rest a) b))))`),
-          step("Rewrite the original call", `(length (intersection x y))
-=> (length-intersection#1 x y)`),
-          step("Check sample data", `(length-intersection#1 (quote (a b c)) (quote (b d c)))
-=> 2`)
         ].join("\n\n");
       }
 
@@ -767,8 +699,9 @@ add 1 and continue with nil`),
       const parsedSource = renderForms(chunks[0]);
       const target = renderForms(chunks[chunks.length - 1]);
       const key = `${title}\n${parsedSource}`.toLowerCase();
+      const dynamicDerivation = deriveWithPartialEvaluator(chunks);
 
-      if (key.includes("append specialization")) {
+      if (key.includes("append specialization") && normalizedSource(chunks[0]) === "(append (quote (a)) x)") {
         return [
           step("Source", "(append (quote (a)) x)"),
           step("Where", `(defun append (list1 list2)
@@ -792,11 +725,7 @@ add 1 and continue with nil`),
       }
 
       if (key.includes("first/cons specialization")) {
-        return [
-          step("Source", source),
-          step("Use the definition of first over cons", `(first (cons x y))
-=> x`)
-        ].join("\n\n");
+        return dynamicDerivation;
       }
 
       if (key.includes("length of intersection call")) {
@@ -856,20 +785,9 @@ add 1 and continue with nil`),
       }
 
       if (key.includes("equal over cons")) {
-        return [
-          step("Source", source),
-          step("Use the standard definition of equality over cons cells", `(equal (cons a b) z)
-=> (cond ((eq (typep z) (quote list))
-          (and (eq a (first z))
-               (eq b (rest z))))))`),
-          step("Substitute a = (quote x) and b = (quote y)", `(cond ((eq (typep z) (quote list))
-       (and (eq (quote x) (first z))
-            (eq (quote y) (rest z))))))`),
-          step("Expand and into cond form", `(cond ((eq (typep z) (quote list))
-       (cond ((eq (quote x) (first z))
-              (eq (quote y) (rest z))))))`),
-          step("Emit component tests", target)
-        ].join("\n\n");
+        const dynamicEqual = deriveEqualOverCons(chunks, target);
+        if (dynamicEqual) return dynamicEqual;
+        return dynamicDerivation;
       }
 
       if (key.includes("append inside cond")) {
@@ -914,11 +832,150 @@ The null-x branch has the truth value of y.`),
       }
 
       return [
-        step("Source", source),
-        step("Unfold known calls", "Apply the standard definitions of the outer functions to the known parts of the input."),
-        step("Simplify", "Evaluate any tests whose truth follows from the available partial information; leave unknown subproblems symbolic."),
-        step("Result", target)
+        dynamicDerivation,
+        step("General note", "The simple partial evaluator unfolds the Lisp primitives it knows, simplifies constructor/destructor pairs and quoted-list operations, and leaves unknown subproblems symbolic.")
       ].join("\n\n");
+    }
+
+    function deriveWithPartialEvaluator(chunks) {
+      const sourceForms = parseMany(chunks[0]);
+      const targetForms = parseMany(chunks[chunks.length - 1]);
+      if (sourceForms.length !== 1) {
+        return [
+          step("Source", displayOriginal(chunks[0])),
+          step("Partial evaluation", "This runner expects one source form for automatic partial evaluation."),
+          step("Target written in the example", renderForms(chunks[chunks.length - 1]))
+        ].join("\n\n");
+      }
+
+      const trace = [];
+      const result = partialEval(sourceForms[0], trace);
+      const target = targetForms.length === 1 ? targetForms[0] : null;
+      const lines = [
+        step("Source", displayOriginal(chunks[0])),
+        ...trace.map(item => step(item.label, item.body)),
+        step("Partial-evaluation result", prettyFormatLisp(result))
+      ];
+      if (target) {
+        lines.push(step("Target written in the example", prettyFormatLisp(target)));
+        lines.push(step("Comparison", lispEqual(result, target) ? "matches" : "differs from the computed partial-evaluation result"));
+      }
+      return lines.join("\n\n");
+    }
+
+    function deriveEqualOverCons(chunks, target) {
+      const forms = parseMany(chunks[0]);
+      if (forms.length !== 1) return null;
+      const form = forms[0];
+      if (!isCall(form, "equal") || !isCall(form[1], "cons")) return null;
+      const left = form[1][1];
+      const right = form[1][2];
+      const z = form[2];
+      const componentTests = [sym("cond"),
+        [
+          [sym("eq"), [sym("typep"), z], [sym("quote"), sym("list")]],
+          [sym("cond"), [[sym("eq"), left, [sym("first"), z]], [sym("eq"), right, [sym("rest"), z]]]]
+        ]
+      ];
+      return [
+        step("Source", displayOriginal(chunks[0])),
+        step("Use the standard definition of equality over cons cells", `(equal (cons a b) z)
+=> (cond ((eq (typep z) (quote list))
+          (and (eq a (first z))
+               (eq b (rest z))))))`),
+        step(`Substitute a = ${prettyFormatLisp(left)} and b = ${prettyFormatLisp(right)}`, prettyFormatLisp([sym("cond"),
+          [
+            [sym("eq"), [sym("typep"), z], [sym("quote"), sym("list")]],
+            [sym("and"), [sym("eq"), left, [sym("first"), z]], [sym("eq"), right, [sym("rest"), z]]]
+          ]
+        ])),
+        step("Expand and into cond form", prettyFormatLisp(componentTests)),
+        step("Target written in the example", target),
+        step("Comparison", lispEqual(componentTests, parseMany(chunks[chunks.length - 1])[0]) ? "matches" : "differs from the computed partial-evaluation result")
+      ].join("\n\n");
+    }
+
+    function partialEval(form, trace) {
+      if (!Array.isArray(form)) return form;
+      if (!form.length) return null;
+
+      const name = isSymbol(form[0]) ? form[0].symbol : "";
+      if (name === "quote") return form;
+
+      if (name === "first" || name === "rest") {
+        const arg = partialEval(form[1], trace);
+        if (typeof arg === "number" || isCall(arg, "quote") && !Array.isArray(arg[1]) && arg[1] !== null) {
+          throw new Error(`${name} expected a cons or list, got ${prettyFormatLisp(arg)}`);
+        }
+        if (isCall(arg, "cons")) {
+          const result = name === "first" ? arg[1] : arg[2] ?? null;
+          trace.push({
+            label: `Simplify ${name} over cons`,
+            body: `${prettyFormatLisp([sym(name), arg])}\n=> ${prettyFormatLisp(result)}`
+          });
+          return result;
+        }
+        if (isQuotedList(arg)) {
+          const values = quotedList(arg);
+          const result = name === "first" ? quoteValue(values[0] ?? null) : quoteValue(values.slice(1));
+          trace.push({
+            label: `Simplify ${name} over a quoted list`,
+            body: `${prettyFormatLisp([sym(name), arg])}\n=> ${prettyFormatLisp(result)}`
+          });
+          return result;
+        }
+        return [sym(name), arg];
+      }
+
+      if (name === "cons") {
+        return [sym("cons"), partialEval(form[1], trace), partialEval(form[2], trace)];
+      }
+
+      if (name === "append") {
+        const left = partialEval(form[1], trace);
+        const right = partialEval(form[2], trace);
+        if (isQuotedList(left)) {
+          const values = quotedList(left);
+          trace.push({
+            label: "Unfold append with known first argument",
+            body: `${prettyFormatLisp([sym("append"), left, right])}`
+          });
+          if (!values.length) {
+            trace.push({ label: "Simplify append base case", body: `(append nil ${prettyFormatLisp(right)})\n=> ${prettyFormatLisp(right)}` });
+            return right;
+          }
+          const rest = quoteValue(values.slice(1));
+          const unfolded = [sym("cons"), quoteValue(values[0]), [sym("append"), rest, right]];
+          trace.push({ label: "Unfold recursive append case", body: prettyFormatLisp(unfolded) });
+          const result = [sym("cons"), quoteValue(values[0]), partialEval([sym("append"), rest, right], trace)];
+          trace.push({ label: "Simplify append result", body: prettyFormatLisp(result) });
+          return result;
+        }
+        return [sym("append"), left, right];
+      }
+
+      if (name === "cond") {
+        const clauses = [];
+        for (const clause of form.slice(1)) {
+          const test = partialEval(clause[0], trace);
+          if (knownNil(test)) {
+            trace.push({ label: "Remove false cond clause", body: prettyFormatLisp(clause) });
+            continue;
+          }
+          const bodies = clause.slice(1).map(body => partialEval(body, trace));
+          if (knownTrue(test) || isSymbolNamed(test, "t")) {
+            const result = bodies.at(-1) ?? null;
+            trace.push({ label: "Select true cond clause", body: `${prettyFormatLisp(clause)}\n=> ${prettyFormatLisp(result)}` });
+            return result;
+          }
+          clauses.push([test, ...bodies]);
+        }
+        if (!clauses.length) return null;
+        return [sym("cond"), ...clauses];
+      }
+
+      const args = form.slice(1).map(arg => partialEval(arg, trace));
+      return [form[0], ...args];
     }
 
     function genericDerivation(sourceText, env) {
@@ -939,6 +996,44 @@ The null-x branch has the truth value of y.`),
         }
       }
       return lines.join("\n\n");
+    }
+
+    function normalizedSource(source) {
+      try {
+        return parseMany(source).map(formatLisp).join("\n");
+      } catch {
+        return source.trim().replace(/\s+/g, " ");
+      }
+    }
+
+    function isCall(value, name) {
+      return Array.isArray(value) && isSymbolNamed(value[0], name);
+    }
+
+    function isSymbolNamed(value, name) {
+      return isSymbol(value) && value.symbol === name;
+    }
+
+    function isQuotedList(value) {
+      return isCall(value, "quote") && (value[1] === null || Array.isArray(value[1]));
+    }
+
+    function quotedList(value) {
+      if (!isQuotedList(value)) return null;
+      return value[1] === null ? [] : value[1];
+    }
+
+    function quoteValue(value) {
+      if (value === undefined || value === null || (Array.isArray(value) && value.length === 0)) return [sym("quote"), null];
+      return [sym("quote"), value];
+    }
+
+    function knownNil(value) {
+      return value === null || isCall(value, "quote") && (value[1] === null || Array.isArray(value[1]) && value[1].length === 0);
+    }
+
+    function knownTrue(value) {
+      return isCall(value, "quote") && !knownNil(value);
     }
 
     function renderForms(source) {
@@ -993,14 +1088,14 @@ The null-x branch has the truth value of y.`),
     function standardEnv() {
       const env = Object.create(null);
       const fn = (name, impl) => env[name] = { builtin: impl };
-      fn("+", args => args.reduce((a, b) => a + b, 0));
+      fn("+", args => args.reduce((a, b) => expectNumber(a) + expectNumber(b), 0));
       fn("1+", args => expectNumber(args[0]) + 1);
       fn("=", args => lispEqual(args[0], args[1]) ? sym("t") : null);
       fn("eq", args => lispEqual(args[0], args[1]) ? sym("t") : null);
       fn("equal", args => lispEqual(args[0], args[1]) ? sym("t") : null);
       fn("null", args => args[0] === null || (Array.isArray(args[0]) && args[0].length === 0) ? sym("t") : null);
-      fn("first", args => Array.isArray(args[0]) ? (args[0][0] ?? null) : null);
-      fn("rest", args => Array.isArray(args[0]) ? args[0].slice(1) : null);
+      fn("first", args => Array.isArray(args[0]) ? (args[0][0] ?? null) : (() => { throw new Error(`first expected list, got ${formatLisp(args[0])}`); })());
+      fn("rest", args => Array.isArray(args[0]) ? args[0].slice(1) : (() => { throw new Error(`rest expected list, got ${formatLisp(args[0])}`); })());
       fn("cons", args => [args[0], ...(args[1] === null ? [] : Array.isArray(args[1]) ? args[1] : [args[1]])]);
       fn("list", args => args);
       fn("append", args => [...toList(args[0]), ...toList(args[1])]);

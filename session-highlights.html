@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Atelier — Build Diary</title>
+<style>
+  :root{
+    --ink:#1C2B4A; --ink-soft:#5A6B8C; --line:#E3ECF4; --paper:#F7FAFC;
+    --turtle:#2E9E6B; --turtle-deep:#1F7A50; --violet:#7B6CF6; --coral:#E0584B; --sun:#E8A400; --blue:#4A78C9;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--paper); color:var(--ink); line-height:1.6;
+        font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+        background-image:radial-gradient(var(--line) 1px, transparent 1px); background-size:24px 24px; }
+  .wrap{ max-width:880px; margin:0 auto; padding:22px 20px 70px; }
+  h1{ font-family:"Trebuchet MS",sans-serif; font-size:34px; margin:0 0 6px; }
+  .sub{ color:var(--ink-soft); font-size:16px; margin:0 0 4px; }
+  .meta{ color:var(--ink-soft); font-size:13px; margin:2px 0 22px; }
+  h2{ font-family:"Trebuchet MS",sans-serif; font-size:22px; margin:34px 0 12px; }
+
+  /* stat strip */
+  .stats{ display:flex; flex-wrap:wrap; gap:12px; margin:18px 0 8px; }
+  .stat{ flex:1; min-width:130px; background:#fff; border:2px solid var(--line); border-radius:14px; padding:14px 16px; text-align:center; }
+  .stat .n{ font-family:"Trebuchet MS",sans-serif; font-weight:800; font-size:30px; line-height:1; color:var(--turtle-deep); }
+  .stat .l{ font-size:12.5px; color:var(--ink-soft); margin-top:5px; }
+
+  /* highlight cards */
+  .card{ background:#fff; border:2px solid var(--line); border-left:7px solid var(--accent,#7B6CF6); border-radius:16px; padding:16px 20px; margin:14px 0; }
+  .card .tag{ display:inline-block; font-family:"Trebuchet MS",sans-serif; font-weight:800; font-size:11px; letter-spacing:.04em; text-transform:uppercase;
+              color:#fff; background:var(--accent,#7B6CF6); border-radius:999px; padding:3px 10px; margin-bottom:8px; }
+  .card h3{ font-family:"Trebuchet MS",sans-serif; font-size:19px; margin:2px 0 8px; }
+  .card p{ margin:8px 0; }
+  .card .punch{ font-size:14.5px; color:var(--ink-soft); border-top:1.5px dashed var(--line); margin-top:10px; padding-top:8px; }
+  .card .punch b{ color:var(--ink); }
+  code{ background:#EEF3F8; border-radius:5px; padding:1px 5px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:90%; }
+
+  .c-violet{ --accent:#7B6CF6; } .c-turtle{ --accent:#2E9E6B; } .c-coral{ --accent:#E0584B; }
+  .c-sun{ --accent:#E8A400; } .c-blue{ --accent:#4A78C9; } .c-pink{ --accent:#C94A8B; } .c-slate{ --accent:#5A6B8C; }
+
+  /* timeline */
+  .timeline{ border-left:3px dotted #AFC6D8; margin-left:8px; padding-left:22px; margin-top:8px; }
+  .t-item{ position:relative; margin:0 0 14px; }
+  .t-item::before{ content:""; position:absolute; left:-30px; top:5px; width:14px; height:14px; border-radius:50%;
+                   background:var(--dot,#7B6CF6); border:3px solid var(--paper); }
+  .t-item .when{ font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; color:var(--ink-soft); }
+  .t-item .what{ font-weight:600; }
+  .t-item .hash{ font-family:ui-monospace,monospace; font-size:11px; color:#9BAAC4; }
+
+  blockquote{ margin:16px 0; padding:12px 16px; background:#EEEBFE; border-radius:12px; font-style:italic; }
+  footer{ margin-top:30px; color:var(--ink-soft); font-size:13px; text-align:center; }
+  footer a{ color:var(--turtle-deep); }
+  @media print{ body{ background:#fff; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>The Atelier — Build Diary 🐢</h1>
+<p class="sub">One session, turning a near-finished constructionism app into a sturdier, kinder, more honest one.</p>
+<p class="meta">A single-file web app where kids build little minds that draw and write. This page highlights the interesting bits of the work, not every line of it.</p>
+
+<div class="stats">
+  <div class="stat"><div class="n">14</div><div class="l">commits</div></div>
+  <div class="stat"><div class="n">2</div><div class="l">genuine security bugs closed</div></div>
+  <div class="stat"><div class="n">~MB→6KB</div><div class="l">storage per studio, after the redesign</div></div>
+  <div class="stat"><div class="n">3</div><div class="l">guides written (kid · teen · teacher)</div></div>
+  <div class="stat"><div class="n">0</div><div class="l">of the user's real works lost</div></div>
+</div>
+
+<h2>The interesting events</h2>
+
+<div class="card c-coral">
+  <span class="tag">Detective story</span>
+  <h3>The case of the phantom Tiny Story</h3>
+  <p>A bug report said a "Tiny Story" mind kept writing poems instead of stories. While fixing it, a <em>second</em> Tiny Story appeared in the browser — one I hadn't made, carrying the old template and real, AI-written prose: <em>"A plain cup sat by the sink…"</em></p>
+  <p>The timestamps gave it away: it was created at 11:35, minutes before, while I was editing code. The user had been testing in the same browser and had reproduced the exact bug live. I preserved their two real rounds, peeled out a mock round I'd added by accident, and applied the fix to their actual agent.</p>
+  <p class="punch"><b>Lesson:</b> when the data you're touching might be someone's real work, read the timestamps before you reach for the broom.</p>
+</div>
+
+<div class="card c-turtle">
+  <span class="tag">Best idea of the day</span>
+  <h3>"Why do we even need thumbnails?"</h3>
+  <p>Turtle drawings were saved as PNGs plus a full list of up to 100,000 drawing ops — kilobytes-to-megabytes per picture, quietly heading for the storage ceiling. The user asked the right question. The answer turned out to be nicer than keeping them.</p>
+  <p>Make the drawings <b>deterministic</b>: give the sandbox a seeded random generator (<code>mulberry32</code>) and shadow <code>Date</code>/<code>performance</code> so code can't sneak in randomness. Now a drawing is fully reproducible from just <code>{code, seed}</code> — a few hundred bytes. Thumbnails became pure cache, regenerated on demand and dropped from storage entirely.</p>
+  <p class="punch"><b>Payoff:</b> a studio that used to weigh megabytes now saves in about <b>6&nbsp;KB</b>, and a shared "trading card" regenerates the <em>exact</em> same drawings on someone else's machine.</p>
+</div>
+
+<div class="card c-violet">
+  <span class="tag">Pedagogy bug</span>
+  <h3>The critique that never came back</h3>
+  <p>Minds could give each other feedback in the crit room — and it was stored, and displayed, and then never heard. The maker prompt only read the student's pinned notes, so every agent-to-agent critique fell into a void. Feedback that doesn't feed back is the whole point, missing.</p>
+  <p>Now an unread note on a mind's last work flows into its next attempt, with attribution, and is marked as heard exactly once. A <b>📌 badge</b> shows when notes are waiting, so you can see the loop close.</p>
+</div>
+
+<div class="card c-sun">
+  <span class="tag">Honesty bug</span>
+  <h3>The glass box that lied</h3>
+  <p>The app's "peek under the hood" promises to show the <em>exact</em> words sent to the AI. But it rebuilt the prompt <em>after</em> the state had changed — so it showed the brand-new work as the "previous" one, this round's journal as "last round's," and the freshly-rewritten lessons as the originals.</p>
+  <p>The fix was four small captures: grab the real prompt string before each call and show that. A glass box has to be honest to be a glass box.</p>
+</div>
+
+<div class="card c-pink">
+  <span class="tag">Security</span>
+  <h3>A crafted trading card walks in</h3>
+  <p>Minds are meant to be shared kid-to-kid as little JSON cards. But a mind's colour was dropped straight into HTML, so a card with a booby-trapped <code>look.color</code> could break out and run code. A name in the Show&nbsp;&amp;&nbsp;Tell picker had the same hole.</p>
+  <p>Every import now passes through a sanitiser — colour must be a real hex value, emoji is truncated, every field is bounded — and the remaining spots got properly escaped.</p>
+</div>
+
+<div class="card c-blue">
+  <span class="tag">Naming</span>
+  <h3>From "Crit Room" to "Show &amp; Tell"</h3>
+  <p>"Crit Room" means nothing to a ten-year-old. <b>Show &amp; Tell</b> means exactly the right thing — you bring something, you present it, others respond — and it's a phrase every child already owns. While renaming it, the transcript got fixed so it no longer vanishes when you leave the tab, and a plain "the notes are saved, here's what happens next" summary replaced a silent one.</p>
+</div>
+
+<div class="card c-slate">
+  <span class="tag">Environment</span>
+  <h3>Downloads that did nothing</h3>
+  <p>Inside a Claude artifact the export buttons silently failed — sandboxed pages can't download files, and the browser can't save to localStorage there either. So the app now <em>notices</em> it's embedded: downloads fall back to a copy-and-paste box, a banner explains the studio won't persist, and a misleading "storage is full" message is suppressed.</p>
+</div>
+
+<div class="card c-violet">
+  <span class="tag">Two outside reviews</span>
+  <h3>Claude Fable read the whole thing — twice</h3>
+  <p>Two detailed punch lists from a second reviewer turned up real bugs and sharp questions: dead Google model ids that 404'd on the first call, an experiment "Try again" that quietly cloned everything twice, a sandbox that stayed wedged after a timeout, a judge whose model could drift mid-experiment, and the thumbnail question that sparked the determinism redesign. Every item in both lists was worked through.</p>
+  <p class="punch">Experiments are now <b>resumable</b>, the judge model is <b>pinned</b> for the whole run, the mock judge makes the two arms visibly differ, and a hung drawing rebuilds a fresh sandbox instead of jamming the next one.</p>
+</div>
+
+<div class="card c-turtle">
+  <span class="tag">For the humans</span>
+  <h3>Three guides, three voices</h3>
+  <p>The session ended by writing the manual three times over: a playful, icon-led walkthrough for <b>young makers</b>; a deeper one for <b>older students</b> covering the mind's anatomy, debugging it, and Goodhart's law in the Science Corner; and a <b>teacher's</b> guide with the Papert/Minsky pedagogy, a 45-minute first lesson, assessment ideas, and a safety section. All three exist as Markdown and as styled, printable HTML, linked from the app's footer and Settings.</p>
+</div>
+
+<h2>The whole timeline</h2>
+<p class="meta">Fourteen commits, smallest-safe-step first. (Times are when each landed.)</p>
+<div class="timeline">
+  <div class="t-item" style="--dot:#2E9E6B"><div class="when">19:02</div><div class="what">Story-vs-poem form, lesson visibility, round-runner UX</div><div class="hash">7b07dcd</div></div>
+  <div class="t-item" style="--dot:#2E9E6B"><div class="when">19:06</div><div class="what">Always-available "New mind" button in the nav</div><div class="hash">fc8fe2c</div></div>
+  <div class="t-item" style="--dot:#4A78C9"><div class="when">19:44</div><div class="what">Save / restart a set of rounds, clearer crit room, stop auto-scroll</div><div class="hash">94fcc86</div></div>
+  <div class="t-item" style="--dot:#7B6CF6"><div class="when">05:51</div><div class="what">In-app "Ask" helper; fixed the critic model-routing bug</div><div class="hash">95e7def</div></div>
+  <div class="t-item" style="--dot:#4A78C9"><div class="when">06:32</div><div class="what">Provider switch resets defaults; "Import a mind" entry point</div><div class="hash">3b4d096</div></div>
+  <div class="t-item" style="--dot:#7B6CF6"><div class="when">06:34</div><div class="what">Closed the crit loop — critiques now reach the next Make</div><div class="hash">d66d93b</div></div>
+  <div class="t-item" style="--dot:#2E9E6B"><div class="when">06:45</div><div class="what">Deterministic drawings; stopped persisting ops/thumbnails</div><div class="hash">f9186f4</div></div>
+  <div class="t-item" style="--dot:#C94A8B"><div class="when">10:06</div><div class="what">Hardened imports (sanitiser), debounced saves, cleanups</div><div class="hash">d6306c8</div></div>
+  <div class="t-item" style="--dot:#4A78C9"><div class="when">15:43</div><div class="what">Renamed to Show &amp; Tell; transcript persists; artifact downloads</div><div class="hash">cb20332</div></div>
+  <div class="t-item" style="--dot:#E8A400"><div class="when">16:49</div><div class="what">Hood prompt fidelity, live Google models, XSS escapes</div><div class="hash">0066492</div></div>
+  <div class="t-item" style="--dot:#7B6CF6"><div class="when">16:54</div><div class="what">Resumable experiments; fixed judge model; mock arms differ</div><div class="hash">656c60c</div></div>
+  <div class="t-item" style="--dot:#5A6B8C"><div class="when">16:58</div><div class="what">Graceful no-storage; recover a wedged sandbox; smart boot</div><div class="hash">e84ff74</div></div>
+  <div class="t-item" style="--dot:#2E9E6B"><div class="when">17:22</div><div class="what">Three user guides (Markdown)</div><div class="hash">761a5db</div></div>
+  <div class="t-item" style="--dot:#2E9E6B"><div class="when">17:45</div><div class="what">HTML guides, linked from the app; teacher-copy fixes</div><div class="hash">70b2dcc</div></div>
+</div>
+
+<blockquote>A running theme: nearly every fix made the app more <em>honest</em> — about what it sent the AI, about whether your work is being saved, about what a crit actually does to a mind. The glass box got a little clearer each time.</blockquote>
+
+<footer>The Atelier — a place to build little minds that make, look, and learn. · <a href="atelier.html">Open the app</a> · <a href="guides/guide-teachers.html">Read the guides</a></footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ToonTalk Web — Project Summary</title>
+<style>
+  :root{
+    --bg:#0f1220; --panel:#191d33; --panel2:#222748; --ink:#eef1ff; --mut:#9aa3c7;
+    --line:#2c3358; --red:#e4564f; --grn:#3fbf6f; --blu:#4d8df0; --yel:#f4c20a;
+    --pnk:#e85aa8; --cyn:#36c1c9; --shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(160deg,#0c0f1c,#141833 60%,#0c0f1c);
+    color:var(--ink);font:16px/1.55 ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{max-width:1040px;margin:0 auto;padding:40px 22px 70px}
+  header{display:flex;flex-direction:column;gap:8px}
+  .kicker{color:var(--mut);letter-spacing:.14em;text-transform:uppercase;font-size:12px;font-weight:700}
+  h1{margin:0;font-size:36px;line-height:1.1;letter-spacing:-.5px}
+  h1 .dot{color:var(--yel)}
+  .sub{color:var(--mut);max-width:74ch}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .pill{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--mut)}
+  .pill b{color:var(--ink)}
+  h2{font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin:42px 0 14px;border-bottom:1px solid var(--line);padding-bottom:8px}
+  h2 .note{text-transform:none;letter-spacing:0;color:var(--mut);font-weight:400;font-size:13px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .card .n{font-size:33px;font-weight:800;letter-spacing:-1px;line-height:1}
+  .card .l{color:var(--mut);font-size:12.5px;margin-top:6px}
+  .card .s{color:var(--mut);font-size:11.5px;margin-top:3px;opacity:.8}
+  .card::after{content:"";position:absolute;right:-20px;top:-20px;width:70px;height:70px;border-radius:50%;opacity:.16}
+  .c-red::after{background:var(--red)}.c-grn::after{background:var(--grn)}.c-blu::after{background:var(--blu)}
+  .c-yel::after{background:var(--yel)}.c-pnk::after{background:var(--pnk)}.c-cyn::after{background:var(--cyn)}
+  .n.red{color:#ff7a73}.n.grn{color:#69d995}.n.blu{color:#7fb0ff}.n.yel{color:#ffd64d}.n.pnk{color:#ff86c4}.n.cyn{color:#5fe0e6}
+
+  /* daily histogram */
+  .hist{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 18px 12px;box-shadow:var(--shadow)}
+  .hwrap{display:flex;align-items:flex-end;gap:6px;height:170px}
+  .hcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;height:100%}
+  .hbar{width:100%;max-width:42px;border-radius:6px 6px 0 0;background:linear-gradient(180deg,#7fb0ff,#4d8df0);position:relative}
+  .hbar.big{background:linear-gradient(180deg,#ffd64d,#f4c20a)}
+  .hbar .cnt{position:absolute;top:-18px;left:0;right:0;text-align:center;font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums}
+  .hlbl{font-size:10.5px;color:var(--mut);white-space:nowrap}
+
+  /* timeline */
+  .ev{display:grid;grid-template-columns:30px 1fr;gap:14px;padding:0 0 18px}
+  .rail{display:flex;flex-direction:column;align-items:center}
+  .bead{width:15px;height:15px;border-radius:50%;border:3px solid var(--bg);margin-top:4px;flex:0 0 auto}
+  .stem{width:2px;flex:1;background:var(--line);margin-top:2px}
+  .ev:last-child .stem{display:none}
+  .evb{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 16px}
+  .evb h3{margin:0 0 5px;font-size:16px}
+  .evb .when{color:var(--mut);font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+  .evb p{margin:5px 0 0;color:var(--mut);font-size:13.5px}
+  ul.clean{margin:0;padding-left:18px}ul.clean li{margin:6px 0;color:var(--mut)}ul.clean li b{color:var(--ink)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:680px){.two{grid-template-columns:1fr}.hlbl{font-size:8px}}
+  footer{margin-top:40px;color:var(--mut);font-size:12.5px;border-top:1px solid var(--line);padding-top:16px}
+  code{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font:13px ui-monospace,Menlo,Consolas,monospace;color:#cdd6ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">Claude Code · the whole conversation</div>
+    <h1>Building ToonTalk Web <span class="dot">●</span> project summary</h1>
+    <p class="sub">A from-scratch, faithful TypeScript + PixiJS reimplementation of Ken Kahn's
+    <b>ToonTalk</b>, built with Claude Code over a single, continuously-running conversation —
+    from the first elements through the full city, robot training, sensors, and a long polish
+    pass. Numbers below are from the full session transcript and the git history (not just the
+    model's current context window, which only ever holds the most recent slice).</p>
+    <div class="pills">
+      <span class="pill">2026-06-07 → 06-22 · <b>15 days</b></span>
+      <span class="pill"><b>214</b> commits</span>
+      <span class="pill">Tests <b>213 passing</b></span>
+      <span class="pill">Latest build <b>2026-06-20t</b></span>
+    </div>
+  </header>
+
+  <h2>By the numbers <span class="note">— full conversation, from the transcript + git</span></h2>
+  <div class="grid">
+    <div class="card c-blu"><div class="n blu">~181</div><div class="l">Human messages</div><div class="s">your turns over 15 days</div></div>
+    <div class="card c-grn"><div class="n grn">214</div><div class="l">Git commits</div><div class="s">typecheck + tests green</div></div>
+    <div class="card c-yel"><div class="n yel">~15.2k</div><div class="l">Lines added (net)</div><div class="s">673 files · ~10.5k TS in src/</div></div>
+    <div class="card c-pnk"><div class="n pnk">~5,922</div><div class="l">Tool calls</div><div class="s">edits, runs, captures…</div></div>
+    <div class="card c-cyn"><div class="n cyn">12,863</div><div class="l">Assistant turns</div><div class="s">model responses</div></div>
+    <div class="card c-red"><div class="n red">28,318</div><div class="l">Transcript events</div><div class="s">204 MB on disk</div></div>
+    <div class="card c-blu"><div class="n blu">~1.48M</div><div class="l">Chars of message text</div><div class="s">user + assistant content</div></div>
+    <div class="card c-grn"><div class="n grn">15</div><div class="l">Days of work</div><div class="s">one continuous session</div></div>
+  </div>
+
+  <h2>Commits per day <span class="note">— where the 214 landed (yellow = 20+ in a day)</span></h2>
+  <div class="hist"><div class="hwrap" id="hist"></div></div>
+
+  <h2>The project arc</h2>
+  <div class="tl">
+    <div class="ev"><div class="rail"><div class="bead" style="background:var(--red)"></div><div class="stem"></div></div>
+      <div class="evb"><div class="when">Jun 7–9 · ~46 commits</div><h3>Foundation &amp; the element set</h3>
+      <p>Phases 0–3 plus the full toolbox: numbers (exact rationals, manual ops), text, boxes,
+      nests &amp; birds, the scale, robots, the three tools (Dusty / Wand / Pumpy), the bomb, and
+      live sensors — each checked against the manual and the original C++.</p></div></div>
+
+    <div class="ev"><div class="rail"><div class="bead" style="background:var(--blu)"></div><div class="stem"></div></div>
+      <div class="evb"><div class="when">Jun 9–14 · the city, ported faithfully</div><h3>Fly · land · walk · room</h3>
+      <p>A pure fly/land/walk state machine, then a faithful port of the original's camera and
+      coordinate system (<code>screen.cpp</code>/<code>prgrmmr.cpp</code>): green-grid flyover with a big
+      helicopter, landing, 8-way street walking with camera-follow, entering houses, and the
+      perspective room you stand in before sitting at the floor — matched to reference frames.</p></div></div>
+
+    <div class="ev"><div class="rail"><div class="bead" style="background:var(--cyn)"></div><div class="stem"></div></div>
+      <div class="evb"><div class="when">Jun 15–16 · ~43 commits</div><h3>Room, notebook &amp; animations</h3>
+      <p>The grey-Lego Tooly toolbox + tan floor, the two-page spiral notebook spread, box
+      grab-vs-extract, and real animations: the nest egg cracking and the bird flying up, bird
+      flight on delivery, Bammer's hammer swing. Dusty and bomb behavior audited to the source.</p></div></div>
+
+    <div class="ev"><div class="rail"><div class="bead" style="background:var(--grn)"></div><div class="stem"></div></div>
+      <div class="evb"><div class="when">Jun 17–19 · ~42 commits</div><h3>Robot training &amp; teams</h3>
+      <p>Train by example in a full-screen thought bubble where <em>you control the robot</em>:
+      take-out / put-in / wand-copy / Dusty-erase, with the result landing on Bammer's strike.
+      Trained robots replay step-by-step, iterate as guarded loops, wait on incomplete boxes,
+      form teams, and recurse through modules.</p></div></div>
+
+    <div class="ev"><div class="rail"><div class="bead" style="background:var(--pnk)"></div><div class="stem"></div></div>
+      <div class="evb"><div class="when">Jun 20 · 22 commits</div><h3>Assets &amp; held tools</h3>
+      <p>Precise sprite transparency (keying the reserved palette index — no more moth-eaten
+      holes), directional hair/hat head overlays for the avatar, and the held-tool morph
+      (Lego ↔ clay) for Pumpy/Dusty/wand.</p></div></div>
+
+    <div class="ev"><div class="rail"><div class="bead" style="background:var(--yel)"></div><div class="stem"></div></div>
+      <div class="evb"><div class="when">Jun 21–22 · this session</div><h3>Polish, autonomy &amp; fidelity capture</h3>
+      <p>Fixed a Pointer-Lock cursor-trap, cleaned the held tools &amp; toolbox, built a headless
+      <code>__ttDev</code> debug-driver, added edge-scroll (floor + city), made robots keep working
+      across views, <em>drove the original ToonTalk</em> via computer-use to capture reference,
+      reworked the standing-room view to floor scale, and wrote a hand-off note. (11 commits.)</p></div></div>
+  </div>
+
+  <h2>How this was measured</h2>
+  <div class="two">
+    <div class="card" style="box-shadow:none">
+      <ul class="clean">
+        <li><b>Git:</b> 214 commits and ~15.2k net lines come straight from <code>git log</code> /
+        <code>git diff</code> over the whole history (root → HEAD).</li>
+        <li><b>Transcript:</b> the 28,318 events, ~181 human messages, ~5,922 tool calls and
+        12,863 assistant turns come from parsing the session's <code>.jsonl</code> log (204 MB).</li>
+      </ul>
+    </div>
+    <div class="card" style="box-shadow:none">
+      <ul class="clean">
+        <li><b>Why an earlier draft looked tiny:</b> a model only ever sees the current
+        (post-compaction) context window — the older turns live on disk, not in memory, so
+        counting "from the chat" under-reports the whole by ~10–20×.</li>
+        <li>Counts marked <b>~</b> are estimates (exchanges, tool calls); commits, files and lines are exact.</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    Source: <code>git</code> history of <code>toontalk-web</code> + the Claude Code transcript
+    <code>3c150570-…jsonl</code> (2026-06-07 → 2026-06-22). Generated by Claude Code.
+  </footer>
+
+</div>
+
+<script>
+  // commits per day (15-day span; 06-12 had none)
+  const days = [
+    ["Jun 7",16],["Jun 8",4],["Jun 9",26],["Jun 10",1],["Jun 11",1],["Jun 12",0],
+    ["Jun 13",1],["Jun 14",36],["Jun 15",20],["Jun 16",23],["Jun 17",26],
+    ["Jun 18",13],["Jun 19",3],["Jun 20",22],["Jun 21",21],["Jun 22",1]
+  ];
+  const max = Math.max(...days.map(d=>d[1]));
+  document.getElementById("hist").innerHTML = days.map(([lbl,n])=>{
+    const h = n===0 ? 0 : Math.max(4, Math.round(n/max*150));
+    const big = n>=20 ? " big" : "";
+    return `<div class="hcol"><div class="hbar${big}" style="height:${h}px">`+
+           `<span class="cnt">${n||""}</span></div><div class="hlbl">${lbl.replace('Jun ','')}</div></div>`;
+  }).join("");
+</script>
+</body>
+</html>

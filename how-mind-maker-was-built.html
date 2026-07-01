@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Mind Maker's guide was built</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F7FAFC; --grid:#E1EAF2; --ink:#1C2B4A; --ink-soft:#5A6B8C; --ink-faint:#8695B0;
+    --turtle:#2E9E6B; --turtle-deep:#1F7A50; --sun:#F3B32E; --violet:#7B6CF6; --violet-deep:#5B4CD6; --coral:#FF6B5E;
+    --line:#E3ECF4;
+    --display:"Quicksand",ui-rounded,"Trebuchet MS",system-ui,sans-serif;
+    --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:"Space Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    font-family:var(--body); font-size:17px; line-height:1.65;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:26px 26px; background-position:-1px -1px;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:0 22px}
+  .eyebrow{font-family:var(--mono); font-size:.72rem; letter-spacing:.22em; text-transform:uppercase; color:var(--turtle-deep); margin:0 0 14px}
+  h1{font-family:var(--display); font-weight:700; color:var(--ink); font-size:clamp(2.2rem,6.4vw,3.4rem); line-height:1.05; letter-spacing:-.015em; margin:0 0 22px}
+  h2{font-family:var(--display); font-weight:700; color:var(--ink); font-size:clamp(1.45rem,3.8vw,1.95rem); line-height:1.15; letter-spacing:-.01em; margin:0 0 4px}
+  p{margin:0 0 18px; color:var(--ink)}
+  .lead{font-size:clamp(1.06rem,2.3vw,1.24rem); color:var(--ink); line-height:1.55}
+  .soft{color:var(--ink-soft)}
+  em{font-style:italic; color:var(--ink)}
+  a{color:var(--turtle-deep); text-decoration:underline; text-decoration-thickness:1.5px; text-underline-offset:2px}
+
+  header{padding:56px 0 6px}
+
+  /* the guide's own voice — the characteristic thing, shown the way the app shows it */
+  .voice{margin:30px 0 4px; display:flex; flex-direction:column; gap:11px; max-width:560px}
+  .chip{align-self:flex-start; max-width:94%; background:#F4F2FE; border:1.5px solid #E4DEFB; border-radius:15px 15px 15px 5px; padding:11px 15px; box-shadow:0 2px 0 rgba(91,76,214,.05)}
+  .chip .tag{font-family:var(--mono); font-size:.6rem; letter-spacing:.16em; color:var(--violet-deep); display:block; margin-bottom:4px}
+  .chip .line{font-size:1.01rem; color:var(--ink); line-height:1.45}
+
+  section{padding:38px 0; border-top:1px solid var(--line)}
+  .kicker{font-family:var(--mono); font-size:.7rem; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 18px}
+
+  /* build sheet */
+  .sheet{display:grid; grid-template-columns:1fr 1fr; gap:26px 34px; margin-top:8px}
+  .grp h3{font-family:var(--mono); font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:var(--ink); margin:0 0 10px; padding-bottom:8px; border-bottom:2px solid var(--seam,var(--turtle))}
+  .grp:nth-child(1){--seam:var(--violet)}
+  .grp:nth-child(2){--seam:var(--turtle)}
+  .grp:nth-child(3){--seam:var(--sun)}
+  .grp:nth-child(4){--seam:var(--coral)}
+  .row{display:grid; grid-template-columns:auto 1fr; gap:12px; align-items:baseline; padding:5px 0}
+  .row .num{font-family:var(--mono); font-weight:700; color:var(--ink); font-size:1.06rem; min-width:4.4ch; text-align:right}
+  .row .lab{font-size:.95rem; color:var(--ink-soft); line-height:1.35}
+
+  .process p{color:var(--ink-soft); font-size:1.03rem}
+  .process p:first-of-type{color:var(--ink)}
+
+  .colophon{padding:32px 0 64px; border-top:1px solid var(--line)}
+  .colophon p{font-family:var(--body); color:var(--ink-soft); font-size:1rem; max-width:620px}
+  .colophon .sig{font-family:var(--mono); font-size:.72rem; letter-spacing:.1em; color:var(--ink-faint); margin-top:16px}
+
+  @media (max-width:560px){
+    body{font-size:16px}
+    .sheet{grid-template-columns:1fr; gap:22px}
+    header{padding:40px 0 4px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Build notes</p>
+    <h1>How Mind&nbsp;Maker's guide was built</h1>
+    <p class="lead">Mind Maker is a small app where children build tiny AI minds out of plain sentences and watch them make art, judge their own work, and slowly get better. This page is about the layer added on top of it: a guided voice demo. It walks a first-time visitor through the whole app out loud — moving a spotlight from one part to the next, running a real round so you can watch a mind make something and learn from it, answering whatever you ask along the way, and carrying out actions for you when you'd rather it just did the thing. The app was already there; the guide is what makes it introduce itself.</p>
+    <div class="voice" aria-label="A few of the things the guide says out loud">
+      <div class="chip"><span class="tag">GUIDE</span><span class="line">None of this is secret code. It's all just plain words that you can change.</span></div>
+      <div class="chip"><span class="tag">GUIDE</span><span class="line">In a round, the mind makes something, looks at it, and learns a lesson for next time.</span></div>
+      <div class="chip"><span class="tag">GUIDE</span><span class="line">Watching the minds give each other notes is one of my favourite parts.</span></div>
+    </div>
+  </header>
+
+  <section>
+    <h2>By the numbers</h2>
+    <p class="kicker">A parts list for one HTML file</p>
+    <div class="sheet">
+      <div class="grp">
+        <h3>The guide</h3>
+        <div class="row"><span class="num">17</span><span class="lab">stops on the tour, every one spoken aloud</span></div>
+        <div class="row"><span class="num">7</span><span class="lab">kinds of action it can take for you in the app</span></div>
+        <div class="row"><span class="num">2</span><span class="lab">ways to start: only what's new, or from the top</span></div>
+      </div>
+      <div class="grp">
+        <h3>The artifact</h3>
+        <div class="row"><span class="num">1</span><span class="lab">HTML file — no build step</span></div>
+        <div class="row"><span class="num">3,676</span><span class="lab">lines of code</span></div>
+        <div class="row"><span class="num">252 KB</span><span class="lab">on disk, all of it</span></div>
+        <div class="row"><span class="num">0</span><span class="lab">frameworks or runtime dependencies</span></div>
+      </div>
+      <div class="grp">
+        <h3>The app it walks you through</h3>
+        <div class="row"><span class="num">8</span><span class="lab">screens</span></div>
+        <div class="row"><span class="num">12</span><span class="lab">built-in minds to remix</span></div>
+        <div class="row"><span class="num">7</span><span class="lab">steps a learning round runs through</span></div>
+      </div>
+      <div class="grp">
+        <h3>Holding it together</h3>
+        <div class="row"><span class="num">16</span><span class="lab">headless tests</span></div>
+        <div class="row"><span class="num">630</span><span class="lab">lines of test harness</span></div>
+        <div class="row"><span class="num">33</span><span class="lab">debug points, to make the invisible legible</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="process">
+    <h2>How the guide got better</h2>
+    <p class="kicker">One watched pass at a time</p>
+    <p>The guide began as a script — a set of stops, each one moving to a screen, lighting up a part, and saying a line out loud. Then it grew. It can now answer whatever you ask and act on it: opening a mind, running a round, or setting up a Show &amp; Tell because you said so, working out what you meant and doing the thing.</p>
+    <p>Almost all of the work after that was making it feel right to watch and hear — and that can only be judged by running it. Does the voice keep time with the picture as a round unfolds? Does the spotlight move <em>with</em> the words, or leap ahead of them? Does it ever congratulate you for something it just did itself, or walk you into a screen with nothing on it? None of that is visible in the code. It only shows up when the thing is actually speaking and drawing in front of you.</p>
+    <p>So every pass looked the same. Run the guide for real. Watch it, listen to it, and send back a screenshot and the app's own debug log. Find what actually happened — usually not the obvious culprit. Make the change, then write a small headless test so the next change can't quietly undo it. The guide improved in small, watched increments: narration re-timed so it never falls behind the paint; the spotlight driven from the same queue as the voice, so the light and the words move together; a snapshot taken after the guide's own moves, so only your changes get read back as yours; a once-empty Show &amp; Tell that now quietly gets a couple of minds ready rather than stranding you; and a memory of what it has already shown you, so coming back a second time covers only what's new.</p>
+    <p>Which is the shape of the whole thing: the tests can prove an action fired and a mind was made and the spotlight visited the right places in the right order. Whether it <em>feels</em> in time, whether a sentence runs too long to hear comfortably, whether any of it lands warmly for a nine-year-old — that stayed with a person's eyes and ears.</p>
+  </section>
+
+  <div class="colophon">
+    <p>One HTML file. No build step, no framework, no runtime dependency but the language model the guide talks to. Vanilla JavaScript, the browser's own Web&nbsp;Speech API for the voice, and a lineage that runs back through Logo and turtle graphics to Seymour Papert's idea that you understand a thing most deeply by building it.</p>
+    <p class="sig">Made by a person and an AI, one watched edit at a time.</p>
+  </div>
+
+</div>
+</body>
+</html>

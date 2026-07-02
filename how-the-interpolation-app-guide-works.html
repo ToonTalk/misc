@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How your turtle guide works — In-Between</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* same palette as In-Between itself, so this reads as a companion, not a rebrand */
+    --paper:#F1F4EF; --card:#FBFCFA; --card-2:#EBEFE8;
+    --ink:#1B221F; --ink-soft:#5E685F; --ink-faint:#929C92;
+    --turtle:#2E7D5B; --turtle-dark:#1F5C42; --turtle-glow:#9FD9BE;
+    --amber:#E0A43B; --amber-dark:#9C6E1E; --amber-soft:#F4DDA8;
+    --line:#D6DCD2; --r:14px; --r-sm:9px;
+    --shadow:0 1px 2px rgba(27,34,31,.05), 0 10px 30px rgba(27,34,31,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:'Nunito',system-ui,sans-serif; color:var(--ink); background:var(--paper);
+    background-image:radial-gradient(circle at 1px 1px, rgba(46,125,91,.07) 1px, transparent 0);
+    background-size:22px 22px; -webkit-font-smoothing:antialiased; line-height:1.6;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:52px 22px 90px}
+  a{color:var(--turtle-dark)}
+  :focus-visible{outline:2px solid var(--turtle);outline-offset:2px;border-radius:4px}
+
+  .eyebrow{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--turtle-dark);margin:0 0 10px}
+  h1{font-family:'Fredoka',sans-serif;font-weight:600;font-size:clamp(28px,5vw,42px);line-height:1.12;margin:0 0 14px}
+  .lede{font-size:17.5px;color:var(--ink-soft);max-width:56ch;margin:0}
+  h2{font-family:'Fredoka',sans-serif;font-weight:500;font-size:22px;margin:0 0 6px}
+  .sec{margin-top:64px}
+  .sec > .eyebrow{margin-bottom:8px}
+  p{margin:0 0 14px}
+  p:last-child{margin-bottom:0}
+
+  /* ---------- hero: a working replica of the guide panel ---------- */
+  .hero-card{margin-top:34px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    box-shadow:var(--shadow);padding:18px 18px 20px;max-width:420px}
+  .hero-head{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+  .hero-face{font-size:22px;transition:transform .2s}
+  .hero-face.vd-talk{animation:bob .55s ease-in-out infinite}
+  @keyframes bob{50%{transform:translateY(-3px) rotate(-6deg)}}
+  .hero-title{font-family:'Fredoka',sans-serif;font-weight:500;font-size:14px;flex:1}
+  .hero-status{font-family:'Space Mono',monospace;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--ink-faint)}
+  .hero-log{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-sm);
+    min-height:96px;max-height:170px;overflow-y:auto;padding:11px;display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
+  .hero-b{max-width:92%;padding:7px 10px;border-radius:11px;font-size:13px;line-height:1.45;
+    background:var(--card-2);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
+  .hero-b.user{align-self:flex-end;background:var(--turtle);color:#fff;border:none;
+    border-bottom-left-radius:11px;border-bottom-right-radius:4px}
+  .hero-b .cursor{opacity:.5}
+
+  .hero-mini{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 12px 10px;margin-bottom:12px}
+  .hero-mini-lab{font-family:'Space Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-faint);margin-bottom:8px;display:flex;justify-content:space-between}
+  .hero-track{position:relative;height:6px;border-radius:99px;background:var(--card-2);border:1px solid var(--line)}
+  .hero-track::before{content:'';position:absolute;inset:0;width:100%;border-radius:99px;
+    background:repeating-linear-gradient(135deg,var(--amber-soft) 0 6px,transparent 6px 10px);opacity:.6;left:70%;
+    clip-path:inset(0 0 0 70%)}
+  .hero-fill{position:absolute;top:0;left:0;height:100%;width:0%;background:var(--turtle);border-radius:99px}
+  .hero-dot{position:absolute;top:50%;left:0%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;
+    background:var(--turtle-dark);box-shadow:0 0 0 3px rgba(31,92,66,.18);transition:left .05s linear}
+  .hero-dot.beyond-glow{box-shadow:0 0 0 4px rgba(224,164,59,.45)}
+
+  .hero-controls{display:flex;align-items:center;gap:8px}
+  .hbtn{border-radius:999px;border:1px solid var(--line);background:var(--card-2);color:var(--turtle-dark);
+    font-family:'Nunito';font-weight:800;font-size:12.5px;padding:8px 15px;cursor:pointer;display:flex;align-items:center;gap:6px}
+  .hbtn.primary{background:var(--turtle);color:#fff;border:none}
+  .hbtn.primary:hover{background:var(--turtle-dark)}
+  .hbtn:disabled{opacity:.55;cursor:default}
+  .hero-note{font-size:11.5px;color:var(--ink-faint);margin-top:10px;line-height:1.5}
+
+  /* ---------- five-step sequence ---------- */
+  .step{display:flex;gap:16px;padding:16px 0;border-top:1px solid var(--line)}
+  .step:last-child{padding-bottom:0}
+  .step-n{font-family:'Space Mono',monospace;font-weight:700;font-size:13px;color:var(--turtle-dark);
+    flex:0 0 auto;width:28px;padding-top:2px}
+  .step-icon{flex:0 0 auto;font-size:19px;width:26px;text-align:center;padding-top:1px}
+  .step-body h3{font-family:'Fredoka',sans-serif;font-weight:500;font-size:15.5px;margin:0 0 4px}
+  .step-body p{font-size:14.5px;color:var(--ink-soft);margin:0}
+
+  .aside{margin-top:14px;background:var(--amber-soft);border:1px solid var(--amber-dark);border-left-width:4px;
+    border-radius:var(--r-sm);padding:11px 13px;font-size:13.5px;color:#4A3610}
+  .aside b{color:#3A2A0C}
+
+  /* ---------- data-flow columns ---------- */
+  .flow{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  @media(max-width:600px){.flow{grid-template-columns:1fr}}
+  .fcard{border-radius:var(--r);padding:16px 17px;border:1px solid}
+  .fcard.stay{background:#EEF6F1;border-color:var(--turtle-glow)}
+  .fcard.go{background:var(--amber-soft);border-color:#E4C374}
+  .fcard h3{font-family:'Fredoka',sans-serif;font-weight:500;font-size:14.5px;margin:0 0 8px;display:flex;align-items:center;gap:7px}
+  .fcard ul{margin:0;padding-left:19px;font-size:13.5px;color:var(--ink-soft)}
+  .fcard li{margin-bottom:5px}
+  .fcard li:last-child{margin-bottom:0}
+
+  footer{margin-top:70px;padding-top:22px;border-top:1px solid var(--line);
+    font-family:'Space Mono',monospace;font-size:11.5px;color:var(--ink-faint);letter-spacing:.02em}
+
+  @media (prefers-reduced-motion: reduce){
+    .hero-face.vd-talk{animation:none} .hero-fill,.hero-dot{transition:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">In-Between &middot; companion guide</p>
+  <h1>How your turtle guide works</h1>
+  <p class="lede">Inside In-Between, a small turtle in a side panel can talk you through the app, answer questions out loud, and even press the buttons for you. Nothing about it is magic — here's exactly what happens, in plain English.</p>
+
+  <div class="hero-card">
+    <div class="hero-head">
+      <span class="hero-face" id="hFace">&#128034;</span>
+      <span class="hero-title">Turtle guide</span>
+      <span class="hero-status" id="hStatus">ready</span>
+    </div>
+    <div class="hero-log" id="hLog"></div>
+    <div class="hero-mini">
+      <div class="hero-mini-lab"><span>A</span><span>going beyond &rarr;</span></div>
+      <div class="hero-track"><div class="hero-fill" id="hFill"></div><div class="hero-dot" id="hDot"></div></div>
+    </div>
+    <div class="hero-controls">
+      <button class="hbtn primary" id="hPlay">&#9654; Try a sample question</button>
+    </div>
+    <p class="hero-note">This is a working model of the panel, not the app itself &mdash; press it freely. It doesn't need a microphone, an internet connection, or an AI to run.</p>
+  </div>
+
+  <div class="sec">
+    <p class="eyebrow">Five things happen, in order</p>
+    <h2>What a question actually goes through</h2>
+
+    <div class="step">
+      <div class="step-n">01</div>
+      <div class="step-icon">&#127908;</div>
+      <div class="step-body">
+        <h3>You ask</h3>
+        <p>Press the microphone and talk, or type into the box at the bottom of the panel. Either way works the same from here on.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-n">02</div>
+      <div class="step-icon">&#128066;</div>
+      <div class="step-body">
+        <h3>It listens</h3>
+        <p>Your browser turns your spoken words into text, right there on your own device. The guide only ever sees words &mdash; it never keeps a recording of your voice.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-n">03</div>
+      <div class="step-icon">&#129300;</div>
+      <div class="step-body">
+        <h3>It thinks</h3>
+        <p>The text of your question is sent to an AI language model &mdash; a computer program that has read enormous amounts of writing and learned to work out a helpful reply to almost anything you ask.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-n">04</div>
+      <div class="step-icon">&#128172;</div>
+      <div class="step-body">
+        <h3>It speaks</h3>
+        <p>Your browser reads the answer aloud. The words also appear in the panel, so you can read along, or scroll back to anything it said earlier.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-n">05</div>
+      <div class="step-icon">&#128073;</div>
+      <div class="step-body">
+        <h3>Sometimes, it shows you</h3>
+        <p>For some questions, describing the answer isn't enough. So the guide can actually press the app's own buttons and move its own sliders &mdash; the same ones you use &mdash; to demonstrate the answer while it talks.</p>
+      </div>
+    </div>
+
+    <div class="aside">
+      <b>Why won't the microphone turn on?</b> If you're viewing In-Between inside another website or app, the microphone button may look pale and do nothing when pressed. That's not broken &mdash; that page simply isn't allowed to ask for microphone access. Type your question instead, or open the standalone version of In-Between directly in your own browser tab, where the microphone works normally.
+    </div>
+  </div>
+
+  <div class="sec">
+    <p class="eyebrow">Privacy, plainly</p>
+    <h2>What leaves your device, and what doesn't</h2>
+    <p>Every question you ask sits somewhere on a line between "stays on your computer" and "has to go out to get you an answer." Here's exactly where that line falls.</p>
+    <div class="flow">
+      <div class="fcard stay">
+        <h3>&#127968; Stays with you</h3>
+        <ul>
+          <li>The sound of your voice</li>
+          <li>What you click, drag, or type while exploring the app</li>
+          <li>Everything the guide has said so far in the panel</li>
+        </ul>
+      </div>
+      <div class="fcard go">
+        <h3>&#8594; Goes out, as text only</h3>
+        <ul>
+          <li>The words of your question</li>
+          <li>A short note on which part of the tour you're at, so the answer fits</li>
+          <li>Nothing else &mdash; no name, no files, no camera, ever</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:14px;font-size:13.5px;color:var(--ink-soft)">One more honest detail: turning speech into text uses your browser's own built-in tools, and in some browsers that briefly uses an online listening service to do the conversion &mdash; but no recording is kept afterwards, and it happens whether or not the guide is even switched on. It's a feature of the browser, not of In-Between.</p>
+  </div>
+
+  <div class="sec">
+    <p class="eyebrow">Agency</p>
+    <h2>You're always the one steering</h2>
+    <p>The guide is built to give way the moment you want to drive:</p>
+    <div class="step" style="border-top:none;padding-top:0">
+      <div class="step-icon">&#9208;</div>
+      <div class="step-body"><p>Touch any control while the guide is mid-sentence, and it pauses itself &mdash; it notices you've taken over.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-icon">&#9654;</div>
+      <div class="step-body"><p>Press play any time to pick up right where you paused.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-icon">&#10095;</div>
+      <div class="step-body"><p>Hide the panel entirely with the arrow. A small turtle tab waits at the edge of the screen if you want it back.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-icon">&#128064;</div>
+      <div class="step-body"><p>If you changed something while paused &mdash; a new shape, a different view &mdash; the guide notices and mentions it before carrying on, instead of pretending it didn't happen.</p></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <p class="eyebrow">One last honesty</p>
+    <h2>Where the answers actually come from</h2>
+    <p>The "thinking" step isn't a search through a fixed list of pre-written answers, and it isn't a person typing back to you. It's a language model &mdash; predicting, word by word, what a good reply would look like, based on patterns it learned from a huge amount of text.</p>
+    <p>It's usually right about how In-Between works, because it's been told the details in advance. But like anyone explaining something from memory, it can occasionally get a small detail wrong. If an answer doesn't sound quite right, that's a good moment to ask again, or ask it a different way.</p>
+  </div>
+
+  <footer>Built for In-Between, a shape-morphing turtle graphics lab &mdash; using your browser's own microphone, speech and speaking tools, plus an AI language model for the thinking part.</footer>
+</div>
+
+<script>
+(function(){
+  const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const face=document.getElementById('hFace'), status=document.getElementById('hStatus'),
+        log=document.getElementById('hLog'), btn=document.getElementById('hPlay'),
+        fill=document.getElementById('hFill'), dot=document.getElementById('hDot');
+  const Q="Why does it look spiky past B?";
+  const A="That's the going-beyond effect. The recipe keeps changing past shape B into territory nobody actually drew. Let me show you.";
+
+  function addBubble(text,who){
+    const d=document.createElement('div');
+    d.className='hero-b'+(who==='user'?' user':'');
+    log.appendChild(d); log.scrollTop=log.scrollHeight;
+    return d;
+  }
+  function typeInto(el,text,ms,done){
+    if(reduced){ el.textContent=text; if(done)done(); return; }
+    let i=0; const step=Math.max(14,ms/Math.max(1,text.length));
+    el.innerHTML='<span class="cursor">&#9612;</span>';
+    const iv=setInterval(()=>{
+      i++; el.textContent=text.slice(0,i);
+      if(i>=text.length){ clearInterval(iv); if(done)done(); }
+    },step);
+  }
+  function moveDot(from,to,secs,onBeyond){
+    const t0=performance.now();
+    function frame(now){
+      const k=Math.min(1,(now-t0)/(secs*1000));
+      const e=k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+      const v=from+(to-from)*e;
+      const pct=Math.max(0,Math.min(1.4,v))/1.4*100;
+      dot.style.left=pct+'%'; fill.style.width=Math.min(pct,71.4)+'%';
+      dot.classList.toggle('beyond-glow', v>1);
+      if(onBeyond) onBeyond(v>1);
+      if(k<1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function run(){
+    btn.disabled=true; log.innerHTML=''; dot.classList.remove('beyond-glow');
+    fill.style.width='0%'; dot.style.left='0%';
+    status.textContent='listening';
+    const qb=addBubble('',  'user');
+    typeInto(qb, Q, 900, ()=>{
+      status.textContent='thinking';
+      setTimeout(()=>{
+        status.textContent='speaking';
+        face.classList.add('vd-talk');
+        const ab=addBubble('', 'guide');
+        typeInto(ab, A, 2200);
+        moveDot(0, 1.4, 2.6);
+        try{
+          if('speechSynthesis' in window){
+            const u=new SpeechSynthesisUtterance(A); u.rate=1.02; u.pitch=1.05;
+            speechSynthesis.cancel(); speechSynthesis.speak(u);
+          }
+        }catch(e){}
+        setTimeout(()=>{
+          face.classList.remove('vd-talk');
+          status.textContent='back to you';
+          btn.disabled=false; btn.textContent='\u21BB Try it again';
+        }, 3000);
+      }, 750);
+    });
+  }
+  btn.addEventListener('click', run);
+})();
+</script>
+</body>
+</html>

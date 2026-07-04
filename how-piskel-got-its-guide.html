@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How a free art app learned to give tours</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%91%BE%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --chrome:#26241f;        /* Piskel's dark cabinet, warmed a touch */
+    --chrome-deep:#1c1a16;
+    --gold:#e0af1f;          /* Piskel's own highlight gold */
+    --gold-soft:#f3d266;
+    --canvas:#fbfaf6;        /* the light drawing sheet */
+    --ink:#2a2822;
+    --muted:#7d786c;
+    --check-a:#efece4;       /* checkerboard pair, like a transparent canvas */
+    --check-b:#ffffff;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--chrome); color:var(--ink);
+    font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    font-size:17px; line-height:1.65;
+  }
+  .px{ font-family:'Silkscreen', 'Courier New', monospace; letter-spacing:.04em; }
+  @font-face{ font-family:'Silkscreen'; src:local('Silkscreen'); font-display:swap; }
+
+  /* ---------- hero: dark cabinet ---------- */
+  header{
+    color:#efeadb; text-align:center;
+    padding:64px 24px 56px;
+    background:
+      radial-gradient(1100px 420px at 50% -10%, rgba(224,175,31,.14), transparent 65%),
+      var(--chrome);
+  }
+  .eyebrow{
+    font-family:'Silkscreen','Courier New',monospace;
+    font-size:11px; letter-spacing:.28em; color:var(--gold);
+    text-transform:uppercase; margin:0 0 26px;
+  }
+  /* the guide, drawn in real pixels (box-shadow sprite, no image file) */
+  .sprite-wrap{ height:76px; margin:0 auto 30px; width:104px; position:relative; }
+  #sprite{
+    position:absolute; top:0; left:0; width:8px; height:8px; background:transparent;
+    animation:hover 3.4s ease-in-out infinite;
+  }
+  @keyframes hover{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  @media (prefers-reduced-motion: reduce){ #sprite{animation:none} }
+  h1{
+    font-family:'Silkscreen','Courier New',monospace;
+    font-size:clamp(24px, 4.6vw, 40px); line-height:1.25;
+    margin:0 auto 18px; max-width:17em; color:#f6f1e2; font-weight:400;
+    text-wrap:balance;
+  }
+  h1 em{ font-style:normal; color:var(--gold); }
+  .dek{ max-width:34em; margin:0 auto; color:#c9c2ae; font-size:18px; }
+  .cta{
+    display:inline-block; font-family:'Silkscreen','Courier New',monospace;
+    font-size:13px; letter-spacing:.03em; text-decoration:none;
+    background:var(--gold); color:var(--chrome-deep);
+    padding:14px 22px; border-bottom:4px solid #a67c12;
+    transition:transform .12s ease;
+  }
+  .cta:hover{ transform:translateY(-2px); }
+  .cta:active{ transform:translateY(0); border-bottom-width:2px; }
+
+  /* checkerboard seam between cabinet and canvas */
+  .seam{
+    height:24px;
+    background:
+      conic-gradient(var(--check-a) 25%, var(--check-b) 0 50%, var(--check-a) 0 75%, var(--check-b) 0)
+      0 0 / 24px 24px;
+  }
+
+  /* ---------- the canvas sheet ---------- */
+  main{ background:var(--canvas); padding:8px 24px 72px; }
+  article{ max-width:680px; margin:0 auto; }
+  section{ padding-top:52px; }
+  h2{
+    font-family:'Silkscreen','Courier New',monospace; font-weight:400;
+    font-size:19px; color:var(--ink); margin:0 0 6px;
+  }
+  h2::before{
+    content:""; display:inline-block; width:12px; height:12px;
+    background:var(--gold); margin-right:12px;
+    box-shadow: 14px 0 0 var(--ink);
+    transform:translateY(1px);
+  }
+  .kicker{ color:var(--muted); font-size:14px; margin:0 0 14px;
+    font-family:ui-monospace, 'Courier New', monospace; letter-spacing:.02em; }
+  p{ margin:0 0 16px; }
+  strong{ color:var(--ink); }
+  .aside{
+    border-left:4px solid var(--gold); background:#f4efe2;
+    padding:12px 16px; margin:20px 0; font-size:15.5px; color:#4d4636;
+  }
+  .aside .speech{ font-style:italic; }
+
+  /* effort chips */
+  .chips{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:12px; margin:26px 0 8px; }
+  .chip{
+    background:var(--chrome); color:#efeadb; padding:16px 14px 13px;
+    border-bottom:4px solid var(--gold);
+  }
+  .chip b{ display:block; font-family:'Silkscreen','Courier New',monospace;
+    font-weight:400; font-size:22px; color:var(--gold-soft); margin-bottom:4px; }
+  .chip span{ font-size:13px; line-height:1.45; display:block; color:#c9c2ae;
+    font-family:ui-monospace,'Courier New',monospace; }
+
+  /* footer */
+  footer{
+    background:var(--chrome-deep); color:#8d867a;
+    text-align:center; padding:34px 24px 42px; font-size:14px;
+  }
+  footer .px{ color:var(--gold); font-size:11px; letter-spacing:.24em;
+    text-transform:uppercase; display:block; margin-bottom:12px; }
+  footer p{ max-width:46em; margin:0 auto 8px; }
+  a{ color:inherit; }
+  @media (max-width:520px){ body{font-size:16px} section{padding-top:44px} }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Piskel &nbsp;+&nbsp; Pixel Pal</p>
+  <div class="sprite-wrap" aria-hidden="true"><div id="sprite"></div></div>
+  <h1>How a free art app learned to <em>give tours</em></h1>
+  <p class="dek">The story of taking an open-source pixel-art editor, folding it into a single
+  file, and moving a friendly AI guide into a panel at its side.</p>
+  <p style="margin-top:30px">
+    <a class="cta" href="https://toontalk.github.io/AI/apps/piskel-guided.html">Try it — Piskel with Pixel Pal &rarr;</a>
+  </p>
+</header>
+
+<div class="seam" aria-hidden="true"></div>
+
+<main>
+<article>
+
+  <section>
+    <h2>The app we started from</h2>
+    <p class="kicker">Piskel — free, open source, loved since 2012</p>
+    <p><strong>Piskel</strong> is a free drawing program for pixel art: the chunky, square-by-square
+    style you know from classic video games. You draw on a checkerboard canvas, stack frames like the
+    pages of a flipbook, and out comes a little animation. It has been built in the open for well over
+    a decade by Julien Descottes and a community of volunteers, and its source code is published for
+    anyone to use.</p>
+    <p>We didn't change a line of it. Everything described below sits <em>alongside</em> the original,
+    politely pressing the same buttons a person would.</p>
+  </section>
+
+  <section>
+    <h2>Step one: the whole app in a single file</h2>
+    <p class="kicker">From a folder of hundreds of pieces to one page</p>
+    <p>A web app normally lives as a folder full of separate pieces: the program itself, the styling,
+    and dozens of little icons and images that get fetched one by one. That's fine on a website, but it
+    can't be handed to someone as a thing.</p>
+    <p>So the first job was bookbinding. We rebuilt Piskel from its public source code and folded every
+    piece into <strong>one self-contained HTML file</strong> — every icon converted to text and embedded,
+    repeated artwork stored once instead of thirty-seven times. The result is a single file, a bit
+    under a megabyte, that opens in any browser, works with no internet at all, and can be published as
+    a Claude artifact for anyone to try in one click.</p>
+  </section>
+
+  <section>
+    <h2>Step two: the guide moves in</h2>
+    <p class="kicker">Meet Pixel Pal 👾</p>
+    <p>Down the right-hand side lives a small panel with a guide in it. Press play and
+    <strong>Pixel Pal</strong> gives a spoken thirteen-stop tour — canvas, tools, colors, frames,
+    layers, all the way to exporting your finished animation — shining a spotlight on each thing as it
+    talks about it. Curious about something? Ask out loud, or type, and it answers in plain words.</p>
+    <p>The guide can also lend a hand, but only on a short leash. It works the app's <em>real</em>
+    controls — the same buttons you'd press — and it lives by house rules: it never draws on your
+    picture, and anything destructive, like deleting a frame or resizing the canvas, stops and asks
+    you first, in a dialog only you can approve. Click anywhere and it pauses; when it comes back it
+    honestly notices what you did:</p>
+    <div class="aside"><span class="speech">"You added a frame and switched to the eraser — carrying
+    on!"</span></div>
+  </section>
+
+  <section>
+    <h2>One engine, many guidebooks</h2>
+    <p class="kicker">Why the second app was so much faster than the first</p>
+    <p>Under the hood the guide is two things. There's an <strong>engine</strong> — the voice, the
+    panel, the spotlight, the safety rules — which knows nothing about any particular app. And there's
+    a <strong>guidebook</strong> written for one app: where everything is, what to say at each stop,
+    which buttons are safe to press. Think of a museum guide's training versus the binder for one
+    specific museum.</p>
+    <p>The engine was built once, for an earlier app. Piskel needed only its guidebook — and the engine
+    crossed over <em>completely unchanged</em>, which was the whole experiment: proof the split is real.</p>
+  </section>
+
+  <section>
+    <h2>What the project shelf contributed</h2>
+    <p class="kicker">Resources that turned a rebuild into a reuse</p>
+    <p>This project keeps a small shelf of shared resources, and they did a lot of the lifting: the
+    finished engine, ready to drop in; a <strong>how-to document</strong> distilling everything learned
+    the first time; and a complete worked example — the first app's guidebook and its test suite — to
+    pattern-match against instead of starting from a blank page.</p>
+    <p>The traffic ran both ways. Porting to a genuinely different app stress-tested that how-to
+    document, and six places where it proved vague or wrong were logged for its next revision. Each new
+    app makes the shelf better for the one after.</p>
+  </section>
+
+  <section>
+    <h2>How big a job was it?</h2>
+    <p class="kicker">Honest numbers</p>
+    <div class="chips">
+      <div class="chip"><b>0</b><span>lines of Piskel changed — the original is untouched</span></div>
+      <div class="chip"><b>448</b><span>lines in the new Piskel guidebook</span></div>
+      <div class="chip"><b>93 ×2</b><span>automated checks, passed twice before delivery</span></div>
+      <div class="chip"><b>~8%</b><span>added to the app's size — 69&nbsp;KB on 860</span></div>
+    </div>
+    <p>Building the engine, the first time round, was the mountain. This port took roughly
+    <strong>two working sessions</strong> of a human and an AI collaborating: the human setting the
+    rules and making the judgment calls, the AI reading Piskel's source, writing the guidebook, and
+    building a test rig that runs the whole app — invisibly, with no screen — and checks 93 things
+    about it.</p>
+    <p>Those checks earned their keep. They caught real bugs before any person ever saw them: the guide
+    once got pasted into an invisible corner of the app and silently never appeared; a menu closed
+    itself in the very same instant the guide opened it; and the guide was taught a command spelling
+    its own engine didn't recognize. All found by the tests, all fixed the same day.</p>
+  </section>
+
+</article>
+</main>
+
+<footer>
+  <span class="px">Credits</span>
+  <p>Piskel is free software by Julien Descottes and contributors, published under the Apache&nbsp;2.0
+  license at piskelapp.com. The voice-guide layer and this page were built in a human–AI collaboration
+  with Claude (Anthropic). July&nbsp;2026.</p>
+  <p><a href="https://docs.google.com/document/d/1IKoAcaW3HeOUul4Qpka9nGF3H02ELC7FUaa-BMB4acY/edit?usp=sharing">Read the write-up on adding AI guides to apps &rarr;</a></p>
+</footer>
+
+<script>
+/* Pixel Pal, drawn pixel-by-pixel — one box-shadow per lit square. */
+(function(){
+  var map = [
+    '..X.....X..',
+    '...X...X...',
+    '..XXXXXXX..',
+    '.XX.XXX.XX.',
+    'XXXXXXXXXXX',
+    'X.XXXXXXX.X',
+    'X.X.....X.X',
+    '...XX.XX...'
+  ];
+  var px = 8, shadows = [];
+  for (var y = 0; y < map.length; y++)
+    for (var x = 0; x < map[y].length; x++)
+      if (map[y][x] === 'X')
+        shadows.push((x*px + 8) + 'px ' + (y*px + 8) + 'px 0 0 #e0af1f');
+  var el = document.getElementById('sprite');
+  el.style.boxShadow = shadows.join(',');
+})();
+</script>
+</body>
+</html>

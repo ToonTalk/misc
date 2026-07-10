@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Tiny Mind was made</title>
+<style>
+  :root{
+    --paper:#F7F7F2; --grid:rgba(70,90,60,.07); --ink:#23281F;
+    --sprout:#3F7D4E; --plum:#6C4B8B; --amber:#8A5A14; --card:#FFFFFF;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; color:var(--ink); background:var(--paper);
+    background-image:linear-gradient(var(--grid) 1px, transparent 1px),
+                     linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:26px 26px;
+    font-family:system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size:1.02rem; line-height:1.62;
+  }
+  main{max-width:70ch; margin:0 auto; padding:2.2rem 1.2rem 4rem}
+  .tag{
+    background:var(--card); border:2px solid var(--ink); border-radius:6px;
+    box-shadow:6px 6px 0 rgba(63,125,78,.25);
+    font-family:"Courier New", ui-monospace, monospace;
+    padding:1rem 1.2rem; margin-bottom:2rem;
+  }
+  .tag .eyebrow{font-size:.72rem; letter-spacing:.18em; color:var(--sprout)}
+  .tag h1{margin:.15rem 0 .4rem; font-size:1.55rem}
+  h2{font-family:"Courier New", ui-monospace, monospace; color:var(--sprout);
+     font-size:1.05rem; letter-spacing:.06em; margin:2.2rem 0 .5rem}
+  .role{background:var(--card); border:1.5px solid var(--ink); border-radius:6px;
+        padding:.7rem 1rem; margin:.7rem 0}
+  .role b{font-family:"Courier New",monospace; color:var(--plum)}
+  .quote{font-style:italic; color:#3c4436}
+  .note{border-left:5px solid var(--amber); background:#FFF8EC;
+        padding:.7rem 1rem; margin:1.4rem 0; border-radius:0 6px 6px 0; font-size:.97rem}
+  footer{margin-top:3rem; padding-top:1rem; border-top:2px solid var(--ink); font-size:.95rem}
+  footer .todo{color:var(--amber)}
+  a{color:var(--sprout)}
+  @media print{body{background:none}}
+</style>
+</head>
+<body>
+<main>
+  <div class="tag">
+    <div class="eyebrow">FIELD NOTES · PROCESS</div>
+    <h1>How Tiny Mind was made</h1>
+    <p style="margin:.3rem 0 0">The idea, the spec, and the division of labor between
+    a human, Claude on claude.ai, and Claude Code — including the parts that went
+    wrong and what they taught.</p>
+  </div>
+
+  <div class="note">These notes were drafted by Claude from inside the design
+  conversation, at Ken Kahn's request — one participant's view of a joint process,
+  checked against the project's own reports and test suites. Ken's own account is in
+  <a href="https://docs.google.com/document/d/1cTVVSiRZQLSaJNTaZ3Cq9ey7fjSMTz0DhtwMuZZJa8s/edit?usp=sharing">his post</a>.</div>
+
+  <h2>THE IDEA</h2>
+  <p>The project began not with an app but with a gap analysis. Reviewing several
+  years of Ken's AI experiments, one axis stood out as unexplored: the model as a
+  <em>constrained participant inside a microworld</em> rather than as builder or
+  conversationalist. Crossed with two long-standing interests — constructionist
+  learning in the Papert tradition, and mechanistic interpretability — it suggested a
+  glass-box language model children could train and then dissect. TinyStories made
+  it feasible: if a 260,000-parameter model can tell story-shaped tales, it is small
+  enough to train in a browser and small enough to open.</p>
+  <p>One design move carried the scientific weight: the child's invented character.
+  Because "Zog" did not exist until the child created him, no claim about where the
+  model stores Zog can be recited from any literature — every explanation the
+  software (or its AI) offers must be derived, and a child can falsify it. The app's
+  epistemology follows from that: highlights are clues; switching a component off and
+  measuring the damage is proof.</p>
+
+  <h2>FROM CONVERSATION TO SPEC</h2>
+  <p>Design happened in dialogue on claude.ai and was frozen into short kickoff
+  documents — one per building session — recording the locked decisions: two models
+  (a 260K trainee whose entire 512-piece alphabet fits on one screen, and a 15M
+  specimen for the microscope); binary formats verified against source rather than
+  memory; a rule that model code stay free of any web-page dependencies so the same
+  functions run in the app and in the test suite. Each kickoff ended with explicit
+  gates: measurable pass/fail conditions that had to hold before features were
+  built on top.</p>
+
+  <h2>GATES BEFORE FEATURES</h2>
+  <p>The first building phase produced no visible app at all. It produced proofs:
+  the hand-written JavaScript model reproduces the reference C implementation's
+  output <em>exactly, token for token</em>; the hand-rolled training code passes a
+  finite-difference gradient check to around one part in ten million; and a sweep of
+  training runs established the numbers the Nursery's pedagogy now rests on — the
+  learning curve flattens around a hundred steps, mixing old stories into training
+  prevents forgetting in a dose-dependent way, and training past the flat point
+  makes held-out surprise rise again. That last curve became a feature twice over:
+  the "parroting" badge, and a time-machine arc deliberately trained into the
+  overfitting regime so children can scrub through the mistake.</p>
+
+  <h2>WHO DID WHAT</h2>
+  <div class="role"><b>KEN</b> — set the goals and the taste; made every locked
+  decision; ran all local builds and tests; carried files and reports between
+  sessions; tested each build as a user, which found things nothing else did.</div>
+  <div class="role"><b>CLAUDE ON CLAUDE.AI</b> — design partner and spec author;
+  wrote the kickoff documents; ported the apps into the claude.ai artifact sandbox
+  (a saga of its own: discovering by experiment that the sandbox blocks worker
+  threads, downloads from nested frames, and all third-party network calls); and
+  later served as independent auditor of builds it did not make.</div>
+  <div class="role"><b>CLAUDE CODE</b> — the engine room: the model, trainer, and
+  instrument code; the test suites (roughly seventy assertions at last count, run as
+  a "fingerprint" before any handoff); the tools that generate training-arc
+  snapshots and assemble releases from source.</div>
+  <p>The connective tissue mattered as much as the roles: every handoff carried a
+  kickoff document in, and a report plus a test-count fingerprint out. Sessions
+  routinely disagreed with their instructions — productively. One session, told to
+  edit the "release files," read the test suite, deduced those files were build
+  outputs, and asked permission to override its own kickoff. It was right.</p>
+
+  <h2>THINGS WENT WRONG, USEFULLY</h2>
+  <p>Multi-session AI collaboration has a characteristic failure class:
+  <em>provenance</em> — knowing which bytes are canonical and where a change actually
+  lives. The project hit it repeatedly. A build tool was lost when the session that
+  wrote it ended; it was reconstructed <em>from the built artifact itself</em>, with a
+  byte-identical round-trip as proof of correctness. A finished feature was reported
+  missing twice — once because it was hidden behind data that hadn't loaded, with no
+  empty state to say so; once because the file-ingest code recognized arc packs only
+  <em>before</em> unzipping, and packs ship as zips. Each incident produced a rule that
+  is now infrastructure: generated files carry a stamp saying so; every gated
+  feature must be discoverable in its gated state; builds ship a self-verification
+  block; and acceptance tests must feed the software the actual shipped bytes, not a
+  convenient approximation.</p>
+
+  <h2>THE SCIENCE THAT FELL OUT</h2>
+  <p>Building the Hunt honestly forced real findings. Single neurons and single
+  attention heads almost never proved out as the home of a fact — but ablating a
+  coordinated group collapsed it: knowledge in even this tiny model is distributed,
+  which the app now teaches with a choir metaphor <em>before</em> the first busted
+  clue. A scoring bug turned into a lesson about tokenization: multi-piece words
+  looked "unknown" because per-piece probabilities were being multiplied. And a
+  control experiment — swap the character's name and re-ask — separates facts that
+  are genuinely about the character from mere word-pattern collocations. None of
+  this was in the spec; all of it is now in the app.</p>
+
+  <h2>WHAT THE AI MODELS ADDED, HONESTLY</h2>
+  <p>The frontier-model contribution wasn't typing speed. It was holding a long spec
+  faithfully across a large build; designing instruments that are honest rather than
+  merely plausible (a wrong-but-convincing attention visualization is worse than
+  none); arguing back when the spec was wrong; and auditing — including one Claude
+  extracting and gradient-checking another Claude's hand-written backpropagation and
+  finding it correct to seven decimal places. The failures were real too, and the
+  process above exists because of them.</p>
+
+  <footer>
+    <p><strong>Tiny Mind</strong> ·
+      <a href="https://toontalk.github.io/AI/apps/Tiny%20Mind/index.html">open the app</a> ·
+      <!-- TODO: replace # with the Claude artifact URL -->
+      <a href="#" class="todo">open in Claude (link coming)</a> ·
+      <a href="https://docs.google.com/document/d/1cTVVSiRZQLSaJNTaZ3Cq9ey7fjSMTz0DhtwMuZZJa8s/edit?usp=sharing">Ken's post about the app</a></p>
+    <p>Guides:
+      <a href="tiny-mind-guide-kids.html">for kids</a> ·
+      <a href="tiny-mind-guide-older-kids.html">for older kids</a> ·
+      <a href="tiny-mind-guide-teachers.html">for teachers</a></p>
+  </footer>
+</main>
+</body>
+</html>

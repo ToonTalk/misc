@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Two Stories We Tell About AI's Past</title> 
+<title>Two Stories We Tell About AI's Past</title>
 <meta name="description" content="An evidence-first look at two recurring claims in AI history: that Minsky and Papert's Perceptrons killed neural-network funding, and that pre-AlexNet AI was brittle rule-based AI.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -52,22 +52,19 @@
 
   /* ---------- tooltips for technical terms ---------- */
   .tt{
-    border-bottom:1.5px dotted var(--gray); cursor:help; position:relative;
+    border-bottom:1.5px dotted var(--gray); cursor:help;
     -webkit-tap-highlight-color:transparent;
   }
-  .tt::after{
-    content:attr(data-tip);
-    position:absolute; left:0; bottom:calc(100% + .5rem); z-index:30;
+  .verdict .tt{border-bottom-color:var(--gray)}
+  #tip{
+    position:fixed; z-index:60; display:none;
     background:var(--ink); color:var(--paper);
     font-family:"IBM Plex Mono",monospace; font-size:.72rem; line-height:1.55;
-    font-style:normal; font-weight:400; letter-spacing:0; text-transform:none;
-    padding:.55rem .7rem; width:max-content; max-width:min(320px, 82vw);
+    font-style:normal; font-weight:400; letter-spacing:0;
+    padding:.55rem .7rem; max-width:min(320px, calc(100vw - 16px));
     box-shadow:0 3px 14px rgba(0,0,0,.22); border:1px solid var(--paper);
-    opacity:0; visibility:hidden; transition:opacity .15s; pointer-events:none;
+    pointer-events:none;
   }
-  .tt.tr::after{left:auto; right:0}
-  .tt:hover::after, .tt:focus-visible::after, .tt.open::after{opacity:1; visibility:visible}
-  .verdict .tt{border-bottom-color:var(--gray)}
 
   /* ---------- keyed citations ---------- */
   .cite{
@@ -386,6 +383,8 @@
 
 </main></div>
 
+<div id="tip" role="tooltip" aria-hidden="true"></div>
+
 <script>
 (function(){
   // Two-arm Archimedean spiral, after the 1969 cover.
@@ -441,29 +440,43 @@
   var btn=document.getElementById("reveal"), ans=document.getElementById("answer");
   if(btn&&ans){ btn.addEventListener("click", function(){ ans.classList.toggle("shown"); }); }
 
-  // Tooltips: tap/click toggles (for touch); Escape closes; only one open at a time.
+  // Tooltips: one fixed-position element, positioned by measuring its actual
+  // rendered size and clamping within the viewport — clipping is impossible by
+  // construction. Shows on hover/focus/tap; hides on outside tap, Escape,
+  // scroll, or resize. Flips below the term when there's no room above.
   var terms=document.querySelectorAll(".tt");
-  function closeAll(except){
-    terms.forEach(function(t){ if(t!==except) t.classList.remove("open"); });
+  var tip=document.getElementById("tip"), current=null;
+  function show(t){
+    current=t;
+    tip.textContent=t.getAttribute("data-tip");
+    tip.style.display="block";
+    tip.setAttribute("aria-hidden","false");
+    t.setAttribute("aria-describedby","tip");
+    var r=t.getBoundingClientRect();
+    var vw=document.documentElement.clientWidth;
+    var tw=tip.offsetWidth, th=tip.offsetHeight;
+    var x=Math.min(Math.max(8, r.left), vw - tw - 8);
+    var y=r.top - th - 8;
+    if(y<8) y=r.bottom + 8;
+    tip.style.left=x+"px"; tip.style.top=y+"px";
+  }
+  function hide(){
+    if(current) current.removeAttribute("aria-describedby");
+    current=null;
+    tip.style.display="none";
+    tip.setAttribute("aria-hidden","true");
   }
   terms.forEach(function(t){
-    t.addEventListener("mouseenter", function(){
-      var r=t.getBoundingClientRect();
-      if(r.left + 320 > window.innerWidth) t.classList.add("tr"); else t.classList.remove("tr");
-    });
-    t.addEventListener("click", function(e){
-      e.stopPropagation();
-      var r=t.getBoundingClientRect();
-      if(r.left + 320 > window.innerWidth) t.classList.add("tr");
-      var was=t.classList.contains("open");
-      closeAll(null);
-      if(!was) t.classList.add("open");
-    });
-    t.addEventListener("keydown", function(e){
-      if(e.key==="Escape") t.classList.remove("open");
-    });
+    t.addEventListener("mouseenter", function(){ show(t); });
+    t.addEventListener("mouseleave", function(){ if(current===t) hide(); });
+    t.addEventListener("focus", function(){ show(t); });
+    t.addEventListener("blur", function(){ if(current===t) hide(); });
+    t.addEventListener("click", function(e){ e.stopPropagation(); show(t); });
+    t.addEventListener("keydown", function(e){ if(e.key==="Escape") hide(); });
   });
-  document.addEventListener("click", function(){ closeAll(null); });
+  document.addEventListener("click", hide);
+  window.addEventListener("scroll", hide, {passive:true});
+  window.addEventListener("resize", hide);
 })();
 </script>
 </body>

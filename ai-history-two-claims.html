@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two Stories We Tell About AI's Past</title>
+<meta name="description" content="An evidence-first look at two recurring claims in AI history: that Minsky and Papert's Perceptrons killed neural-network funding, and that pre-AlexNet AI was brittle rule-based AI.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Spectral:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F7F6F1;
+    --ink:#191B1E;
+    --ink-soft:#4A4C50;
+    --red:#BE3A2C;      /* claim 1 thread */
+    --blue:#2C5484;     /* claim 2 thread */
+    --gray:#8A867D;
+    --rule:#DEDAD0;
+    --card:#FFFFFF;
+    --maxcol:46rem;
+    --rail:17rem;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"Spectral",Georgia,serif; font-size:1.06rem; line-height:1.62;
+  }
+  a{color:inherit; text-decoration-color:var(--gray); text-underline-offset:2px}
+  a:hover{text-decoration-color:var(--ink)}
+  code,.mono{font-family:"IBM Plex Mono",monospace}
+
+  /* ---------- layout: main column + margin-note rail ---------- */
+  .wrap{max-width:calc(var(--maxcol) + var(--rail) + 6rem); margin:0 auto; padding:0 1.25rem}
+  main{max-width:var(--maxcol)}
+  .note{
+    font-family:"IBM Plex Mono",monospace; font-size:.74rem; line-height:1.55;
+    color:var(--ink-soft); border-left:2px solid var(--rule);
+    padding:.15rem 0 .15rem .8rem; margin:1rem 0 1.4rem;
+  }
+  .note b{color:var(--ink); font-weight:500}
+  @media (min-width:1180px){
+    main{position:relative}
+    .note{
+      float:right; clear:right;
+      width:var(--rail); margin-right:calc(-1 * var(--rail) - 3rem);
+      margin-top:.2rem;
+    }
+  }
+
+  /* ---------- tooltips for technical terms ---------- */
+  .tt{
+    border-bottom:1.5px dotted var(--gray); cursor:help; position:relative;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .tt::after{
+    content:attr(data-tip);
+    position:absolute; left:0; bottom:calc(100% + .5rem); z-index:30;
+    background:var(--ink); color:var(--paper);
+    font-family:"IBM Plex Mono",monospace; font-size:.72rem; line-height:1.55;
+    font-style:normal; font-weight:400; letter-spacing:0; text-transform:none;
+    padding:.55rem .7rem; width:max-content; max-width:min(320px, 82vw);
+    box-shadow:0 3px 14px rgba(0,0,0,.22); border:1px solid var(--paper);
+    opacity:0; visibility:hidden; transition:opacity .15s; pointer-events:none;
+  }
+  .tt.tr::after{left:auto; right:0}
+  .tt:hover::after, .tt:focus-visible::after, .tt.open::after{opacity:1; visibility:visible}
+  .verdict .tt{border-bottom-color:var(--gray)}
+
+  /* ---------- keyed citations ---------- */
+  .cite{
+    font-family:"IBM Plex Mono",monospace; font-size:.6em; vertical-align:super;
+    text-decoration:none; color:var(--ink-soft); letter-spacing:.02em; margin-left:.12em;
+  }
+  .cite:hover{color:var(--ink); text-decoration:underline}
+  .verdict .cite{color:var(--gray)}
+  .refs li:target{background:var(--card); outline:2px solid var(--gray); outline-offset:2px}
+
+  /* ---------- header ---------- */
+  header{border-bottom:1px solid var(--rule)}
+  .masthead{display:flex; justify-content:space-between; align-items:baseline; padding:1rem 0;
+    font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--ink-soft); letter-spacing:.02em}
+  .hero{padding:3.2rem 0 2.6rem}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:.74rem; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--ink-soft); margin:0 0 1rem}
+  h1{
+    font-family:"Archivo",sans-serif; font-weight:900; letter-spacing:-.02em;
+    font-size:clamp(2.3rem, 5.4vw, 4rem); line-height:1.02; margin:0 0 1.2rem; max-width:20ch;
+  }
+  h1 .r{color:var(--red)} h1 .b{color:var(--blue)}
+  .dek{font-size:1.12rem; max-width:56ch; color:var(--ink-soft); margin:0}
+
+  /* ---------- spiral figure ---------- */
+  .cover{margin:2.8rem 0 0}
+  .cover svg{
+    display:block; width:100%; max-width:600px; height:auto;
+    background:var(--card); border:1px solid var(--rule);
+  }
+  .cover figcaption{
+    margin-top:1rem; font-family:"IBM Plex Mono",monospace; font-size:.76rem;
+    line-height:1.6; color:var(--ink-soft); max-width:38rem;
+  }
+  .cover .answer{opacity:0; transition:opacity .25s; color:var(--ink)}
+  .cover .answer.shown{opacity:1}
+  .cover button{
+    font-family:inherit; font-size:inherit; background:none; border:none; padding:0;
+    text-decoration:underline; text-underline-offset:2px; cursor:pointer; color:var(--ink)}
+
+  /* ---------- nav ---------- */
+  nav{position:sticky; top:0; background:color-mix(in srgb, var(--paper) 92%, white); z-index:5;
+    border-bottom:1px solid var(--rule); backdrop-filter:blur(4px)}
+  nav .wrap{display:flex; gap:1.4rem; overflow-x:auto; padding-top:.55rem; padding-bottom:.55rem}
+  nav a{font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.05em;
+    text-transform:uppercase; text-decoration:none; color:var(--ink-soft); white-space:nowrap}
+  nav a:hover{color:var(--ink)}
+  nav a.c1::before{content:"■ "; color:var(--red)}
+  nav a.c2::before{content:"■ "; color:var(--blue)}
+
+  /* ---------- sections ---------- */
+  section{padding:3rem 0 1rem; border-bottom:1px solid var(--rule)}
+  h2{font-family:"Archivo",sans-serif; font-weight:800; letter-spacing:-.015em;
+    font-size:clamp(1.6rem,3.4vw,2.3rem); line-height:1.08; margin:.4rem 0 1.4rem; max-width:24ch}
+  h3{font-family:"Archivo",sans-serif; font-weight:700; font-size:1.12rem; margin:2.4rem 0 .8rem; color:var(--ink)}
+  .kicker{font-family:"IBM Plex Mono",monospace; font-size:.74rem; letter-spacing:.12em;
+    text-transform:uppercase}
+  #claim1 .kicker{color:var(--red)}
+  #claim2 .kicker{color:var(--blue)}
+  #claim1 h3::before{content:"— "; color:var(--red)}
+  #claim2 h3::before{content:"— "; color:var(--blue)}
+  p{margin:0 0 1.15rem}
+
+  /* the folk claim, displayed */
+  .claim{
+    background:var(--card); border:1px solid var(--rule); padding:1.4rem 1.6rem; margin:0 0 .9rem;
+    font-size:1.2rem; line-height:1.5; font-style:italic; position:relative;
+  }
+  .claim::before{content:"THE CLAIM, AS COMMONLY TOLD"; position:absolute; top:-.62rem; left:1rem;
+    background:var(--paper); padding:0 .5rem; font-style:normal;
+    font-family:"IBM Plex Mono",monospace; font-size:.66rem; letter-spacing:.12em; color:var(--ink-soft)}
+  #claim1 .claim{border-top:3px solid var(--red)}
+  #claim2 .claim{border-top:3px solid var(--blue)}
+  .specimen{font-family:"IBM Plex Mono",monospace; font-size:.72rem; line-height:1.6;
+    color:var(--ink-soft); margin:0 0 2rem}
+  .specimen b{color:var(--ink); font-weight:500}
+
+  /* evidence entries */
+  .ev{margin:0 0 1.5rem; padding-left:1rem; border-left:3px solid var(--rule)}
+  .ev .tag{font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.1em; font-weight:500}
+  .ev.for{border-left-color:#2E7D4F}   .ev.for .tag{color:#2E7D4F}
+  .ev.against{border-left-color:#9A3B90} .ev.against .tag{color:#9A3B90}
+  .ev.mixed{border-left-color:#B07C1F}  .ev.mixed .tag{color:#B07C1F}
+  .ev p{margin:.35rem 0 .3rem}
+  .src{font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--gray)}
+
+  blockquote{
+    margin:1.6rem 0; padding:0 0 0 1.2rem; border-left:3px solid var(--ink);
+    font-size:1.12rem; font-style:italic;
+  }
+  blockquote .src{display:block; margin-top:.4rem; font-style:normal}
+
+  /* timeline */
+  .timeline{list-style:none; margin:1.4rem 0 2rem; padding:0}
+  .timeline li{display:grid; grid-template-columns:6.4rem 1fr; gap:1rem; padding:.42rem 0;
+    border-top:1px dashed var(--rule); font-size:.95rem}
+  .timeline .yr{font-family:"IBM Plex Mono",monospace; font-size:.78rem; color:var(--red); padding-top:.18rem}
+  .timeline li.pre .yr{color:var(--gray)}
+  .timeline li strong{font-weight:600}
+
+  /* currents (claim 2) */
+  .eras{display:grid; gap:1rem; margin:1.4rem 0 2rem}
+  .era{background:var(--card); border:1px solid var(--rule); border-left:4px solid var(--blue); padding:1rem 1.2rem}
+  .era .span{font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--blue); letter-spacing:.06em}
+  .era h4{font-family:"Archivo",sans-serif; font-weight:700; font-size:1.02rem; margin:.25rem 0 .4rem}
+  .era p{margin:0; font-size:.97rem}
+
+  /* verdict */
+  .verdict{background:var(--ink); color:var(--paper); padding:1.6rem 1.8rem; margin:2.4rem 0 2rem}
+  .verdict .kicker{color:var(--gray) !important; display:block; margin-bottom:.7rem}
+  .verdict p{margin:0 0 .9rem; font-size:1.05rem}
+  .verdict p:last-child{margin-bottom:0}
+  #claim1 .verdict{border-top:4px solid var(--red)}
+  #claim2 .verdict{border-top:4px solid var(--blue)}
+
+  /* sources */
+  .refs{list-style:none; margin:1.4rem 0 3rem; padding:0; font-size:.9rem}
+  .refs li{padding:.5rem 0; border-top:1px dashed var(--rule)}
+  .refs .who{font-family:"IBM Plex Mono",monospace; font-size:.74rem; color:var(--ink-soft)}
+  .refs .key{font-family:"IBM Plex Mono",monospace; font-size:.7rem; color:var(--gray)}
+
+  footer{padding:2rem 0 3.5rem; font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--gray)}
+  :focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="masthead"><span>AI HISTORIOGRAPHY · WORKING NOTES</span><span>JULY 2026</span></div>
+    <div class="hero">
+      <p class="eyebrow">Two claims, examined against the historical record</p>
+      <h1>The book that <span class="r">killed a field</span>, and the rules that <span class="b">were too brittle</span></h1>
+      <p class="dek">Many popular histories of AI retell two stories: that Minsky and Papert's <em>Perceptrons</em> (1969) got neural-network funding cut — perhaps deliberately — and that the AI it left standing was rule-based, dominant for decades, and doomed by the brittleness of rules until AlexNet arrived. Both stories contain something true. Neither survives contact with the record in its usual form.</p>
+
+      <figure class="cover" id="coverfig">
+        <svg id="spirals" viewBox="0 0 600 290" role="img" aria-label="Two nearly identical spirals; one is a single connected curve, the other is two separate curves"></svg>
+        <figcaption>
+          After the cover of <em>Perceptrons</em> (MIT Press, 1969). One of these figures is a single connected curve; the other is two separate curves. Minsky &amp; Papert proved that no <span class="tt" tabindex="0" data-tip="A perceptron whose association units each see only a patch of the retina of bounded diameter.">diameter-limited</span> perceptron can tell which is which. David Block's reply: neither can you, at a glance — so why treat this as damning for a model of perception? The figures here are constructed identically except for a single break, sized to the ordinary gap between windings, hidden somewhere in one of them.
+          <button type="button" id="reveal">Which is which?</button>
+          <span class="answer" id="answer"> Left: one curve. Right: two — the break sits in the right figure's upper-left windings, about a third of the way out.</span>
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</header>
+
+<nav aria-label="Sections">
+  <div class="wrap">
+    <a class="c1" href="#claim1">Claim 1 · The funding cut</a>
+    <a class="c2" href="#claim2">Claim 2 · Brittle rules</a>
+    <a href="#why">Why the myths persist</a>
+    <a href="#sources">Sources</a>
+  </div>
+</nav>
+
+<div class="wrap"><main>
+
+<!-- ================================================================ -->
+<section id="claim1">
+  <p class="kicker">Claim 1</p>
+  <h2>Did <em>Perceptrons</em> get neural-network funding cut — and was that the intent?</h2>
+
+  <div class="claim">In 1969 Minsky and Papert published <em>Perceptrons</em>, proving that perceptrons couldn't even compute XOR. Funding agencies read it, neural-network research was defunded, and the field died for fifteen years. Some say this was the point: to redirect ARPA money toward symbolic AI.</div>
+  <p class="specimen"><b>Specimens of the genre:</b> Olazaran catalogues the capsule form — overselling, then the 1969 book, then a near-total shift of funding from neural nets to symbolic AI, then a fifteen-year dry spell (his example is Cruz 1988)<a class="cite" href="#s-o93">O93</a>. Variants open neural-network textbooks of the late 80s and course notes to this day.</p>
+
+  <h3>What the book actually argued</h3>
+  <p>The folk version misremembers the mathematics. Minsky and Papert did not "discover" that a single-layer perceptron can't compute <span class="tt" tabindex="0" data-tip="Exclusive-or: output 1 iff exactly one input is 1. Not linearly separable, so no single layer of weights can compute it — a limit well known before 1969.">XOR</span> — the linear-separability limit was well known, and Rosenblatt himself had catalogued his machine's problems at length in <em>Principles of Neurodynamics</em> (1962), including a fifteen-item list of open problems that put multilayer training and figure–ground separation at the top<a class="cite" href="#s-r62">R62</a>. The book's real content is a set of <em>scaling</em> results about a precisely defined class: single-layer perceptrons whose association units are <span class="tt" tabindex="0" data-tip="Each association unit may look at no more than k retina points (wherever located). The 'order' of a predicate is the smallest such k that suffices.">order-limited</span> or <span class="tt" tabindex="0" data-tip="Each association unit sees only points within a patch of bounded diameter — a locality constraint modeled on receptive fields.">diameter-limited</span>. For such machines they proved that <span class="tt" tabindex="0" data-tip="Is the number of active inputs odd or even? XOR is the two-input case. Trivial for a serial program; provably non-local for a perceptron.">parity</span> requires an association unit that sees the entire retina, and that the order needed for <span class="tt" tabindex="0" data-tip="Is the figure one piece or several? The figure–ground predicate on the book's cover — and #13 on Rosenblatt's own list of hard problems.">connectedness</span> grows without bound as the retina grows — so the perceptron's virtue, parallel combination of <em>local</em> evidence, cannot survive scaling on these predicates. They also accepted, and praised, Rosenblatt's <span class="tt" tabindex="0" data-tip="Rosenblatt 1960: if a single-layer perceptron can represent a classification at all, the error-correction rule will find weights for it in finitely many steps.">convergence theorem</span><a class="cite" href="#s-mp69">MP69</a>.</p>
+  <div class="note"><b>The XOR shorthand.</b> XOR is simply the smallest instance of parity. Reducing the book to "perceptrons can't do XOR" turns a theory of what local, parallel evidence-combining can compute into a trivium — and makes the later "but a hidden layer solves XOR!" rebuttal look more decisive than it was. Minsky and Papert knew a network with one hidden layer solves XOR; their skepticism was about <em>learning</em> in multilayer machines, not representation.</div>
+  <p>On multilayer networks — the thing the field actually needed — the book offers not a proof but a conjecture, flagged as such:</p>
+  <blockquote>"…our intuitive judgment that the extension is sterile."
+    <span class="src">Minsky &amp; Papert, Perceptrons (1969), §13.2 — immediately followed by a call to prove or refute the judgment.</span>
+  </blockquote>
+  <p>That conjecture aged badly: Werbos described <span class="tt" tabindex="0" data-tip="Gradient descent through multiple layers of weights via the chain rule. Werbos 1974 (thesis); Rumelhart, Hinton &amp; Williams 1986 (Nature) made it the field's workhorse.">backpropagation</span> in his 1974 thesis, and Rumelhart, Hinton and Williams demonstrated its promise in 1986 — on small problems, but persuasively enough to make it the field's workhorse. It was, though, an honest conjecture about a problem the principal US perceptron groups had already failed to crack — and said so in print (Hawkins's 1961 survey; Nilsson's 1965 <em>Learning Machines</em>)<a class="cite" href="#s-o93">O93</a>.</p>
+  <div class="note"><b>Not literally everyone failed:</b> in the USSR, Ivakhnenko's GMDH (1965–71) was training deep polynomial networks layer by layer while the perceptron controversy raged. "The field" in this story means the US perceptron mainstream — a scope worth keeping visible.</div>
+  <p>Minsky returned to the question of scope a quarter-century later, in his foreword to Siu, Roychowdhury and Kailath's <em>Discrete Neural Computation</em> (1995) — the book he presented as the successor to <em>Perceptrons</em>. The standard objection, that the results apply only to two-layer nets and multilayer networks escape them, was in his telling misdirected: <em>Perceptrons</em> almost never asked <em>competence</em> questions (what a network can represent — any Boolean function, given one hidden layer and enough units) but <em>scalability</em> questions under <span class="tt" tabindex="0" data-tip="Each unit or gate receives a bounded number of inputs. The locality assumption under which the Perceptrons results — and much of threshold-circuit complexity — are proved.">bounded fan-in</span>, where, he claimed, unit and connection counts still tend to grow exponentially, with extra layers shrinking the exponents rather than removing them<a class="cite" href="#s-f95">F95</a>. As a general statement about bounded fan-in that is too strong — with depth unrestricted, fan-in-2 circuits compute parity in linear size — and the hard scaling results of the threshold-circuit literature attach to shallow, restricted network families<a class="cite" href="#s-srk95">SRK95</a>. But the clarification of scope stands: the 1969 theorems were about resource growth in a constrained class, they were never refuted by multilayer networks, and reading them as claims about what multilayer networks can compute was always a misreading.</p>
+
+  <h3>The timeline problem</h3>
+  <p>The strongest evidence against the simple causal story is chronological. Olazaran's sociological reconstruction — built on interviews with Minsky, Widrow, Nilsson, Rosen, Hart, and the <span class="tt" tabindex="0" data-tip="US Office of Naval Research — the agency that funded Rosenblatt's perceptron project from 1957 on.">ONR</span> program officers who funded Rosenblatt — shows the field's crisis <em>preceding</em> the book:</p>
+  <ul class="timeline">
+    <li class="pre"><span class="yr">1957–58</span><span>Rosenblatt's perceptron; ONR press event; the <em>New York Times</em> relays predictions of machines that will walk, talk, and be conscious. The hype is co-produced by the funder's own need for legitimation<a class="cite" href="#s-o93">O93</a>.</span></li>
+    <li class="pre"><span class="yr">1963</span><span><span class="tt" tabindex="0" data-tip="Advanced Research Projects Agency (DARPA from 1972); its Information Processing Techniques Office bankrolled US computing research at a scale ONR never approached.">ARPA</span> begins large-scale funding of symbolic AI labs (<span class="tt" tabindex="0" data-tip="MIT's ARPA-funded laboratory ('Machine-Aided Cognition' / 'Multiple Access Computer'), founded 1963 — institutional home of the MIT AI group.">Project MAC</span> at MIT, then CMU, Stanford). The funding asymmetry the myth attributes to the book <strong>predates the book by six years</strong><a class="cite" href="#s-n10">N10</a>.</span></li>
+    <li class="pre"><span class="yr">~1965</span><span>Minsky &amp; Papert's critical results circulate in draft and are widely known<a class="cite" href="#s-o93">O93</a>.</span></li>
+    <li class="pre"><span class="yr">1965–66</span><span>Widrow's Stanford group abandons neural nets after failing to train multilayer <span class="tt" tabindex="0" data-tip="Widrow's machines of many adalines (adaptive linear elements). Trainable in one layer via LMS; the group never found a rule for training two adaptive layers.">madalines</span> — "we tried, and tried, but we never succeeded" — and pivots to adaptive signal processing. SRI's neural-net group, its money running out, pivots to the symbolic <span class="tt" tabindex="0" data-tip="SRI's mobile robot (1966–72): vision, STRIPS planning, and action in one system — a founding project of symbolic robotics.">Shakey</span> project<a class="cite" href="#s-o93">O93</a>.</span></li>
+    <li><span class="yr">1969</span><span><em>Perceptrons</em> is published: in Olazaran's phrase, the final push in a closure already well underway, not its trigger<a class="cite" href="#s-o96">O96</a>.</span></li>
+    <li><span class="yr">1969–70</span><span>The <span class="tt" tabindex="0" data-tip="Provision of the FY1970 Military Authorization Act requiring DoD-funded research to show direct military relevance — squeezing exploratory work of every kind, symbolic AI included.">Mansfield Amendment</span> forces defense-funded research toward direct military relevance<a class="cite" href="#s-fr99">FR99</a>.</span></li>
+    <li><span class="yr">1971</span><span>Rosenblatt dies in a sailing accident at 43. His support had been substantial at the project's peak — a Cornell colleague's tribute, quoted by Olazaran, put it in the hundreds of thousands of dollars a year — but it melted away in the second half of the 1960s: ONR's grants, per its own program officers, sat in the tens of thousands where ARPA funded hundreds of thousands to millions, and he never obtained ARPA-scale backing for a large machine. Having been active in the peace movement during the Korean War, he never held a security clearance<a class="cite" href="#s-o93">O93</a>.</span></li>
+    <li><span class="yr">1970s</span><span>Neural-style research continues under other names and in other communities: Amari, Grossberg, Kohonen, Anderson, von der Malsburg; Fukushima's neocognitron (1980) is convolutional in all but name; Widrow's <span class="tt" tabindex="0" data-tip="Least mean squares — Widrow &amp; Hoff's 1960 weight-update rule. Left neural nets for adaptive filtering and is still running in every modem and echo canceller.">LMS</span> quietly conquers telecommunications. The <em>theory</em> line, though, really does go quiet: the Siu–Roychowdhury–Kailath bibliography has almost no 1970s citations beyond Werbos — the drought was real, whatever its cause<a class="cite" href="#s-f95">F95</a>.</span></li>
+    <li><span class="yr">1982–88</span><span>Hopfield (1982), the <span class="tt" tabindex="0" data-tip="Parallel Distributed Processing — Rumelhart, McClelland et al.'s 1986 two-volume manifesto that relaunched connectionism.">PDP</span> volumes and backprop (1986), the expanded <em>Perceptrons</em> edition with a rebuttal epilogue, and Papert's <em>Daedalus</em> essay (1988) responding to his casting as villain.</span></li>
+  </ul>
+
+  <h3>The intent question — four versions, four verdicts</h3>
+  <div class="ev for">
+    <span class="tag">DOCUMENTED</span>
+    <p><strong>Rivalry and adversarial motive.</strong> The perceptron controversy was heated and personal through the early 60s — Minsky and Rosenblatt clashed on conference platforms — and the fight was partly about money: neural-net groups were seeking funds for bigger machines while symbolic AI was institutionalizing. Minsky told Olazaran that he and Papert set out to work out the theory at precisely the moment neural-net groups were trying to raise money for bigger machines. Papert put it on the record himself:</p>
+    <blockquote>"There was some hostility in the energy behind the research reported in <em>Perceptrons</em>…"
+      <span class="src">Papert, "One AI or Many?", Daedalus 117(1), 1988 — continuing that part of the drive was that funding and energy were, in their view, being dissipated on misleading connectionist applications.</span>
+    </blockquote>
+  </div>
+  <div class="ev mixed">
+    <span class="tag">JOURNALIST'S GLOSS</span>
+    <p><strong>"Out to kill the perceptron."</strong> Bernstein's 1981 <em>New Yorker</em> profile of Minsky says the pair "set out to kill the perceptron" as a kind of service to the field. It's the most-quoted line in the genre — and it is a profile-writer's paraphrase of Minsky's own framing (establish the limits, stop the waste), not a policy memo.</p>
+    <p class="src">Bernstein, "A.I.", The New Yorker, Dec 14, 1981.</p>
+  </div>
+  <div class="ev against">
+    <span class="tag">DENIED BY THE ACCUSED</span>
+    <p><strong>Minsky's own rebuttal, 1995.</strong> In the <em>Discrete Neural Computation</em> foreword Minsky addressed both tales directly. The persuasion story — that gloomy remarks in the book induced a generation to abandon its work — did not, he said, ring true, since nothing motivates scientists like the chance to prove others wrong. As for the funding-plot story, that the theorems were proved to make sponsors take the researchers' money away: "that compliment is too grand to accept! Mathematicians have no such great powers." His own explanations for the quiet decade: the book proved nearly all the easy theorems at once, leaving students nothing to teethe on; the circuit-complexity tools needed for the hard ones didn't mature until the 1980s; and the compute wasn't there.</p>
+    <p class="src">Minsky, foreword to Siu, Roychowdhury &amp; Kailath (1995). A principal's self-account, written after the revival's accusations — weigh it accordingly. But note that it converges with the timeline evidence rather than contradicting it.</p>
+  </div>
+  <div class="note"><b>A pleasing irony</b> preserved in the same foreword, via Scott Fahlman: the fear that local minima would doom backprop only dissolved when Hinton got the algorithm from Rumelhart and ran it — on a Symbolics Lisp machine. The connectionist revival was bootstrapped on symbolic AI's own hardware.</div>
+  <div class="ev against">
+    <span class="tag">NOT ESTABLISHED</span>
+    <p><strong>A deliberate funding-diversion plot.</strong> The strong version — the book was engineered to move ARPA money from perceptrons to MIT — has no documentary support. ARPA's concentration on symbolic labs began in 1963; Rosenblatt was never an ARPA client to be defunded; and the drying-up of perceptron money tracked the multilayer-training impasse, the Mansfield reorientation, and Rosenblatt's death at least as closely as it tracked the book. That MIT's AI Lab sought ARPA money (the Minsky–Papert 1971 proposal is on DSpace) is the kernel from which this reading grows, but labs seeking funding is the baseline condition of the field, not evidence of a scheme.</p>
+  </div>
+  <div class="note"><b>Complicating the villain casting:</b> Minsky built one of the first neural-net learning machines (<span class="tt" tabindex="0" data-tip="Stochastic Neural Analog Reinforcement Calculator — Minsky &amp; Edmonds' 1951 machine: 40 randomly wired 'neurons' of vacuum tubes, motors and clutches, learning by reinforcement.">SNARC</span>, 1951), wrote his Princeton thesis on neural nets, and in his 1991 <em>AI Magazine</em> piece — "Logical Versus Analogical, Symbolic Versus Connectionist" — argued that both camps were insufficient alone and the dichotomy itself was the mistake. Whatever the book did, its authors were not lifelong enemies of the idea.</div>
+  <p>One more turn of the screw, and it is Olazaran's central finding: the "official history" was written <em>twice</em>. In the 1970s the winners' version said Rosenblatt oversold, Minsky and Papert proved the approach hopeless, and the field rightly moved on. In the 1980s the revived connectionists needed a different story — a promising field martyred by one book — because a martyrdom implies the field was never refuted, merely suppressed. The claim under examination here is largely the <em>second</em> official history. Both versions compress a multi-causal closure into a morality tale; they just disagree about who wears the black hat<a class="cite" href="#s-o96">O96</a>.</p>
+
+  <div class="verdict">
+    <span class="kicker">Verdict — Claim 1</span>
+    <p><strong>Partly true, causally inflated, and twice curated.</strong> The book was a real and probably decisive rhetorical instrument in closing the perceptron controversy, and its authors acknowledged adversarial energy and a funding motive. But "the book got funding cut" compresses a closure with at least five causes — the multilayer-training impasse the perceptron groups themselves couldn't solve, ARPA's pre-existing commitment to symbolic labs, the Mansfield Amendment, Rosenblatt's marginal funding position and early death, and the book — into a single act with a single agent.</p>
+    <p>On intent: hostility and rivalry, yes, by the authors' own admission; a deliberate plan to divert agency money, denied by the accused and not established by anyone else — and the version of history that needs it to be true was itself written by the winners of the next round.</p>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<section id="claim2">
+  <p class="kicker">Claim 2</p>
+  <h2>Was pre-AlexNet AI rule-based — and did it fail because rules are brittle?</h2>
+
+  <div class="claim">Before deep learning, AI meant writing rules by hand. That was the dominant paradigm for fifty years. It failed because logical rules are too brittle and too hard to define — and then AlexNet (2012) showed that learning beats rules.</div>
+  <p class="specimen"><b>Specimens of the genre:</b> deep-learning explainers routinely describe even the SIFT-and-SVM era of computer vision as having failed because "writing rules for every visual concept" doesn't scale — applying the rules story, without irony, to a feature-engineering-plus-statistical-learning paradigm (<a href="https://clarion.ai/the-history-of-computer-vision-models-from-pixels-to-perception/">one representative example</a>).</p>
+
+  <p>Two distinctions do most of the work in what follows, so let them lead. First, "rule-based" has a narrow meaning — <span class="tt" tabindex="0" data-tip="If–then rules matched against a working memory — the architecture beneath expert systems and Newell's cognitive theories.">production rules</span> and logical inference, the machinery of expert systems — and a broad one: any hand-authored symbolic knowledge, frames and scripts included. On the broad reading the brittleness diagnosis generalizes, as conceded below; on either reading the dominance chronology fails. Second, there were two separate transitions, a quarter-century apart, that the claim fuses into one: hand-authored knowledge gave way to <em>statistical learning</em>, field by field, between roughly 1985 and 1995; engineered features gave way to <em>learned features</em> in 2012. What AlexNet beat was the second incumbent, not the first.</p>
+  <p>There <em>was</em> a rules era, and it <em>did</em> hit a brittleness wall — but it was one commercially loud phase of a sixty-year field, and it wasn't even the reigning paradigm at the labs the folk story imagines as its headquarters.</p>
+
+  <h3>What pre-AlexNet AI actually was: four currents, not one paradigm</h3>
+  <p class="specimen">Overlapping currents, not sequential eras — which is itself part of the argument.</p>
+  <div class="eras">
+    <div class="era"><span class="span">1956–1969</span><h4>Search and heuristics</h4><p>Theorem proving, <span class="tt" tabindex="0" data-tip="General Problem Solver — Newell, Shaw &amp; Simon's 1957 program: means–ends analysis over operator differences. Not the satnav.">GPS</span>, game trees, means–ends analysis. Samuel's checkers player (1959) was a <em>learning</em> system — machine learning is as old as the field. The era's diagnosed failure was combinatorial explosion, not rule brittleness.</p></div>
+    <div class="era"><span class="span">1969–1985</span><h4>Knowledge — plural, and at war with itself</h4><p>Semantic networks, <span class="tt" tabindex="0" data-tip="Minsky 1974: stereotyped situation-structures with default-filled slots. A theory of expectation and recognition, proposed explicitly against logic-based representation.">frames</span>, <span class="tt" tabindex="0" data-tip="Schank &amp; Abelson 1977: stereotyped event sequences (the restaurant script) supplying the expectations that make story understanding possible.">scripts</span>, production systems, logic programming, procedural knowledge (<span class="tt" tabindex="0" data-tip="Winograd's 1970 MIT blocks-world dialogue system. Meaning represented as procedures to be executed — not as axioms to be deduced from.">SHRDLU</span>), blackboards (<span class="tt" tabindex="0" data-tip="CMU's 1970s speech understanding system: independent knowledge sources cooperating by posting hypotheses to a shared 'blackboard'.">HEARSAY-II</span>), Marr's mathematical theory of vision. The famous split of the era — <span class="tt" tabindex="0" data-tip="Schank-era labels. Neats: formalists wanting logic, proofs and clean theory (McCarthy, Hayes, Nilsson). Scruffies: builders of ad-hoc, psychology-flavored programs (MIT, Yale).">neats vs. scruffies</span> — was precisely a fight over whether logic-style rules were an adequate substrate. The scruffies said no.</p></div>
+    <div class="era"><span class="span">1975–1990</span><h4>Where the claim is true: expert systems</h4><p><span class="tt" tabindex="0" data-tip="Stanford, 1965 onward: inferred molecular structure from mass-spectrometry data. Usually counted as the first expert system.">DENDRAL</span> → <span class="tt" tabindex="0" data-tip="Shortliffe's 1970s Stanford system: ~600 production rules with certainty factors, diagnosing bacterial infections. Outperformed junior clinicians in evaluation; never deployed.">MYCIN</span> → <span class="tt" tabindex="0" data-tip="McDermott's system (CMU/DEC, 1978–80) configuring VAX orders — thousands of rules, real money saved, and a maintenance burden that became the canonical brittleness story.">R1/XCON</span>; expert-system shells; <span class="tt" tabindex="0" data-tip="Workstations with hardware support for running Lisp (Symbolics, LMI, TI). The market's 1987 collapse is a conventional start-date for the AI winter.">Lisp machines</span>; Japan's logic-programming <span class="tt" tabindex="0" data-tip="Japan's 1982–92 national program (ICOT) to build massively parallel Prolog-descended machines. Ended well short of its goals — a failure of logic programming, not of neural nets.">Fifth Generation Project</span>; DARPA's <span class="tt" tabindex="0" data-tip="DARPA's 1983 program (~$1B over a decade): autonomous land vehicle, pilot's associate, battle management. Scaled back in the late-80s retrenchment.">Strategic Computing</span>. Through the 1980s, hand-authored rules dominated AI's commercial image and a substantial share of its funding. The <span class="tt" tabindex="0" data-tip="Feigenbaum's term: getting knowledge out of experts and into rules is slow, expensive and unreliable — the binding constraint on expert systems.">knowledge-acquisition bottleneck</span>, maintenance collapse, and the 1987–93 AI winter followed.</p></div>
+    <div class="era"><span class="span">1985–2012</span><h4>The statistical turn</h4><p><span class="tt" tabindex="0" data-tip="Hidden Markov models — probabilistic sequence models (IBM's speech group, from the mid-70s) that displaced knowledge-based speech recognition during the 1980s.">HMMs</span> displace knowledge-based speech recognition; Pearl's <span class="tt" tabindex="0" data-tip="Probability distributions factored over graphs — Bayesian networks and kin. Pearl's 1988 book made uncertainty respectable in AI again.">probabilistic graphical models</span> (1988); the statistical NLP revolution of the 90s; <span class="tt" tabindex="0" data-tip="Support vector machines — maximum-margin classifiers (Vapnik and colleagues, 1990s). The default serious classifier of the 2000s.">SVMs</span>, <span class="tt" tabindex="0" data-tip="Combining many weak learners into one strong one — AdaBoost (Freund &amp; Schapire, 1995); Viola–Jones face detection (2001) was boosting in your camera.">boosting</span>, random forests; the connectionist revival itself (a <span class="tt" tabindex="0" data-tip="LeCun's convolutional network (1989–98). Deployed by AT&amp;T/NCR to read a sizable share of US bank checks in the late 1990s — neural nets never actually left.">LeNet</span> ConvNet was reading a substantial share of US bank checks by the late 90s); vision as engineered features + learned classifiers — <span class="tt" tabindex="0" data-tip="Scale-invariant feature transform (Lowe, 1999/2004): hand-designed local keypoints and descriptors, robust to scale and rotation.">SIFT</span>, <span class="tt" tabindex="0" data-tip="Histograms of oriented gradients (Dalal &amp; Triggs, 2005): edge-orientation statistics; the classic pedestrian detector.">HOG</span>, <span class="tt" tabindex="0" data-tip="Felzenszwalb et al., 2008: objects as parts connected by spring-like spatial costs over HOG features. State of the art in detection right up to the CNN takeover.">deformable parts models</span>.</p></div>
+  </div>
+
+  <h3>Symbolic AI was never synonymous with rules</h3>
+  <p>Where did rules genuinely reign? Stanford's heuristic-programming line (DENDRAL, MYCIN, Feigenbaum's knowledge-is-power doctrine) and CMU's production-system tradition (Newell's cognitive architectures; XCON was built at CMU for DEC) — the labs the expert-systems industry actually grew from. That concession made, the two labs the popular story treats as symbolic AI's head office — Minsky's MIT and Schank's Yale — were the loudest internal <em>critics</em> of the logic-and-rules program. Minsky's 1974 frames memo includes a sustained attack on the "logistic" approach, arguing that consistent, <span class="tt" tabindex="0" data-tip="Deduction in which adding premises never retracts conclusions. Default reasoning ('birds fly — except penguins') violates it, which is why the scruffies wanted defaults, not axioms.">monotonic deduction</span> is too inflexible to carry commonsense thought — his alternative was stereotyped structures with defaults, a theory of <em>expectation</em>, not of inference rules<a class="cite" href="#s-m74">M74</a>. <em>The Society of Mind</em> (1986) doubled down: intelligence as a rabble of interacting agents, about as far from a rule engine as symbolic theorizing gets. Winograd's SHRDLU embodied meaning procedurally. Marr's vision program was applied mathematics. And by the mid-80s the MIT AI Lab's most provocative line was Brooks's <span class="tt" tabindex="0" data-tip="Brooks, 1986: layered reactive control for robots — competent behavior without central symbolic world models. 'The world is its own best model.'">subsumption architecture</span>, which rejected central symbolic representation altogether<a class="cite" href="#s-br91">BR91</a>.</p>
+  <p>Yale, under Schank, was if anything more explicitly anti-logic: <span class="tt" tabindex="0" data-tip="Schank's language-independent meaning representation (c. 1972), built from roughly a dozen primitive acts (PTRANS, MTRANS…) — designed to make inference come from content, not from a logic.">conceptual dependency</span>, scripts (Schank &amp; Abelson, 1977), <span class="tt" tabindex="0" data-tip="Memory organization packets — Schank's Dynamic Memory (1982): episodic structures that reorganize with experience; failure-driven reminding as the engine of learning.">MOPs</span> and dynamic memory (1982), and <span class="tt" tabindex="0" data-tip="Solve new problems by retrieving and adapting stored past cases (Kolodner's CYRUS, Hammond's CHEF) — a memory-and-adaptation theory offered against rule-based inference.">case-based reasoning</span> treated understanding as memory organization and reminding — retrieval and adaptation of rich prior episodes, built in open opposition to rule-and-theorem-proving accounts of cognition<a class="cite" href="#s-sa77">SA77</a>. When Drew McDermott published "A Critique of Pure Reason" (1987), the most quoted takedown of logicism, he wrote it from inside Yale AI<a class="cite" href="#s-md87">MD87</a>. The brittleness critique the folk story attributes to the deep-learning era was a founding commitment of scruffy AI, made in the mid-1970s.</p>
+  <div class="note"><b>Who were the neats, then?</b> The logicist program was real — McCarthy at Stanford, Hayes's naïve physics, Nilsson, Kowalski and the Prolog line in Edinburgh, Marseille and later Japan. The point is not that rules were absent but that "rule-based" names one faction in an ongoing civil war, not the field. And the map is messy everywhere: CMU housed HEARSAY's blackboards, and by the mid-80s, Hinton.</div>
+
+  <h3>What AlexNet actually beat</h3>
+  <p>By 2012, the reigning paradigm in computer vision was a decade past any flavor of symbolic AI. The <span class="tt" tabindex="0" data-tip="ImageNet Large Scale Visual Recognition Challenge, run from 2010. 'Top-5 error': the correct label is missing from the model's five best guesses.">ILSVRC</span> winners immediately before AlexNet were: 2010, NEC/UIUC — SIFT and <span class="tt" tabindex="0" data-tip="Local binary patterns — a fast hand-designed texture descriptor.">LBP</span> features, sparse coding, SVMs (28.2% top-5 error); 2011, Xerox Research Centre Europe — compressed <span class="tt" tabindex="0" data-tip="An encoding of local descriptors via gradients of a Gaussian mixture model — the strongest hand-engineered image representation of the pre-CNN years.">Fisher vectors</span> and linear SVMs (25.7%)<a class="cite" href="#s-ils15">ILS15</a>. AlexNet's 2012 result — <span class="tt" tabindex="0" data-tip="15.3% is the ensemble figure reported in Krizhevsky et al.'s paper; the challenge retrospective scores the winning submission at 16.4%. The 2012 runner-up (Fisher vectors again) came in at 26.2%.">15.3%</span> top-5 error<a class="cite" href="#s-ksh12">KSH12</a> — was a rout of <em>hand-engineered features feeding statistical classifiers</em> — that is, of one learning paradigm by another. "Learning beats rules" had been settled in speech in the 1980s and in NLP in the 1990s; what 2012 settled was "learned features beat engineered features, given enough data and compute." The popular narrative telescopes these two distinct transitions, twenty-five years apart, into one.</p>
+  <div class="ev for">
+    <span class="tag">WHAT THE CLAIM GETS RIGHT</span>
+    <p><strong>Brittleness was real, and diagnosed early — from inside.</strong> Hand-authored knowledge did hit a scaling wall: Lighthill's 1973 combinatorial-explosion critique, Feigenbaum's knowledge-acquisition bottleneck, XCON's maintenance collapse, the Fifth Generation's shortfall, the winter. And the insiders saw it coming: the AAAI-84 panel on the "dark ages of AI" — Drew McDermott in the chair, Roger Schank among the panelists — worried publicly that expectations had inflated past what expert systems could deliver, and it is around this discussion that "AI winter" entered circulation<a class="cite" href="#s-da85">DA85</a>. Popular histories add Minsky to the warning party; he issued similar warnings in the period, but he was not on this panel — a small specimen of citation drift about the very episode<a class="cite" href="#s-c93">C93</a>.</p>
+  </div>
+  <div class="ev mixed">
+    <span class="tag">THE HONEST STEELMAN — AND A CAVEAT FOR THE SKEPTIC</span>
+    <p><strong>The wall was wider than rules.</strong> On the broad reading of "rule-based" — hand-authored knowledge structures of any flavor, neat rules or scruffy frames and scripts — the brittleness charge becomes true, and it then applies to MIT frames and Yale scripts as much as to MYCIN's production rules. Scripts didn't transfer; <span class="tt" tabindex="0" data-tip="Lenat's project (1984– ) to hand-encode millions of commonsense assertions — the direct, decades-long attempt to brute-force the brittleness problem.">CYC</span> was the heroic attempt to brute-force the commonsense gap and is the exception that measures the problem. Defenders of the scruffy tradition don't get to keep the anti-logic high ground <em>and</em> claim immunity from the brittleness diagnosis. What the broad reading cannot rescue is the chronology: even hand-authored knowledge in the broad sense had ceded the frontier in speech, NLP and vision to statistical learning well over a decade before AlexNet.</p>
+  </div>
+  <div class="ev against">
+    <span class="tag">WHAT THE CLAIM GETS WRONG</span>
+    <p><strong>Dominance and failure, both overdrawn.</strong> Rules in the narrow sense dominated AI's public face and much of its funding through the 1980s — not sixty years of research, which was contested throughout; from the late 80s onward statistical learning grew increasingly dominant — decisively so in speech, then NLP, then vision. Nor did symbolic techniques "fail" wholesale: <span class="tt" tabindex="0" data-tip="Propositional satisfiability / satisfiability-modulo-theories solvers — industrial-strength logic engines running today in chip and software verification.">SAT/SMT</span> solvers, planners, Deep Blue's search, theorem provers running in chip verification, and knowledge graphs are all descendants that shipped. And brittleness is not proprietary to rules — adversarial examples, distribution shift, and confabulation are the connectionist genre of the same disease: competence that degrades ungracefully at the edges of what was built in.</p>
+  </div>
+
+  <div class="verdict">
+    <span class="kicker">Verdict — Claim 2</span>
+    <p><strong>A real diagnosis attached to a false history.</strong> Brittleness of hand-coded knowledge is a genuine, well-documented failure mode — first prosecuted from within symbolic AI in the 1970s, and fairly charged against scruffy frames and scripts as well as neat rules. But "rule-based AI was the dominant form of AI before neural networks" mistakes the expert-systems boom for six decades of research, fuses two transitions a quarter-century apart — hand-authored knowledge to statistical learning (c. 1985–95), engineered features to learned features (2012) — and mislabels labs, MIT and Yale above all, whose defining conviction was that rules were not enough.</p>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<section id="why">
+  <p class="kicker">Synthesis</p>
+  <h2>Why both myths persist</h2>
+  <p>The two claims fail in the same way, and Olazaran supplies the mechanism: fields write their histories at moments of victory, and rewrite them at the next one. The 1970s official history ("overselling was corrected by proof") served symbolic AI's institutionalization. The 1980s revision ("a book murdered a healthy field") served the connectionist revival, which needed its predecessors suppressed rather than refuted. The current version ("brittle rules ruled until learning arrived") serves the deep-learning era, which gains a sixty-year runway of failure to be the answer to — Cardon, Cointet and Mazières call their history of this last rewrite "Neurons Spike Back" for a reason<a class="cite" href="#s-ccm18">CCM18</a>. Each story flatters its teller's present.</p>
+  <p>Add pedagogical compression — an introductory chapter needs one villain, one dark age, and one clean pivot — and citation drift, in which Bernstein's "set out to kill" hardens from profile color into archival fact, and both myths become self-sustaining. The corrective in each case is the same and is mostly chronological: put the funding decisions, the technical impasses, and the publications on one timeline, and the single-cause versions fall apart on their own.</p>
+  <div class="note"><b>A fair question to leave open:</b> counterfactuals. Would multilayer methods have matured a decade earlier with sustained 1970s funding? Werbos's 1974 thesis suggests the idea was available; Minsky's 1995 foreword argues the complexity theory and the compute were not. The honest answer is that nobody knows — which is itself an argument against the confident causal grammar of both myths.</div>
+</section>
+
+<!-- ================================================================ -->
+<section id="sources">
+  <p class="kicker">Sources</p>
+  <h2>Primary and secondary sources</h2>
+  <ul class="refs">
+    <li id="s-o93"><span class="key">[O93]</span> <span class="who">Olazaran 1993</span> — "A Sociological History of the Neural Network Controversy," <em>Advances in Computers</em> 37, 335–425. Interview-based reconstruction; the backbone of Claim 1 above. <a href="https://gwern.net/doc/ai/nn/1993-olazaran.pdf">PDF</a></li>
+    <li id="s-o96"><span class="key">[O96]</span> <span class="who">Olazaran 1996</span> — "A Sociological Study of the Official History of the Perceptrons Controversy," <em>Social Studies of Science</em> 26(3), 611–659. <a href="https://journals.sagepub.com/doi/10.1177/030631296026003005">SAGE</a> · <a href="https://www.jstor.org/stable/285702">JSTOR</a></li>
+    <li id="s-mp69"><span class="key">[MP69]</span> <span class="who">Minsky &amp; Papert 1969 / 1988</span> — <em>Perceptrons: An Introduction to Computational Geometry</em>, MIT Press; expanded 1988 edition with prologue and epilogue answering the revival's critics.</li>
+    <li id="s-f95"><span class="key">[F95]</span> <span class="who">Minsky 1995</span> — Foreword to Siu, Roychowdhury &amp; Kailath, <em>Discrete Neural Computation</em>. Minsky's fullest retrospective on the quiet decade: the scalability-not-competence clarification, and his rebuttal of both the persuasion tale and the funding-plot tale.</li>
+    <li id="s-srk95"><span class="key">[SRK95]</span> <span class="who">Siu, Roychowdhury &amp; Kailath 1995</span> — <em>Discrete Neural Computation: A Theoretical Foundation</em>. Prentice Hall. Threshold-circuit complexity as the mathematical continuation of perceptron theory — presented in the foreword as the successor to <em>Perceptrons</em>.</li>
+    <li id="s-r62"><span class="key">[R62]</span> <span class="who">Rosenblatt 1962</span> — <em>Principles of Neurodynamics</em>. Spartan. See esp. the fifteen open problems, pp. 577–581.</li>
+    <li id="s-b70"><span class="key">[B70]</span> <span class="who">Block 1970</span> — Review of <em>Perceptrons</em>, <em>Information and Control</em> 17, 501–522. The contemporaneous rebuttal, including the connectedness-and-humans argument.</li>
+    <li id="s-b81"><span class="key">[B81]</span> <span class="who">Bernstein 1981</span> — "A.I.," profile of Marvin Minsky, <em>The New Yorker</em>, Dec 14, 1981.</li>
+    <li id="s-pa88"><span class="key">[PA88]</span> <span class="who">Papert 1988</span> — "One AI or Many?", <em>Daedalus</em> 117(1), 1–14. <a href="https://www.jstor.org/stable/20025136">JSTOR</a></li>
+    <li id="s-m91"><span class="key">[M91]</span> <span class="who">Minsky 1991</span> — "Logical Versus Analogical or Symbolic Versus Connectionist or Neat Versus Scruffy," <em>AI Magazine</em> 12(2), 34–51. <a href="https://ojs.aaai.org/aimagazine/index.php/aimagazine/article/view/894">AAAI</a></li>
+    <li id="s-m74"><span class="key">[M74]</span> <span class="who">Minsky 1974</span> — "A Framework for Representing Knowledge," MIT AI Memo 306, incl. the criticism of the logistic approach. <a href="https://dspace.mit.edu/handle/1721.1/6089">DSpace</a></li>
+    <li id="s-sa77"><span class="key">[SA77]</span> <span class="who">Schank &amp; Abelson 1977</span> — <em>Scripts, Plans, Goals and Understanding</em>. Erlbaum. Schank 1982, <em>Dynamic Memory</em>, for MOPs and the case-based turn.</li>
+    <li id="s-md87"><span class="key">[MD87]</span> <span class="who">McDermott 1987</span> — "A Critique of Pure Reason," <em>Computational Intelligence</em> 3(3), 151–160, with peer commentary.</li>
+    <li id="s-br91"><span class="key">[BR91]</span> <span class="who">Brooks 1991</span> — "Intelligence Without Representation," <em>Artificial Intelligence</em> 47, 139–159.</li>
+    <li id="s-l73"><span class="key">[L73]</span> <span class="who">Lighthill 1973</span> — "Artificial Intelligence: A General Survey," Science Research Council. Note it hit symbolic AI and robotics hardest — the era's funding axes didn't map onto neural-vs-symbolic.</li>
+    <li id="s-tn98"><span class="key">[TN98]</span> <span class="who">Anderson &amp; Rosenfeld 1998</span> — <em>Talking Nets: An Oral History of Neural Networks</em>. MIT Press. The revival-era participants' accounts, including grant-difficulty testimony for the 1970s.</li>
+    <li id="s-pe88"><span class="key">[PE88]</span> <span class="who">Pearl 1988</span> — <em>Probabilistic Reasoning in Intelligent Systems</em>. Morgan Kaufmann.</li>
+    <li id="s-ksh12"><span class="key">[KSH12]</span> <span class="who">Krizhevsky, Sutskever &amp; Hinton 2012</span> — "ImageNet Classification with Deep Convolutional Neural Networks," <em>NIPS</em>. Reports 15.3% top-5 test error for the ensemble, vs. 26.2% for the runner-up. <a href="https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf">PDF</a></li>
+    <li id="s-ils15"><span class="key">[ILS15]</span> <span class="who">Russakovsky et al. 2015</span> — "ImageNet Large Scale Visual Recognition Challenge," <em>IJCV</em>; documents the 2010–12 winning methods; scores the 2012 winning submission at 16.4%. <a href="https://arxiv.org/abs/1409.0575">arXiv</a></li>
+    <li id="s-ccm18"><span class="key">[CCM18]</span> <span class="who">Cardon, Cointet &amp; Mazières 2018</span> — "Neurons Spike Back," <em>Réseaux</em> 211, 173–220. Bibliometric and sociological history of the connectionist revanche. <a href="https://mazieres.gitlab.io/neurons-spike-back/">English version</a></li>
+    <li id="s-da85"><span class="key">[DA85]</span> <span class="who">McDermott, Waldrop, Chandrasekaran, McDermott &amp; Schank 1985</span> — "The Dark Ages of AI: A Panel Discussion at AAAI-84," <em>AI Magazine</em> 6(3), 122–134. The winter warnings in their primary form. <a href="https://ojs.aaai.org/aimagazine/index.php/aimagazine/article/view/494">AAAI</a></li>
+    <li id="s-c93"><span class="key">[C93]</span> <span class="who">Crevier 1993</span> — <em>AI: The Tumultuous History of the Search for Artificial Intelligence</em>. Basic Books. The standard narrative history of the expert-systems boom and bust.</li>
+    <li id="s-n10"><span class="key">[N10]</span> <span class="who">Nilsson 2010</span> — <em>The Quest for Artificial Intelligence</em>. Cambridge. Institutional and funding background, including ARPA's 1963 commitments, from a participant.</li>
+    <li id="s-fr99"><span class="key">[FR99]</span> <span class="who">National Research Council 1999</span> — <em>Funding a Revolution: Government Support for Computing Research</em>. National Academies Press. The authoritative account of federal computing-research funding, including the Mansfield Amendment.</li>
+    <li><span class="who">Further reading</span> — McCorduck 1979/2004, <em>Machines Who Think</em>; Boden 2006, <em>Mind as Machine</em>. General histories, read with the sources above as a corrective on both episodes.</li>
+  </ul>
+</section>
+
+<footer>
+  Single-file page, no build step. Compiled July 2026 from the sources above; quotations are brief and attributed. Dotted-underlined terms carry explanations — hover, tap, or tab to them; bracketed superscripts link to sources. Corrections welcome — that is rather the point.
+</footer>
+
+</main></div>
+
+<script>
+(function(){
+  // Two-arm Archimedean spiral, after the 1969 cover.
+  // Correctness by construction: both arms share r = B*theta but are drawn at
+  // angular phases 0 and pi. At any spatial angle, the radii of the two arms'
+  // windings interleave with radial separation pi*B (~14px) > stroke width (5),
+  // so the arms never touch. The ONLY difference between the two figures is a
+  // short bridge through the centre joining the arms' inner endpoints:
+  //   left figure  = one path  (arm A outer->inner, bridge, arm B inner->outer)
+  //   right figure = two paths (no bridge; an ~11px gap hides at the centre)
+  function armPts(cx, cy, B, th0, th1, phase, outward){
+    var pts=[], STEPTH=0.05;
+    if(outward){
+      for(var t=th0; t<=th1; t+=STEPTH) pts.push(pt(t));
+      pts.push(pt(th1));
+    }else{
+      for(var t=th1; t>=th0; t-=STEPTH) pts.push(pt(t));
+      pts.push(pt(th0));
+    }
+    function pt(t){ var r=B*t; return [cx + r*Math.cos(t+phase), cy + r*Math.sin(t+phase)]; }
+    return pts;
+  }
+  function toPath(pts){
+    return "M"+pts.map(function(p){return p[0].toFixed(1)+" "+p[1].toFixed(1);}).join(" L ");
+  }
+  var svg=document.getElementById("spirals");
+  if(svg){
+    var B=4.5, TH0=1.25, TH1=28.2, ns="http://www.w3.org/2000/svg";
+    // Both figures are built IDENTICALLY: two interleaved arms joined by a
+    // smooth S through the centre, outer ends terminating at the same angular
+    // positions. The ONLY difference: the right figure's outer arm carries a
+    // break at theta=9.7 (radius ~44px), with the cap-to-cap gap sized to the
+    // ordinary inter-winding gap (~9px edge to edge) — so the disconnection
+    // looks locally like any other pair of parallel windings. Endpoint
+    // inventories no longer differ at the centre; you have to trace.
+    function path(dstr,color){ var p=document.createElementNS(ns,"path");
+      p.setAttribute("d",dstr); p.setAttribute("fill","none");
+      p.setAttribute("stroke",color); p.setAttribute("stroke-width","5");
+      p.setAttribute("stroke-linecap","round"); p.setAttribute("stroke-linejoin","round");
+      svg.appendChild(p); }
+    // left: connected — one path (arm A outer->centre->arm B outer)
+    var aIn = armPts(150,145,B,TH0,TH1,0,false);        // outer -> inner
+    var bOut= armPts(150,145,B,TH0,TH1,Math.PI,true);   // inner -> outer
+    path(toPath(aIn.concat(bOut)), "#BE3A2C");
+    // right: same construction, but arm A is broken at theta ~9.7 -> two curves
+    var THB=9.7, DELTA=0.16;
+    var p1 = armPts(450,145,B,THB+DELTA,TH1,0,true);    // break -> perimeter
+    var p2 = armPts(450,145,B,TH0,THB-DELTA,0,false)    // break -> centre ...
+             .concat(armPts(450,145,B,TH0,TH1,Math.PI,true)); // ... -> out arm B
+    path(toPath(p1), "#2C5484");
+    path(toPath(p2), "#2C5484");
+  }
+  var btn=document.getElementById("reveal"), ans=document.getElementById("answer");
+  if(btn&&ans){ btn.addEventListener("click", function(){ ans.classList.toggle("shown"); }); }
+
+  // Tooltips: tap/click toggles (for touch); Escape closes; only one open at a time.
+  var terms=document.querySelectorAll(".tt");
+  function closeAll(except){
+    terms.forEach(function(t){ if(t!==except) t.classList.remove("open"); });
+  }
+  terms.forEach(function(t){
+    t.addEventListener("mouseenter", function(){
+      var r=t.getBoundingClientRect();
+      if(r.left + 320 > window.innerWidth) t.classList.add("tr"); else t.classList.remove("tr");
+    });
+    t.addEventListener("click", function(e){
+      e.stopPropagation();
+      var r=t.getBoundingClientRect();
+      if(r.left + 320 > window.innerWidth) t.classList.add("tr");
+      var was=t.classList.contains("open");
+      closeAll(null);
+      if(!was) t.classList.add("open");
+    });
+    t.addEventListener("keydown", function(e){
+      if(e.key==="Escape") t.classList.remove("open");
+    });
+  });
+  document.addEventListener("click", function(){ closeAll(null); });
+})();
+</script>
+</body>
+</html>

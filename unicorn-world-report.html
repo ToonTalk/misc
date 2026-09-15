@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Building Sisi's Unicorn World — a build log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #2b2233;
+    --ink-soft: #5b5270;
+    --dusk-1: #6f5ab8;
+    --dusk-2: #a98cff;
+    --dawn: #ffb3d9;
+    --cream: #fff3c4;
+    --paper: #f8f6ff;
+    --line: #e4ddf5;
+    --r1: #ff5e7e; --r2: #ffa14a; --r3: #e0b400; --r4: #37a852; --r5: #2f8fc9; --r6: #8a63e0;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+    font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, .num-big, .stat-n { font-family: 'Fredoka', sans-serif; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal { opacity: 0; transform: translateY(14px); animation: rise 0.7s ease forwards; }
+  }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative; overflow: hidden; color: #fff;
+    background: linear-gradient(180deg, var(--dusk-1) 0%, var(--dusk-2) 42%, var(--dawn) 78%, var(--cream) 100%);
+    padding: 76px 24px 96px;
+  }
+  .hero-inner { max-width: 760px; margin: 0 auto; position: relative; z-index: 2; }
+  .hero .eyebrow-free { font-size: 15px; opacity: 0.85; margin: 0 0 6px; }
+  .hero h1 { font-size: clamp(34px, 5.6vw, 54px); line-height: 1.08; margin: 0 0 18px; font-weight: 600; }
+  .hero p.lede { max-width: 46em; font-size: 18px; opacity: 0.94; margin: 0 0 40px; }
+  .hero-stat { font-size: clamp(46px, 8vw, 72px); font-weight: 700; line-height: 1; }
+  .hero-stat span { font-size: 0.34em; font-weight: 500; opacity: 0.85; margin-left: 10px; }
+  .sky-deco { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+
+  /* ---------- stat strip ---------- */
+  .stats {
+    max-width: 760px; margin: -52px auto 0; position: relative; z-index: 3;
+    background: #fff; border-radius: 18px; box-shadow: 0 18px 40px rgba(60, 40, 120, 0.14);
+    display: grid; grid-template-columns: repeat(3, 1fr); padding: 30px 10px;
+  }
+  .stat { text-align: center; padding: 10px 8px; border-left: 1px solid var(--line); }
+  .stat:first-child, .stat:nth-child(4) { border-left: none; }
+  .stat-n { font-size: 30px; font-weight: 600; color: var(--dusk-1); }
+  .stat-l { font-size: 13.5px; color: var(--ink-soft); margin-top: 2px; }
+  @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, 1fr); } .stat:nth-child(4) { border-left: 1px solid var(--line); } .stat:nth-child(odd) { border-left: none; } }
+
+  /* ---------- content column ---------- */
+  main { max-width: 680px; margin: 0 auto; padding: 76px 24px 40px; }
+  section + section { margin-top: 68px; }
+  h2 { font-size: 26px; font-weight: 600; margin: 0 0 6px; }
+  .section-note { color: var(--ink-soft); margin: 0 0 34px; max-width: 34em; }
+
+  /* ---------- timeline ---------- */
+  .timeline { position: relative; padding-left: 54px; }
+  .timeline::before { content: ''; position: absolute; left: 20px; top: 6px; bottom: 6px; width: 2px; background: var(--line); }
+  .entry { position: relative; padding-bottom: 38px; }
+  .entry:last-child { padding-bottom: 0; }
+  .dot {
+    position: absolute; left: -54px; top: 2px; width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600;
+    font-family: 'Fredoka', sans-serif; font-size: 15px; box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+  }
+  .entry h3 { margin: 2px 0 6px; font-size: 17.5px; font-weight: 600; }
+  .entry p { margin: 0; color: var(--ink-soft); }
+  .entry .tag {
+    display: inline-block; font-size: 12.5px; color: var(--ink-soft); margin-top: 8px;
+    border: 1px solid var(--line); border-radius: 100px; padding: 2px 10px;
+  }
+
+  /* ---------- cast grid ---------- */
+  .cast { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .cast span {
+    font-size: 14px; padding: 6px 13px; border-radius: 100px; background: var(--paper);
+    border: 1px solid var(--line); color: var(--ink);
+  }
+
+  /* ---------- rough edges ---------- */
+  .rough { border-left: 3px solid var(--r2); padding-left: 20px; }
+  .rough li { margin-bottom: 12px; }
+  .rough li::marker { color: var(--r2); }
+
+  /* ---------- verbatim prompts ---------- */
+  .verbatim { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 20px; }
+  .verbatim li { padding-left: 20px; border-left: 3px solid var(--c, var(--dusk-1)); }
+  .vnum { font-family: 'Fredoka', sans-serif; font-weight: 600; color: var(--c, var(--dusk-1)); margin-right: 8px; }
+  .verbatim q { quotes: '\201C' '\201D'; color: var(--ink); }
+  .verbatim .shot {
+    display: inline-block; margin-left: 8px; font-size: 12.5px; color: var(--ink-soft);
+    border: 1px solid var(--line); border-radius: 100px; padding: 1px 10px; white-space: nowrap;
+  }
+
+  footer {
+    max-width: 680px; margin: 0 auto; padding: 30px 24px 70px; color: var(--ink-soft);
+    font-size: 14.5px; border-top: 1px solid var(--line); margin-top: 60px;
+  }
+  footer .mono { color: var(--ink-soft); }
+  a { color: var(--dusk-1); }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <svg class="sky-deco" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <circle cx="690" cy="60" r="30" fill="#fff3c4" opacity="0.9"/>
+    <g stroke-width="9" fill="none" opacity="0.5">
+      <path d="M 60 340 A 340 340 0 0 1 740 340" stroke="#ff5e7e"/>
+      <path d="M 72 340 A 328 328 0 0 1 728 340" stroke="#ffa14a"/>
+      <path d="M 84 340 A 316 316 0 0 1 716 340" stroke="#ffe14a"/>
+      <path d="M 96 340 A 304 304 0 0 1 704 340" stroke="#5be07a"/>
+      <path d="M 108 340 A 292 292 0 0 1 692 340" stroke="#4ec9ff"/>
+      <path d="M 120 340 A 280 280 0 0 1 680 340" stroke="#a97bff"/>
+    </g>
+    <g fill="#fff">
+      <circle cx="60" cy="50" r="2"/><circle cx="130" cy="90" r="1.6"/><circle cx="230" cy="40" r="2"/>
+      <circle cx="330" cy="80" r="1.4"/><circle cx="500" cy="35" r="1.8"/><circle cx="590" cy="100" r="1.4"/>
+    </g>
+  </svg>
+  <div class="hero-inner">
+    <p class="reveal eyebrow-free">A build log</p>
+    <h1 class="reveal" style="animation-delay:.05s">Sisi's Unicorn World</h1>
+    <p class="lede reveal" style="animation-delay:.1s">One sitting, one running conversation, one HTML file. What started as a unicorn in a meadow grew a horse who loves her, six other couples, two nests of hatching chicks, and a day–night cycle where everyone but the owl falls asleep.</p>
+    <div class="hero-stat reveal" style="animation-delay:.18s">11<span>requests turned into features</span></div>
+  </div>
+</div>
+
+<div class="stats reveal" style="animation-delay:.24s">
+  <div class="stat"><div class="stat-n">19</div><div class="stat-l">animated characters</div></div>
+  <div class="stat"><div class="stat-n">10</div><div class="stat-l">love stories</div></div>
+  <div class="stat"><div class="stat-n">2</div><div class="stat-l">nests, 5 chicks</div></div>
+  <div class="stat"><div class="stat-n">22</div><div class="stat-l">synthesised sounds</div></div>
+  <div class="stat"><div class="stat-n">24</div><div class="stat-l">hand-drawn creatures</div></div>
+  <div class="stat"><div class="stat-n mono" style="font-size:26px">1,202</div><div class="stat-l">lines, one file</div></div>
+</div>
+
+<main>
+
+<section>
+  <h2>How it grew</h2>
+  <p class="section-note">Every entry below is a real request from the conversation, in the order it arrived. Nothing here was planned upfront — the world was built one instruction at a time, each one landing on top of whatever came before.</p>
+
+  <div class="timeline">
+    <div class="entry reveal">
+      <div class="dot" style="background:var(--r1)">1</div>
+      <h3>The starting world</h3>
+      <p>A unicorn meadow for a 5-year-old: parrots circling overhead, a giraffe, and a cast of tap-to-react animals — no reading, no failing, no timers. Tapping the unicorn into ten falling stars sets off a confetti celebration.</p>
+      <span class="tag">feature</span>
+    </div>
+    <div class="entry reveal">
+      <div class="dot" style="background:var(--r2)">2</div>
+      <h3>A horse that rears, a mermaid in the pond</h3>
+      <p>The horse stands on its hind legs and paws the air on tap, hind legs planted; the mermaid sits on a rock at the pond's edge, tail trailing in the water, and sings when greeted.</p>
+      <span class="tag">feature</span>
+    </div>
+    <div class="entry reveal">
+      <div class="dot" style="background:var(--r3)">3</div>
+      <h3>The first romance, and a monkey on a vine</h3>
+      <p>Horse and unicorn fall for each other — hearts, a nuzzle, a soft chime — whenever they're close. A monkey swings from the big tree, chattering when tapped.</p>
+      <span class="tag">feature</span>
+    </div>
+    <div class="entry reveal">
+      <div class="dot" style="background:var(--r4)">4</div>
+      <h3>Bug: a detached head</h3>
+      <p>A screenshot caught the horse's head floating away from its neck mid-nuzzle — the head had been rotating around the wrong pivot. Fixed by making the neck and head one rigid group that pivots at the shoulder.</p>
+      <span class="tag">fix</span>
+    </div>
+    <div class="entry reveal">
+      <div class="dot" style="background:var(--r5)">5</div>
+      <h3>Six more couples</h3>
+      <p>Giraffe & monkey, bunny & sheep, fox & bear, frog & duck — each pair now sends hearts and triggers the other's reaction. The mermaid falls for every parrot that passes; the owl falls only for the pink one.</p>
+      <span class="tag">feature</span>
+    </div>
+    <div class="entry reveal">
+      <div class="dot" style="background:var(--r6)">6</div>
+      <h3>Everyone learns to walk</h3>
+      <p>The biggest rebuild: every creature — parrots and owl included — became independently walkable. Tap one to select it, tap the ground to send it there. Giraffes swing their legs, bunnies hop, snails crawl.</p>
+      <span class="tag">rebuild</span>
+    </div>
+    <div class="entry reveal">
+      <div class="dot" style="background:var(--r1)">7</div>
+      <h3>A three-way romance</h3>
+      <p>Butterfly, snail and turtle all love one another — tapping any one sends hearts to both others. At the turtle's walking speed, it's a slow-burn courtship.</p>
+      <span class="tag">feature</span>
+    </div>
+    <div class="entry reveal">
+      <div class="dot" style="background:var(--r2)">8</div>
+      <h3>A nest, and a new score</h3>
+      <p>Three speckled eggs appear under the owl's branch; tapping calls the pink parrot home to hatch them. Separately, the background loop was rebuilt from a plain sine-wave beep into a scheduled music-box waltz — plucked bell tones over a soft bass.</p>
+      <span class="tag">feature</span>
+    </div>
+    <div class="entry reveal">
+      <div class="dot" style="background:var(--r3)">9</div>
+      <h3>A second nest, and dinner</h3>
+      <p>The owl gets its own nest of two eggs beside the first. Once hatched, both parents now fly off for food — a berry, a ladybird — and feed their chicks on return, on request or on their own every so often.</p>
+      <span class="tag">feature</span>
+    </div>
+    <div class="entry reveal">
+      <div class="dot" style="background:var(--r4)">10</div>
+      <h3>Day turns to night</h3>
+      <p>A full day–night cycle: dusk fades the rainbow, stars come out, a smiling moon rises, fireflies drift over the grass, and the music softens. Every creature falls asleep except the owl. Each morning the nests' chicks grow — medium after the first night, full-grown after the second. Tapping the sun or moon skips ahead.</p>
+      <span class="tag">feature</span>
+    </div>
+    <div class="entry reveal">
+      <div class="dot" style="background:var(--r5)">11</div>
+      <h3>Bug: sleeping wrong</h3>
+      <p>The first pass at "lying down" just tipped each standing drawing onto its side — the horse ended up folded in half with its head through the pond. Replaced with a real pose per creature (folded legs, rested heads, a fox curled round its own tail) and sent the monkey home to curl up in the tree once night falls.</p>
+      <span class="tag">fix</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>The cast</h2>
+  <p class="section-note">Fourteen ground animals, four parrots, the unicorn, and two nests full of chicks.</p>
+  <div class="cast">
+    <span>unicorn</span><span>horse</span><span>giraffe</span><span>monkey</span><span>mermaid</span>
+    <span>bunny</span><span>sheep</span><span>fox</span><span>bear</span><span>frog</span>
+    <span>duck</span><span>turtle</span><span>snail</span><span>butterfly</span><span>owl</span>
+    <span>4 parrots</span><span>2 nests</span><span>5 chicks (growing)</span>
+  </div>
+</section>
+
+<section>
+  <h2>Rough edges, honestly</h2>
+  <p class="section-note">Not everything landed clean the first time — two of the eleven requests above were fixes for things the previous pass got wrong. A few more things worth knowing:</p>
+  <ul class="rough">
+    <li><strong>Untested audio.</strong> All 22 sounds and the music-box waltz were written and syntax-checked, never heard — headless testing has no ears. The harmony should be sound; the mix balance between melody and bass is a guess.</li>
+    <li><strong>Everything stays awake-capable at night.</strong> Sleeping animals can still be tapped and sent walking. A stricter version would make Sisi wait for morning — left as-is so nothing ever blocks her.</li>
+    <li><strong>No save state.</strong> Refreshing the page resets the day/night clock, the chicks' growth stage, and who's paired up with whom. Everything else about the world (positions, love, nests) is recomputed fresh each load.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Every request, verbatim</h2>
+  <p class="section-note">The eleven lines behind the timeline above, exactly as typed — nothing paraphrased or cleaned up.</p>
+  <ol class="verbatim">
+    <li style="--c:var(--r1)"><span class="vnum">1</span><q>make a unicorn world game. there are parrots flying in the sky. and a giraffe. and lots of other animals. make if for Sisi who is 5 years old. (a web game)</q></li>
+    <li style="--c:var(--r2)"><span class="vnum">2</span><q>add a horse that stands on its back legs and moves it front legs in the air. add a mermaid in a pond</q></li>
+    <li style="--c:var(--r3)"><span class="vnum">3</span><q>the horse and unicorn love each other. a monkey swinging from a tree.</q></li>
+    <li style="--c:var(--r4)"><span class="vnum">4</span><q>the horse's head came off when he met the unicorn. fix this please</q><span class="shot">+ screenshot</span></li>
+    <li style="--c:var(--r5)"><span class="vnum">5</span><q>all the animals should walk including the parrots and owl</q></li>
+    <li style="--c:var(--r6)"><span class="vnum">6</span><q>the butterfly and the snail are in love. the turtle with the butterfly and snail</q></li>
+    <li style="--c:var(--r1)"><span class="vnum">7</span><q>the pink parrot has a nest underneath the owl with eggs in it<br>the music should have a different kind of sound</q></li>
+    <li style="--c:var(--r2)"><span class="vnum">8</span><q>the pink parrot gets food for the chicks. the owl has a nest next to the other nest</q></li>
+    <li style="--c:var(--r3)"><span class="vnum">9</span><q>after a while night should come. in the morning the chicks are medium and the next day they are full size.</q></li>
+    <li style="--c:var(--r4)"><span class="vnum">10</span><q>when they sleep they should lie down.</q></li>
+    <li style="--c:var(--r5)"><span class="vnum">11</span><q>lying down - not like that. a night the monkey sleeps in the tree</q><span class="shot">+ screenshot</span></li>
+  </ol>
+</section>
+
+</main>
+
+<footer>
+  <p>Built across a single conversation with Claude on 7 September 2026, as a running series of feature requests rather than a spec. <span class="mono">unicorn-world.html</span> · single file, no dependencies, runs offline.</p>
+</footer>
+
+</body>
+</html>
